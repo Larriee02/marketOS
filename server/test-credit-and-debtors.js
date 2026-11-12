@@ -25,7 +25,7 @@ async function runTests() {
   const cashbookService = require('./src/services/cashbook.service');
 
   // 1. Create a test user
-  const testEmail = `retailer_debtor_${Date.now()}@stockflow.test`;
+  const testEmail = `retailer_debtor_${Date.now()}@marketos.test`;
   const registerResult = await authService.register({
     email: testEmail,
     password: 'Password123#',

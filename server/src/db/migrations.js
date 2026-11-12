@@ -158,7 +158,7 @@ module.exports = [
 
       -- Remove demo/test accounts and any unowned legacy rows for clean live testing
       DELETE FROM users
-      WHERE LOWER(email) = 'admin@stockflowlagos.com'
+      WHERE LOWER(email) = 'admin@marketos.com'
          OR LOWER(email) LIKE 'trader_%@lagos.ng'
          OR LOWER(email) LIKE 'google_trader_%@gmail.com'
          OR LOWER(email) LIKE 'apple_trader_%@icloud.com';

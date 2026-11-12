@@ -2,7 +2,7 @@ const { SignJWT, jwtVerify } = require('jose');
 const env = require('../config/env');
 const AppError = require('./AppError');
 
-const COOKIE_NAME = 'sf_session';
+const COOKIE_NAME = 'mos_session';
 const secretKey = () => {
   if (env.JWT_SECRET_MISSING) {
     throw new AppError(
@@ -19,13 +19,13 @@ async function signSession(user) {
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(String(user.id))
     .setIssuedAt()
-    .setIssuer('stockflow')
+    .setIssuer('marketos')
     .setExpirationTime(`${env.SESSION_DAYS}d`)
     .sign(secretKey());
 }
 
 async function verifySession(token) {
-  const { payload } = await jwtVerify(token, secretKey(), { issuer: 'stockflow' });
+  const { payload } = await jwtVerify(token, secretKey(), { issuer: 'marketos' });
   return { userId: Number(payload.sub), tokenVersion: Number(payload.tv || 0) };
 }
 

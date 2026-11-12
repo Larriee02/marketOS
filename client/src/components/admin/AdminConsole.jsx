@@ -244,7 +244,7 @@ export function AdminConsole({ currentUser, onToast }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `stockflow-users-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `marketos-users-${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -940,7 +940,7 @@ export function AdminConsole({ currentUser, onToast }) {
                     {inspectingUser.phone && (
                       <a
                         href={`https://wa.me/${inspectingUser.phone.replace(/^0/, '234').replace(/\D/g, '')}?text=${encodeURIComponent(
-                          `Hello ${inspectingUser.full_name}, your StockFlow Lagos temporary password is: ${resetResult.temporaryPassword}`
+                          `Hello ${inspectingUser.full_name}, your MarketOS temporary password is: ${resetResult.temporaryPassword}`
                         )}`}
                         target="_blank"
                         rel="noreferrer"

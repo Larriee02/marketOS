@@ -4,7 +4,7 @@ process.env.ALLOW_OTP_PREVIEW = 'true';
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
-fs.rmSync(path.join(os.tmpdir(), 'stockflow-live-production-v5.json'), { force: true });
+fs.rmSync(path.join(os.tmpdir(), 'marketos-live-production-v5.json'), { force: true });
 
 const S = path.join(__dirname, '../server/src');
 const authService = require(`${S}/services/auth.service`);

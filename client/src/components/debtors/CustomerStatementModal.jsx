@@ -22,7 +22,7 @@ export function CustomerStatementModal({
   isOpen,
   onClose,
   customerName,
-  storeName = 'StockFlow Store',
+  storeName = 'MarketOS Store',
   storePhone = '',
   storeAddress = '',
   apiFetch,

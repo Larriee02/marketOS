@@ -25,7 +25,7 @@ const WINDOW_MS = 5 * 60 * 1000; // 5-minute stateless HMAC window (accepts curr
 
 function generateStatelessCode(key, windowIdx = Math.floor(Date.now() / WINDOW_MS)) {
   const digest = crypto
-    .createHmac('sha256', env.JWT_SECRET || 'stockflow-otp-secret')
+    .createHmac('sha256', env.JWT_SECRET || 'marketos-otp-secret')
     .update(`otp:${key}:${windowIdx}`)
     .digest();
   const num = digest.readUInt32BE(0) % 900000;

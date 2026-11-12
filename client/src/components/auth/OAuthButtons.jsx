@@ -55,7 +55,7 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
     const handleMessage = (event) => {
       if (event.origin !== window.location.origin) return;
       const data = event.data;
-      if (!data || data.type !== 'STOCKFLOW_OAUTH_SUCCESS') return;
+      if (!data || data.type !== 'MARKETOS_OAUTH_SUCCESS') return;
 
       if (pollTimerRef.current) {
         clearInterval(pollTimerRef.current);
@@ -159,7 +159,7 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
     const top = Math.max(0, Math.round(dualScreenTop + (screenHeight - height) / 2));
 
     const features = `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=yes,status=no,resizable=yes,scrollbars=yes`;
-    const popup = window.open(authorizeUrl, 'stockflow_google_oauth', features);
+    const popup = window.open(authorizeUrl, 'marketos_google_oauth', features);
 
     if (!popup || popup.closed || typeof popup.closed === 'undefined') {
       // Popup blocked (common on mobile browsers) -> perform standard full-page OAuth redirect

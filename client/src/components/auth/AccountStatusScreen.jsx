@@ -58,7 +58,7 @@ export function AccountStatusScreen({
             <Package className="w-5 h-5" />
           </div>
           <span className="font-extrabold font-luxury text-base sm:text-lg text-theme-primary">
-            StockFlow
+            MarketOS
           </span>
         </div>
 
@@ -187,7 +187,7 @@ export function AccountStatusScreen({
       </div>
 
       <footer className="text-center text-[11px] text-theme-secondary">
-        StockFlow • Account Verification
+        MarketOS • Account Verification
       </footer>
     </div>
   );

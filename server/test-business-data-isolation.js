@@ -29,7 +29,7 @@ async function runTests() {
   // ==========================================
   const timestamp = Date.now();
   const merchantARes = await authService.register({
-    email: `merchant_alpha_${timestamp}@stockflow.test`,
+    email: `merchant_alpha_${timestamp}@marketos.test`,
     password: 'AlphaPassword123#',
     full_name: 'Merchant Alpha',
     business_name: 'Alpha Supermarket Ltd',
@@ -39,7 +39,7 @@ async function runTests() {
   const userA = merchantARes.user.id;
 
   const merchantBRes = await authService.register({
-    email: `merchant_beta_${timestamp}@stockflow.test`,
+    email: `merchant_beta_${timestamp}@marketos.test`,
     password: 'BetaPassword123#',
     full_name: 'Merchant Beta',
     business_name: 'Beta Provisions Stall',

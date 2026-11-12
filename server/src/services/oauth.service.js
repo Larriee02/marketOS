@@ -414,7 +414,7 @@ function renderOAuthProviderGatewayHtml({ provider, state, callbackUrl, authoriz
     </div>
 
     <h1 class="g-title">Choose an account</h1>
-    <p class="g-subtitle">to continue to <strong>StockFlow</strong></p>
+    <p class="g-subtitle">to continue to <strong>MarketOS</strong></p>
 
     ${error ? `<div class="g-error">${escapeHtml(error)}</div>` : ''}
 
@@ -439,7 +439,7 @@ function renderOAuthProviderGatewayHtml({ provider, state, callbackUrl, authoriz
       </div>
 
       <p class="g-consent">
-        To continue, Google will share your name, email address, and profile picture with <strong>StockFlow</strong>.
+        To continue, Google will share your name, email address, and profile picture with <strong>MarketOS</strong>.
       </p>
 
       <div class="g-actions">
@@ -462,7 +462,7 @@ function renderOAuthProviderGatewayHtml({ provider, state, callbackUrl, authoriz
 
   <div class="g-footer">
     <span>English (United States)</span>
-    <span>Google OAuth 2.0 • StockFlow</span>
+    <span>Google OAuth 2.0 • MarketOS</span>
   </div>
 </body>
 </html>`;
@@ -620,7 +620,7 @@ function renderOAuthProviderGatewayHtml({ provider, state, callbackUrl, authoriz
     </div>
 
     <h1 class="a-title">Sign in with Apple</h1>
-    <p class="a-subtitle">Use your Apple ID to sign in to <strong>StockFlow</strong>.</p>
+    <p class="a-subtitle">Use your Apple ID to sign in to <strong>MarketOS</strong>.</p>
 
     ${error ? `<div class="a-error">${escapeHtml(error)}</div>` : ''}
 
@@ -645,7 +645,7 @@ function renderOAuthProviderGatewayHtml({ provider, state, callbackUrl, authoriz
       </div>
 
       <p class="a-consent">
-        StockFlow will receive your verified Apple ID email and name to sign you in or set up your store workspace.
+        MarketOS will receive your verified Apple ID email and name to sign you in or set up your store workspace.
       </p>
 
       <div class="a-actions">
@@ -657,7 +657,7 @@ function renderOAuthProviderGatewayHtml({ provider, state, callbackUrl, authoriz
     <details class="a-dev">
       <summary>Have an Apple Developer Service ID? Connect live appleid.apple.com</summary>
       <form method="GET" action="${escapeHtml(authorizeUrl)}" style="margin-top:10px; display:flex; gap:8px;">
-        <input class="a-input" style="padding:8px 10px; font-size:12px;" name="client_id" placeholder="com.yourcompany.stockflow" required />
+        <input class="a-input" style="padding:8px 10px; font-size:12px;" name="client_id" placeholder="com.yourcompany.marketos" required />
         <button type="submit" class="a-btn-submit" style="padding:8px 14px; font-size:12px; white-space:nowrap;">Redirect to Apple</button>
       </form>
       <p style="margin-top:6px; font-size:11px; color:#86868b;">
@@ -696,7 +696,7 @@ function renderOAuthHashExtractorHtml({ callbackUrl, state }) {
 </head>
 <body>
   <div class="box">
-    <p>Verifying your account with StockFlow...</p>
+    <p>Verifying your account with MarketOS...</p>
     <form id="hashForm" method="POST" action="${escapeHtml(callbackUrl)}">
       <input type="hidden" name="state" value="${escapeHtml(state)}" />
       <input type="hidden" name="id_token" id="id_token" />
@@ -725,12 +725,12 @@ function renderOAuthHashExtractorHtml({ callbackUrl, state }) {
 /**
  * Renders the final OAuth 2.0 callback completion page:
  * - Saves the session token to localStorage
- * - Posts `{ type: 'STOCKFLOW_OAUTH_SUCCESS', token, user, isNewUser, provider }` to `window.opener`
+ * - Posts `{ type: 'MARKETOS_OAUTH_SUCCESS', token, user, isNewUser, provider }` to `window.opener`
  * - Closes the OAuth popup window automatically, or redirects the full window to `/store/sell`
  */
 function renderOAuthCallbackSuccessHtml({ user, token, isNewUser, provider }) {
   const payloadJson = JSON.stringify({
-    type: 'STOCKFLOW_OAUTH_SUCCESS',
+    type: 'MARKETOS_OAUTH_SUCCESS',
     provider,
     token,
     user,
@@ -742,7 +742,7 @@ function renderOAuthCallbackSuccessHtml({ user, token, isNewUser, provider }) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Authenticated — StockFlow</title>
+  <title>Authenticated — MarketOS</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -785,7 +785,7 @@ function renderOAuthCallbackSuccessHtml({ user, token, isNewUser, provider }) {
     (function() {
       var data = ${payloadJson};
       try {
-        localStorage.setItem('stockflow_auth_token', data.token);
+        localStorage.setItem('marketos_auth_token', data.token);
       } catch (e) {}
 
       if (window.opener && !window.opener.closed) {

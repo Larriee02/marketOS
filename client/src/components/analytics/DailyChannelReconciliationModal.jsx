@@ -25,7 +25,7 @@ export function DailyChannelReconciliationModal({
   transactions = [],
   apiFetch,
   formatNaira = (v) => `₦${Number(v || 0).toLocaleString()}`,
-  storeName = 'StockFlow Store',
+  storeName = 'MarketOS Store',
   onSuccess,
 }) {
   const [reconcileDate, setReconcileDate] = useState(

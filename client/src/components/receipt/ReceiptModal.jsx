@@ -55,7 +55,7 @@ export function ReceiptModal({ isOpen, onClose, receipt, formatNaira }) {
 
     return [
       `==========================================`,
-      `       ${(receipt.businessName || 'STOCKFLOW STORE').toUpperCase()}`,
+      `       ${(receipt.businessName || 'MARKETOS STORE').toUpperCase()}`,
       `       ${receipt.location || 'Lagos, Nigeria'}`,
       `==========================================`,
       `Receipt No: ${receipt.receiptNo || 'N/A'}`,
@@ -140,7 +140,7 @@ export function ReceiptModal({ isOpen, onClose, receipt, formatNaira }) {
           {/* Receipt Header */}
           <div className="text-center pb-3 border-b border-dashed border-slate-300 dark:border-slate-700 space-y-1">
             <h3 className="text-base sm:text-lg font-black tracking-tight uppercase font-luxury text-slate-900 dark:text-white">
-              {receipt.businessName || 'StockFlow Lagos Store'}
+              {receipt.businessName || 'MarketOS Store'}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {receipt.location || 'Lagos, Nigeria'}
@@ -249,7 +249,7 @@ export function ReceiptModal({ isOpen, onClose, receipt, formatNaira }) {
               Thank you for shopping with us!
             </p>
             <p className="text-[10px]">
-              Goods collected in good condition • Powered by StockFlow Lagos
+              Goods collected in good condition • Powered by MarketOS
             </p>
           </div>
         </div>

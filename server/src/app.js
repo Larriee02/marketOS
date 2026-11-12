@@ -770,7 +770,7 @@ app.use((err, req, res, next) => {
 const PORT = env.PORT || 5000;
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`StockFlow Lagos SaaS API v1 running on http://localhost:${PORT}`);
+    console.log(`MarketOS SaaS API v1 running on http://localhost:${PORT}`);
   });
 }
 

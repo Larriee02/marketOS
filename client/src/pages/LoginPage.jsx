@@ -102,7 +102,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
           </div>
           <div>
             <span className="font-extrabold font-luxury text-base sm:text-lg text-theme-primary block leading-tight">
-              StockFlow
+              MarketOS
             </span>
             <span className="hidden sm:block text-[11px] text-theme-secondary">
               Retail Operations, Inventory & Cashbook Platform
@@ -373,7 +373,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
       </main>
 
       <footer className="max-w-6xl w-full mx-auto text-center text-[11px] text-theme-muted">
-        StockFlow • Retail Inventory & Cashbook Platform
+        MarketOS • Retail Inventory & Cashbook Platform
       </footer>
     </div>
   );

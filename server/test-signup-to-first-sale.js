@@ -27,7 +27,7 @@ async function runTests() {
   // MILESTONE 1: Create an Account
   // ==========================================
   console.log('📌 MILESTONE 1: Create Account & Auto-Approval');
-  const testEmail = `retailer_first_sale_${Date.now()}@stockflow.test`;
+  const testEmail = `retailer_first_sale_${Date.now()}@marketos.test`;
   const testPhone = `080${String(Date.now()).slice(-8)}`;
   const registerResult = await authService.register({
     email: testEmail,
@@ -249,7 +249,7 @@ async function runTests() {
   const stateToken = oauthService.signOAuthState({
     provider: 'GOOGLE',
     nonce: 'test-nonce-123',
-    origin: 'https://stockflow-pro.vercel.app',
+    origin: 'https://marketos.vercel.app',
   });
   const verifiedState = oauthService.verifyOAuthState(stateToken);
   assert.strictEqual(verifiedState.provider, 'GOOGLE', 'OAuth state provider must be GOOGLE');
@@ -258,7 +258,7 @@ async function runTests() {
   // 2. Google OAuth 2.0 Authorize URL (accounts.google.com)
   const googleAuthUrl = oauthService.buildGoogleAuthorizeUrl({
     clientId: '123456-test.apps.googleusercontent.com',
-    redirectUri: 'https://stockflow-pro.vercel.app/api/v1/auth/oauth/google/callback',
+    redirectUri: 'https://marketos.vercel.app/api/v1/auth/oauth/google/callback',
     state: stateToken,
     nonce: 'test-nonce-123',
     useCodeFlow: true,
@@ -291,9 +291,9 @@ async function runTests() {
     token: oauthResult.token,
     user: oauthResult.user,
     isNewUser: oauthResult.isNewUser,
-    origin: 'https://stockflow-pro.vercel.app',
+    origin: 'https://marketos.vercel.app',
   });
-  assert.ok(callbackHtml.includes('STOCKFLOW_OAUTH_SUCCESS'), 'Callback HTML must post STOCKFLOW_OAUTH_SUCCESS to opener');
+  assert.ok(callbackHtml.includes('MARKETOS_OAUTH_SUCCESS'), 'Callback HTML must post MARKETOS_OAUTH_SUCCESS to opener');
   console.log('✅ Google (`accounts.google.com`) OAuth 2.0 Redirect, Gateway & Callback verified');
 
   // ==========================================
@@ -322,7 +322,7 @@ async function runTests() {
   // ==========================================
   console.log('\n📌 MILESTONE 9: Multi-Industry Trade Categories (Car Dealers, Gadgets, Fabrics, Pharmacy)');
   const carDealerReg = await authService.register({
-    email: `car_dealer_${Date.now()}@stockflow.test`,
+    email: `car_dealer_${Date.now()}@marketos.test`,
     password: 'SecureRetailPassword123#',
     full_name: 'Tunde Motors',
     business_name: 'Tunde Luxury Autos',

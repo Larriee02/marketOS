@@ -1,8 +1,8 @@
 {
-  "name": "stockflow-lagos",
+  "name": "marketos",
   "version": "1.0.0",
   "private": true,
-  "description": "StockFlow - Retail Inventory, Point of Sale & Cashbook Platform",
+  "description": "MarketOS - Retail Inventory, Point of Sale & Cashbook Platform",
   "engines": {
     "node": "22.x"
   },

@@ -1,4 +1,4 @@
-const TOKEN_KEY = 'stockflow_auth_token';
+const TOKEN_KEY = 'marketos_auth_token';
 
 export function getStoredToken() {
   try {

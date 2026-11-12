@@ -135,7 +135,7 @@ export function BulkImportModal({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', 'stockflow_lagos_inventory_template.csv');
+    link.setAttribute('download', 'marketos_inventory_template.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

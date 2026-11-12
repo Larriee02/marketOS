@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const env = require('./env');
 const { STARTER_CATALOG } = require('../db/starterCatalog');
 
-const STORE_FILE = path.join(os.tmpdir(), 'stockflow-live-production-v5.json');
+const STORE_FILE = path.join(os.tmpdir(), 'marketos-live-production-v5.json');
 
 let memoryState = null;
 
@@ -38,7 +38,7 @@ function ensureOwner(state) {
       email: OWNER_EMAIL,
       password_hash: getOwnerPasswordHash(),
       full_name: OWNER_NAME,
-      business_name: 'StockFlow HQ',
+      business_name: 'MarketOS HQ',
       phone: null,
       business_type: 'Provision Store',
       city: 'Lagos',

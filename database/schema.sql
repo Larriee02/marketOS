@@ -1,4 +1,4 @@
--- StockFlow Lagos - Provision Store & Retail Trader Schema (Naira / NGN)
+-- MarketOS - Multi-Industry Retail & Trade Schema (Naira / NGN)
 DROP TABLE IF EXISTS credit_repayments CASCADE;
 DROP TABLE IF EXISTS credit_records CASCADE;
 DROP TABLE IF EXISTS cash_transactions CASCADE;

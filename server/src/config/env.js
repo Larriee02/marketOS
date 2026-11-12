@@ -12,9 +12,9 @@ const bool = (value, fallback = false) => {
   return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
 };
 
-const defaultSecret = `sf-lagos-prod-${crypto
+const defaultSecret = `mos-prod-${crypto
   .createHash('sha256')
-  .update(process.env.VERCEL_PROJECT_PRODUCTION_URL || 'stockflow-lagos-secret-key-2026')
+  .update(process.env.VERCEL_PROJECT_PRODUCTION_URL || 'marketos-secret-key-2026')
   .digest('hex')}`;
 
 const jwtSecret =

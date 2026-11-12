@@ -34,15 +34,15 @@ function getNodemailer() {
   }
   return {
     transporter: nodemailerInstance,
-    fromAddress: env.EMAIL_FROM || `StockFlow <${user}>`,
+    fromAddress: env.EMAIL_FROM || `MarketOS <${user}>`,
     provider: host === 'smtp.gmail.com' ? 'gmail' : 'smtp',
   };
 }
 
 function buildOtpEmailHtml({ code, recipientName, purpose, expiresInMinutes = 10 }) {
   const isSignup = purpose === 'SIGNUP';
-  const actionText = isSignup ? 'complete your StockFlow registration' : 'sign in to your StockFlow workspace';
-  const title = isSignup ? 'Confirm Your StockFlow Account' : 'StockFlow Security Verification Code';
+  const actionText = isSignup ? 'complete your MarketOS registration' : 'sign in to your MarketOS workspace';
+  const title = isSignup ? 'Confirm Your MarketOS Account' : 'MarketOS Security Verification Code';
 
   return `
 <!DOCTYPE html>
@@ -156,9 +156,9 @@ function buildOtpEmailHtml({ code, recipientName, purpose, expiresInMinutes = 10
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo-badge">SF</div>
+      <div class="logo-badge">MO</div>
       <div style="margin-left: 12px;">
-        <h1 class="brand-title">StockFlow</h1>
+        <h1 class="brand-title">MarketOS</h1>
         <p class="brand-subtitle">Retail Inventory & Cashbook Platform</p>
       </div>
     </div>
@@ -172,10 +172,10 @@ function buildOtpEmailHtml({ code, recipientName, purpose, expiresInMinutes = 10
       <div class="otp-hint">Expires in ${expiresInMinutes} minutes</div>
     </div>
 
-    <p>Never share this code with anyone. StockFlow team members will never ask for your verification code.</p>
+    <p>Never share this code with anyone. MarketOS team members will never ask for your verification code.</p>
 
     <div class="footer">
-      This automated security email was sent by StockFlow.<br>
+      This automated security email was sent by MarketOS.<br>
       If you did not request this verification code, you can safely ignore this message.
     </div>
   </div>
@@ -191,7 +191,7 @@ function buildWelcomeEmailHtml({ recipientName, businessName, currency = 'NGN' }
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to StockFlow</title>
+  <title>Welcome to MarketOS</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -257,7 +257,7 @@ function buildWelcomeEmailHtml({ recipientName, businessName, currency = 'NGN' }
 <body>
   <div class="container">
     <div class="badge">Workspace Activated</div>
-    <h1>Welcome to StockFlow, ${recipientName || 'Trader'}!</h1>
+    <h1>Welcome to MarketOS, ${recipientName || 'Trader'}!</h1>
     <p>Your retail inventory and cashbook workspace is now active and ready to record sales and stock movements.</p>
     <div class="card">
       <div class="row">Store / Business: <strong>${businessName || 'Retail Store'}</strong></div>
@@ -265,7 +265,7 @@ function buildWelcomeEmailHtml({ recipientName, businessName, currency = 'NGN' }
       <div class="row">Status: <strong style="color:#34D399;">Approved & Active</strong></div>
     </div>
     <p>You can now add stock, sell items from the Point of Sale counter or Inventory tab, and track all movements in your Activity History.</p>
-    <div class="footer">StockFlow • Retail Inventory & Cashbook Platform</div>
+    <div class="footer">MarketOS • Retail Inventory & Cashbook Platform</div>
   </div>
 </body>
 </html>
@@ -298,7 +298,7 @@ class NotificationService {
     // 2. Try Resend API
     if (env.RESEND_API_KEY) {
       try {
-        const fromAddress = env.EMAIL_FROM || 'StockFlow <onboarding@resend.dev>';
+        const fromAddress = env.EMAIL_FROM || 'MarketOS <onboarding@resend.dev>';
         const res = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -328,7 +328,7 @@ class NotificationService {
     // 3. Try SendGrid API
     if (env.SENDGRID_API_KEY) {
       try {
-        const rawFrom = env.EMAIL_FROM || 'notifications@stockflowlagos.com';
+        const rawFrom = env.EMAIL_FROM || 'notifications@marketos.com';
         const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
           method: 'POST',
           headers: {
@@ -367,9 +367,9 @@ class NotificationService {
   async sendEmailOtp({ to, code, recipientName = '', purpose = 'LOGIN' }) {
     const isSignup = purpose === 'SIGNUP';
     const subject = isSignup
-      ? `${code} is your StockFlow registration code`
-      : `${code} is your StockFlow sign-in code`;
-    const text = `Hello ${recipientName || 'there'},\n\nYour StockFlow verification code is: ${code}\nThis code will expire in 10 minutes.\n\nDo not share this code with anyone.`;
+      ? `${code} is your MarketOS registration code`
+      : `${code} is your MarketOS sign-in code`;
+    const text = `Hello ${recipientName || 'there'},\n\nYour MarketOS verification code is: ${code}\nThis code will expire in 10 minutes.\n\nDo not share this code with anyone.`;
     const html = buildOtpEmailHtml({ code, recipientName, purpose });
 
     console.log(`[Notification:Email] Sending OTP ${code} to ${to} (${purpose})`);
@@ -381,8 +381,8 @@ class NotificationService {
    */
   async sendWelcomeEmail({ to, recipientName = '', businessName = '', currency = 'NGN' }) {
     if (!to) return { success: false };
-    const subject = `Welcome to StockFlow — ${businessName || 'Your Store'} is Ready!`;
-    const text = `Hello ${recipientName || 'there'},\n\nWelcome to StockFlow! Your store workspace (${businessName || 'Retail Store'}) is now active with default currency ${currency}.`;
+    const subject = `Welcome to MarketOS — ${businessName || 'Your Store'} is Ready!`;
+    const text = `Hello ${recipientName || 'there'},\n\nWelcome to MarketOS! Your store workspace (${businessName || 'Retail Store'}) is now active with default currency ${currency}.`;
     const html = buildWelcomeEmailHtml({ recipientName, businessName, currency });
 
     return this.deliverEmail({ to, subject, text, html });

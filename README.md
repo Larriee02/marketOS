@@ -1,4 +1,4 @@
-# StockFlow Pro — Retail Inventory, Stock-Taking & Cashflow Management Platform
+# MarketOS — Retail Inventory, Stock-Taking & Cashflow Management Platform
 
 A production-grade full-stack MVP built with **React 18 + Tailwind CSS**, **Node.js + Express**, and **PostgreSQL**.
 

@@ -173,7 +173,7 @@ async function bootstrapAdmin() {
     if (existing.rows.length === 0) {
       const inserted = await rawQuery(
         `INSERT INTO users (email, password_hash, full_name, business_name, phone, business_type, city, role, status, approved_at)
-         VALUES ($1, $2, $3, 'StockFlow HQ', NULL, 'Provision Store', 'Lagos', 'ADMIN', 'APPROVED', NOW())
+         VALUES ($1, $2, $3, 'MarketOS HQ', NULL, 'Provision Store', 'Lagos', 'ADMIN', 'APPROVED', NOW())
          RETURNING id`,
         [OWNER_EMAIL, getOwnerPasswordHash(), OWNER_NAME]
       );

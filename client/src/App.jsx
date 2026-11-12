@@ -150,7 +150,7 @@ const TAB_TO_ROUTE = {
 export default function App() {
   const [darkMode, setDarkMode] = useState(() => {
     try {
-      return localStorage.getItem('stockflow_theme') === 'dark';
+      return localStorage.getItem('marketos_theme') === 'dark';
     } catch {
       return false;
     }
@@ -166,7 +166,7 @@ export default function App() {
       root.setAttribute('data-theme', 'light');
     }
     try {
-      localStorage.setItem('stockflow_theme', darkMode ? 'dark' : 'light');
+      localStorage.setItem('marketos_theme', darkMode ? 'dark' : 'light');
     } catch {
       // Ignore storage quota errors
     }
@@ -344,7 +344,7 @@ function AppShell({ darkMode, setDarkMode }) {
   const [showQuickStockModal, setShowQuickStockModal] = useState(false);
   const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(() => {
     try {
-      return localStorage.getItem('stockflow_hide_onboarding') === 'true';
+      return localStorage.getItem('marketos_hide_onboarding') === 'true';
     } catch {
       return false;
     }
@@ -1261,9 +1261,9 @@ function AppShell({ darkMode, setDarkMode }) {
 
       // Build and open Instant Digital Receipt
       setLastReceipt({
-        receiptNo: `SFL-${Date.now().toString().slice(-6)}`,
+        receiptNo: `MOS-${Date.now().toString().slice(-6)}`,
         timestamp: new Date().toLocaleString(),
-        businessName: currentUser?.business_name || 'StockFlow Lagos Store',
+        businessName: currentUser?.business_name || 'MarketOS Store',
         location: currentUser?.location || 'Lagos, Nigeria',
         cashierName: currentUser?.full_name || 'Store Owner',
         customerName: customerName.trim() || 'Walk-in Customer',
@@ -1302,9 +1302,9 @@ function AppShell({ darkMode, setDarkMode }) {
 
   const openReceiptForMovement = (m) => {
     setLastReceipt({
-      receiptNo: `SFL-${String(m.id).padStart(6, '0')}`,
+      receiptNo: `MOS-${String(m.id).padStart(6, '0')}`,
       timestamp: new Date(m.created_at).toLocaleString(),
-      businessName: currentUser?.business_name || 'StockFlow Lagos Store',
+      businessName: currentUser?.business_name || 'MarketOS Store',
       location: currentUser?.location || 'Lagos, Nigeria',
       cashierName: currentUser?.full_name || 'Store Owner',
       customerName: m.counterparty_name || 'Walk-in Customer',
@@ -1327,9 +1327,9 @@ function AppShell({ darkMode, setDarkMode }) {
 
   const openReceiptForTransaction = (tx) => {
     setLastReceipt({
-      receiptNo: `SFL-${String(tx.id).padStart(6, '0')}`,
+      receiptNo: `MOS-${String(tx.id).padStart(6, '0')}`,
       timestamp: new Date(tx.transaction_date).toLocaleString(),
-      businessName: currentUser?.business_name || 'StockFlow Lagos Store',
+      businessName: currentUser?.business_name || 'MarketOS Store',
       location: currentUser?.address || currentUser?.city || 'Lagos, Nigeria',
       cashierName: currentUser?.full_name || 'Store Owner',
       customerName: tx.counterparty_name || 'Customer',
@@ -1459,9 +1459,9 @@ function AppShell({ darkMode, setDarkMode }) {
 
       if (isSale && res?.movement) {
         setLastReceipt({
-          receiptNo: `SFL-${String(res.movement.id).padStart(6, '0')}`,
+          receiptNo: `MOS-${String(res.movement.id).padStart(6, '0')}`,
           timestamp: new Date().toLocaleString(),
-          businessName: currentUser?.business_name || 'StockFlow Lagos Store',
+          businessName: currentUser?.business_name || 'MarketOS Store',
           location: currentUser?.location || 'Lagos, Nigeria',
           cashierName: currentUser?.full_name || 'Store Owner',
           customerName: movementForm.counterparty_name?.trim() || 'Walk-in Customer',
@@ -1833,7 +1833,7 @@ function AppShell({ darkMode, setDarkMode }) {
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-base sm:text-xl font-extrabold font-luxury tracking-tight truncate text-white">
-                  {currentUser.business_name || 'StockFlow'}
+                  {currentUser.business_name || 'MarketOS'}
                 </h1>
                 <span className="hidden xs:inline-block text-[10px] sm:text-[11px] bg-emerald-500/20 text-emerald-200 border border-emerald-400/35 px-2.5 py-0.5 rounded-full font-extrabold">
                   {currentUser.role === 'ADMIN' ? 'Admin' : 'Verified'} • {currencyCode} ({currencySymbol})
@@ -2096,7 +2096,7 @@ function AppShell({ darkMode, setDarkMode }) {
             setIsOnboardingDismissed((prev) => {
               const next = !prev;
               try {
-                localStorage.setItem('stockflow_hide_onboarding', String(next));
+                localStorage.setItem('marketos_hide_onboarding', String(next));
               } catch {
                 // ignore
               }
@@ -5326,7 +5326,7 @@ function AppShell({ darkMode, setDarkMode }) {
         isOpen={Boolean(statementModalCustomer)}
         onClose={() => setStatementModalCustomer(null)}
         customerName={statementModalCustomer}
-        storeName={currentUser?.business_name || 'StockFlow Store'}
+        storeName={currentUser?.business_name || 'MarketOS Store'}
         storePhone={currentUser?.phone || ''}
         storeAddress={currentUser?.address || ''}
         apiFetch={apiFetch}
@@ -5368,7 +5368,7 @@ function AppShell({ darkMode, setDarkMode }) {
         transactions={transactions}
         apiFetch={apiFetch}
         formatNaira={formatNaira}
-        storeName={currentUser?.business_name || 'StockFlow Store'}
+        storeName={currentUser?.business_name || 'MarketOS Store'}
         onSuccess={() => {
           showSuccessToast('Daily channel reconciliation recorded!');
           fetchAllData();
