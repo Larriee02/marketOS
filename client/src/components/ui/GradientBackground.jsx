@@ -1,67 +1,98 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 /**
- * Immersive 3D Spatial Background Canvas
- * Renders layered volumetric lighting, subtle architectural perspective grid,
- * and silky-smooth Light <-> Dark mode atmosphere transitions.
+ * Immersive 3D Spatial Background
+ * - Perspective floor grid that tilts with the cursor (parallax depth)
+ * - Volumetric emerald / indigo / cyan light orbs on separate depth layers
+ * - Floating 3D wireframe cube + glass ring rendered with CSS 3D transforms
+ * - Smooth Light <-> Dark atmosphere crossfade
+ * Respects prefers-reduced-motion and disables parallax on touch devices.
  */
 export function GradientBackground({ darkMode }) {
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const finePointer = window.matchMedia('(pointer: fine)').matches;
+    if (reduceMotion || !finePointer) return undefined;
+
+    let frame = 0;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    const onMove = (e) => {
+      targetX = (e.clientX / window.innerWidth - 0.5) * 2; // -1 .. 1
+      targetY = (e.clientY / window.innerHeight - 0.5) * 2;
+      if (!frame) frame = requestAnimationFrame(tick);
+    };
+
+    const tick = () => {
+      currentX += (targetX - currentX) * 0.08;
+      currentY += (targetY - currentY) * 0.08;
+      root.style.setProperty('--px', currentX.toFixed(4));
+      root.style.setProperty('--py', currentY.toFixed(4));
+      if (Math.abs(targetX - currentX) > 0.001 || Math.abs(targetY - currentY) > 0.001) {
+        frame = requestAnimationFrame(tick);
+      } else {
+        frame = 0;
+      }
+    };
+
+    window.addEventListener('pointermove', onMove, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+
   return (
     <div
+      ref={rootRef}
       aria-hidden="true"
-      className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0 no-print"
-      style={{
-        backgroundColor: darkMode ? '#060B16' : '#EEF2F9',
-        transition: 'background-color 0.55s cubic-bezier(0.22, 1, 0.36, 1)',
-      }}
+      className={`sf-scene fixed inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0 no-print ${
+        darkMode ? 'sf-scene--dark' : 'sf-scene--light'
+      }`}
     >
-      {/* Subtle 3D Architectural Perspective Grid */}
-      <div
-        className="absolute inset-0 w-full h-full"
-        style={{
-          backgroundImage: darkMode
-            ? 'linear-gradient(to right, rgba(148, 163, 184, 0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.04) 1px, transparent 1px)'
-            : 'linear-gradient(to right, rgba(15, 23, 42, 0.035) 1px, transparent 1px), linear-gradient(to bottom, rgba(15, 23, 42, 0.035) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-          maskImage: 'radial-gradient(ellipse 85% 75% at 50% 30%, #000 40%, transparent 100%)',
-          WebkitMaskImage:
-            'radial-gradient(ellipse 85% 75% at 50% 30%, #000 40%, transparent 100%)',
-          transition: 'opacity 0.55s ease',
-        }}
-      />
+      {/* Depth Layer 0: Atmosphere base (crossfades between themes) */}
+      <div className="sf-atmo sf-atmo--light" />
+      <div className="sf-atmo sf-atmo--dark" />
 
-      {/* Top-Left 3D Volumetric Emerald Sphere */}
-      <div
-        className="absolute -top-36 -left-32 w-[34rem] h-[34rem] rounded-full blur-3xl animate-float-slow"
-        style={{
-          background: darkMode
-            ? 'radial-gradient(circle at 35% 35%, rgba(16, 185, 129, 0.24), rgba(6, 182, 212, 0.08) 55%, transparent 75%)'
-            : 'radial-gradient(circle at 35% 35%, rgba(16, 185, 129, 0.20), rgba(14, 165, 233, 0.10) 55%, transparent 75%)',
-          transition: 'background 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-        }}
-      />
+      {/* Depth Layer 1: 3D perspective floor grid */}
+      <div className="sf-grid-wrap">
+        <div className="sf-grid" />
+      </div>
 
-      {/* Top-Right 3D Volumetric Indigo / Cobalt Sphere */}
-      <div
-        className="absolute -top-24 -right-28 w-[32rem] h-[32rem] rounded-full blur-3xl animate-float-reverse"
-        style={{
-          background: darkMode
-            ? 'radial-gradient(circle at 60% 35%, rgba(99, 102, 241, 0.24), rgba(56, 189, 248, 0.09) 55%, transparent 75%)'
-            : 'radial-gradient(circle at 60% 35%, rgba(79, 70, 229, 0.14), rgba(56, 189, 248, 0.10) 55%, transparent 75%)',
-          transition: 'background 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-        }}
-      />
+      {/* Depth Layer 2: Volumetric light orbs (different parallax depths) */}
+      <div className="sf-orb sf-orb--emerald" />
+      <div className="sf-orb sf-orb--indigo" />
+      <div className="sf-orb sf-orb--cyan" />
 
-      {/* Bottom Center Ambient Horizon Glow */}
-      <div
-        className="absolute -bottom-44 left-1/2 -translate-x-1/2 w-[54rem] h-[26rem] rounded-full blur-3xl"
-        style={{
-          background: darkMode
-            ? 'radial-gradient(ellipse at center, rgba(16, 185, 129, 0.12) 0%, rgba(79, 70, 229, 0.10) 45%, transparent 75%)'
-            : 'radial-gradient(ellipse at center, rgba(16, 185, 129, 0.11) 0%, rgba(99, 102, 241, 0.07) 45%, transparent 75%)',
-          transition: 'background 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-        }}
-      />
+      {/* Depth Layer 3: Floating 3D objects */}
+      <div className="sf-object sf-object--cube">
+        <div className="sf-cube">
+          <span className="sf-face sf-face--front" />
+          <span className="sf-face sf-face--back" />
+          <span className="sf-face sf-face--right" />
+          <span className="sf-face sf-face--left" />
+          <span className="sf-face sf-face--top" />
+          <span className="sf-face sf-face--bottom" />
+        </div>
+      </div>
+
+      <div className="sf-object sf-object--ring">
+        <div className="sf-ring" />
+      </div>
+
+      <div className="sf-object sf-object--pill">
+        <div className="sf-pill" />
+      </div>
+
+      {/* Fine film grain for a premium, tactile finish */}
+      <div className="sf-grain" />
     </div>
   );
 }

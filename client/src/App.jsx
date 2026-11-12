@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { flushSync } from 'react-dom';
+import { Tilt3DController } from './components/ui/Tilt3DController';
 import {
   Package,
   ArrowUpRight,
@@ -170,12 +172,59 @@ export default function App() {
     }
   }, [darkMode]);
 
+  // Remember where the user last clicked so the theme switch can ripple out from that point
+  useEffect(() => {
+    const recordOrigin = (e) => {
+      const root = document.documentElement;
+      root.style.setProperty('--vt-x', `${e.clientX}px`);
+      root.style.setProperty('--vt-y', `${e.clientY}px`);
+    };
+    window.addEventListener('pointerdown', recordOrigin, { passive: true });
+    return () => window.removeEventListener('pointerdown', recordOrigin);
+  }, []);
+
+  // Cinematic circular-reveal theme switch (View Transitions API) with graceful fallback
+  const setDarkModeSmooth = useCallback(
+    (value) => {
+      const next = typeof value === 'function' ? value(darkMode) : value;
+      if (next === darkMode) return;
+
+      const applyRootTheme = () => {
+        const root = document.documentElement;
+        root.classList.toggle('dark', next);
+        root.setAttribute('data-theme', next ? 'dark' : 'light');
+      };
+
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (typeof document.startViewTransition !== 'function' || reduceMotion) {
+        document.documentElement.classList.add('theme-transitioning');
+        applyRootTheme();
+        setDarkMode(next);
+        window.setTimeout(
+          () => document.documentElement.classList.remove('theme-transitioning'),
+          600
+        );
+        return;
+      }
+
+      const root = document.documentElement;
+      root.classList.add('theme-instant');
+      const transition = document.startViewTransition(() => {
+        applyRootTheme();
+        flushSync(() => setDarkMode(next));
+      });
+      transition.finished.finally(() => root.classList.remove('theme-instant'));
+    },
+    [darkMode]
+  );
+
   return (
     <RouterProvider>
       <ToastProvider>
         <GradientBackground darkMode={darkMode} />
+        <Tilt3DController />
         <div className="relative z-10 min-h-screen">
-          <AppShell darkMode={darkMode} setDarkMode={setDarkMode} />
+          <AppShell darkMode={darkMode} setDarkMode={setDarkModeSmooth} />
         </div>
       </ToastProvider>
     </RouterProvider>
