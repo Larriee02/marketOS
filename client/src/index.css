@@ -4,180 +4,195 @@
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
 /* ==========================================================================
-   DESIGN SYSTEM SPECIFICATION: NAVY & EMERALD
-   A coordinated light and dark colour system for a professional retail,
-   POS and stock management application.
+   STOCKFLOW 3D SPATIAL DESIGN SYSTEM
+   Immersive 3D frosted glass, tactile depth, and smooth Light/Dark transitions.
    ========================================================================== */
 
 :root {
   color-scheme: light;
 
-  /* 5. Core Design System CSS Variables — Light Mode */
-  --bg: #F5F7FA;               /* App Background: Main page and dashboard background */
-  --surface: #FFFFFF;          /* Surface / Cards: Cards, tables, modals and panels */
-  --surface-elevated: #FFFFFF; /* Raised cards, modals and dropdowns */
-  --primary: #142B45;          /* Primary Navy: Sidebar, brand foundation, headings */
-  --accent: #15966A;           /* Primary Emerald: Primary actions, active navigation, highlights */
-  --text: #25364A;             /* Primary Text: Body copy and important labels */
-  --text-muted: #64748B;       /* Secondary Text: Helper text and metadata */
-  --border: #E2E8F0;           /* Dividers, table borders and outlines */
+  /* Core Surfaces — Light Mode (Porcelain Pearl & Royal Indigo-Emerald) */
+  --bg: #EEF2F9;
+  --surface: rgba(255, 255, 255, 0.80);
+  --surface-elevated: rgba(255, 255, 255, 0.92);
+  --primary: #0F172A;
+  --accent: #059669;
+  --text: #0F172A;
+  --text-muted: #475569;
+  --border: rgba(148, 163, 184, 0.28);
 
-  /* 3. Functional Colours — Light Mode */
-  --color-success: #16A34A;    /* Completed sales, successful payments, healthy stock */
-  --color-warning: #D97706;    /* Low stock, reorder reminders, pending attention */
-  --color-danger: #DC2626;     /* Out of stock, failed transactions, destructive actions */
-  --color-info: #2563EB;       /* Neutral notices and informational messages */
+  /* Functional Colours — Light Mode */
+  --color-success: #059669;
+  --color-warning: #D97706;
+  --color-danger: #E11D48;
+  --color-info: #4F46E5;
 
-  /* Semantic Application Surface Mappings (Light Mode) */
-  --bg-app: var(--bg);
+  /* Semantic Surface Mappings */
+  --bg-app: #EEF2F9;
   --bg-mesh:
-    radial-gradient(at 10% 8%, rgba(20, 43, 69, 0.05) 0px, transparent 48%),
-    radial-gradient(at 90% 12%, rgba(21, 150, 106, 0.06) 0px, transparent 50%),
-    linear-gradient(180deg, #F5F7FA 0%, #EFF3F8 100%);
+    radial-gradient(at 10% 8%, rgba(16, 185, 129, 0.10) 0px, transparent 48%),
+    radial-gradient(at 90% 12%, rgba(79, 70, 229, 0.08) 0px, transparent 50%),
+    linear-gradient(180deg, #F4F7FC 0%, #E7EEF8 100%);
 
-  --bg-card: var(--surface);
-  --bg-card-elevated: var(--surface-elevated);
-  --bg-subtle: #F8FAFC;
-  --bg-input: #FFFFFF;
+  --bg-card: rgba(255, 255, 255, 0.80);
+  --bg-card-elevated: rgba(255, 255, 255, 0.94);
+  --bg-subtle: rgba(248, 250, 252, 0.75);
+  --bg-input: rgba(255, 255, 255, 0.90);
   --bg-option: #FFFFFF;
-  --bg-header: var(--primary); /* #142B45 Navy Navigation & Header Foundation */
+  --bg-header: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.93) 100%);
 
-  --border-color: #FFFFFF;
-  --border-outer: var(--border);
-  --divider-color: var(--border);
+  --border-color: rgba(255, 255, 255, 0.90);
+  --border-outer: rgba(148, 163, 184, 0.28);
+  --divider-color: rgba(148, 163, 184, 0.22);
 
+  /* 3D Multi-Layered Elevation Shadow (Specular Top Bevel + Soft Key Light + Ambient Depth) */
   --glass-shadow:
-    0 1px 3px 0 rgba(20, 43, 69, 0.06),
-    0 8px 24px -6px rgba(20, 43, 69, 0.06);
+    inset 0 1.5px 0 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 0 rgba(15, 23, 42, 0.04),
+    0 10px 28px -8px rgba(15, 23, 42, 0.11),
+    0 3px 10px -2px rgba(15, 23, 42, 0.06);
 
-  /* Typography Roles (Light Mode) */
-  --heading-color: var(--primary); /* #142B45 Primary Navy for headings */
-  --text-primary: var(--text);     /* #25364A Primary Text for body copy & labels */
-  --text-secondary: var(--text-muted); /* #64748B Secondary Text for helper & metadata */
+  --glass-shadow-elevated:
+    inset 0 1.5px 0 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 0 0 rgba(15, 23, 42, 0.06),
+    0 20px 44px -12px rgba(15, 23, 42, 0.16),
+    0 6px 16px -4px rgba(15, 23, 42, 0.08);
 
-  /* Brand & Primary Action Roles (Light Mode: #15966A Primary Emerald & #142B45 Primary Navy) */
-  --brand-blue: var(--accent);
-  --brand-blue-hover: #117A56;
-  --brand-blue-soft: rgba(21, 150, 106, 0.10);
-  --brand-blue-border: rgba(21, 150, 106, 0.28);
-  --brand-gradient: linear-gradient(135deg, #15966A 0%, #12825B 100%);
+  /* Typography Roles */
+  --heading-color: #0F172A;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+
+  /* Brand & 3D Action Roles */
+  --brand-blue: #059669;
+  --brand-blue-hover: #047857;
+  --brand-blue-soft: rgba(5, 150, 105, 0.12);
+  --brand-blue-border: rgba(5, 150, 105, 0.30);
+  --brand-gradient: linear-gradient(135deg, #10B981 0%, #059669 55%, #047857 100%);
   --btn-primary-text: #FFFFFF;
 
-  --brand-gold: var(--primary);
-  --brand-gold-soft: rgba(20, 43, 69, 0.08);
-  --brand-gold-border: rgba(20, 43, 69, 0.22);
-  --gold-gradient: linear-gradient(135deg, #142B45 0%, #1E3E62 100%);
+  --brand-gold: #4F46E5;
+  --brand-gold-soft: rgba(79, 70, 229, 0.10);
+  --brand-gold-border: rgba(79, 70, 229, 0.26);
+  --gold-gradient: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
 
-  --color-inflow: var(--color-success);  /* #16A34A */
-  --color-outflow: var(--color-danger);  /* #DC2626 */
+  --color-inflow: #059669;
+  --color-outflow: #E11D48;
 
-  /* Badge Surfaces & Text (Light Mode — High Contrast Functional Pairings) */
-  --badge-info-bg: rgba(37, 99, 235, 0.10);
-  --badge-info-text: #1D4ED8;
-  --badge-info-border: rgba(37, 99, 235, 0.25);
+  /* Badge Surfaces & Text */
+  --badge-info-bg: rgba(79, 70, 229, 0.10);
+  --badge-info-text: #4338CA;
+  --badge-info-border: rgba(79, 70, 229, 0.25);
 
-  --badge-success-bg: rgba(22, 163, 74, 0.10);
-  --badge-success-text: #15803D;
-  --badge-success-border: rgba(22, 163, 74, 0.26);
+  --badge-success-bg: rgba(5, 150, 105, 0.11);
+  --badge-success-text: #047857;
+  --badge-success-border: rgba(5, 150, 105, 0.28);
 
   --badge-warning-bg: rgba(217, 119, 6, 0.11);
   --badge-warning-text: #B45309;
   --badge-warning-border: rgba(217, 119, 6, 0.28);
 
-  --badge-danger-bg: rgba(220, 38, 38, 0.10);
-  --badge-danger-text: #B91C1C;
-  --badge-danger-border: rgba(220, 38, 38, 0.26);
+  --badge-danger-bg: rgba(225, 29, 72, 0.10);
+  --badge-danger-text: #BE123C;
+  --badge-danger-border: rgba(225, 29, 72, 0.26);
 
-  --badge-neutral-bg: #F1F5F9;
-  --badge-neutral-text: #25364A;
-  --badge-neutral-border: #CBD5E1;
+  --badge-neutral-bg: rgba(241, 245, 249, 0.9);
+  --badge-neutral-text: #334155;
+  --badge-neutral-border: rgba(203, 213, 225, 0.7);
 }
 
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
 
-  /* 5. Core Design System CSS Variables — Dark Mode
-     Midnight navy surfaces with a softer, brighter emerald accent (#34D399) */
-  --bg: #0B1220;               /* Dark Background: App canvas and page background */
-  --surface: #111C2E;          /* Dark Surface: Sidebar, cards and main panels */
-  --surface-elevated: #18263A; /* Elevated Surface: Dropdowns, hover panels and raised cards */
-  --primary: #142B45;          /* Primary Navy foundation */
-  --accent: #34D399;           /* Dark Emerald: Primary buttons, active states and highlights */
-  --text: #E7EEF7;             /* Dark Text: Headings and primary body text */
-  --text-muted: #A7B4C5;       /* Muted Text: Secondary labels and helper text */
-  --border: #29384D;           /* Dark Border: Dividers, table borders and outlines */
+  /* Core Surfaces — Dark Mode (Obsidian Void & Bioluminescent Emerald/Cyan) */
+  --bg: #060B16;
+  --surface: rgba(15, 23, 42, 0.72);
+  --surface-elevated: rgba(22, 33, 56, 0.86);
+  --primary: #0F172A;
+  --accent: #34D399;
+  --text: #F1F5F9;
+  --text-muted: #94A3B8;
+  --border: rgba(148, 163, 184, 0.16);
 
-  /* 3. Functional Colours — Dark Mode */
-  --color-success: #4ADE80;    /* Completed sales, successful payments, healthy stock */
-  --color-warning: #FBBF24;    /* Low stock, reorder reminders, pending attention */
-  --color-danger: #F87171;     /* Out of stock, failed transactions, destructive actions */
-  --color-info: #60A5FA;       /* Neutral notices and informational messages */
+  /* Functional Colours — Dark Mode */
+  --color-success: #34D399;
+  --color-warning: #FBBF24;
+  --color-danger: #FB7185;
+  --color-info: #818CF8;
 
-  /* Semantic Application Surface Mappings (Dark Mode) */
-  --bg-app: var(--bg);
+  /* Semantic Surface Mappings */
+  --bg-app: #060B16;
   --bg-mesh:
-    radial-gradient(at 12% 10%, rgba(20, 43, 69, 0.45) 0px, transparent 52%),
-    radial-gradient(at 88% 14%, rgba(52, 211, 153, 0.07) 0px, transparent 50%),
-    linear-gradient(180deg, #0B1220 0%, #0B1220 100%);
+    radial-gradient(at 12% 10%, rgba(16, 185, 129, 0.10) 0px, transparent 52%),
+    radial-gradient(at 88% 14%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+    linear-gradient(180deg, #060B16 0%, #091122 100%);
 
-  --bg-card: var(--surface);                  /* #111C2E */
-  --bg-card-elevated: var(--surface-elevated);/* #18263A */
-  --bg-subtle: var(--surface-elevated);       /* #18263A */
-  --bg-input: #0B1220;                        /* #0B1220 recessed input inside #111C2E/#18263A cards */
-  --bg-option: #111C2E;
-  --bg-header: var(--surface);                /* #111C2E Dark Surface for navigation & header */
+  --bg-card: rgba(15, 23, 42, 0.72);
+  --bg-card-elevated: rgba(22, 33, 56, 0.88);
+  --bg-subtle: rgba(30, 41, 59, 0.58);
+  --bg-input: rgba(6, 11, 22, 0.78);
+  --bg-option: #0F172A;
+  --bg-header: linear-gradient(135deg, rgba(10, 17, 32, 0.88) 0%, rgba(17, 28, 48, 0.85) 100%);
 
-  --border-color: rgba(231, 238, 247, 0.07);
-  --border-outer: var(--border);              /* #29384D */
-  --divider-color: var(--border);             /* #29384D */
+  --border-color: rgba(255, 255, 255, 0.10);
+  --border-outer: rgba(148, 163, 184, 0.16);
+  --divider-color: rgba(148, 163, 184, 0.14);
 
+  /* 3D Multi-Layered Dark Elevation Shadow (Rim Specular + Deep Obsidian Drop) */
   --glass-shadow:
-    inset 0 1px 0 0 rgba(231, 238, 247, 0.05),
-    0 18px 40px -12px rgba(5, 9, 18, 0.65),
-    0 4px 12px -2px rgba(5, 9, 18, 0.45);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.10),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.40),
+    0 18px 40px -12px rgba(2, 6, 16, 0.72),
+    0 4px 14px -2px rgba(2, 6, 16, 0.50);
 
-  /* Typography Roles (Dark Mode) */
-  --heading-color: var(--text);               /* #E7EEF7 */
-  --text-primary: var(--text);                /* #E7EEF7 */
-  --text-secondary: var(--text-muted);        /* #A7B4C5 */
+  --glass-shadow-elevated:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.50),
+    0 24px 56px -14px rgba(2, 6, 16, 0.85),
+    0 8px 20px -4px rgba(2, 6, 16, 0.60);
 
-  /* Brand & Primary Action Roles (Dark Mode: #34D399 Dark Emerald) */
-  --brand-blue: var(--accent);                /* #34D399 */
+  /* Typography Roles */
+  --heading-color: #F8FAFC;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+
+  /* Brand & 3D Action Roles */
+  --brand-blue: #34D399;
   --brand-blue-hover: #6EE7B7;
-  --brand-blue-soft: rgba(52, 211, 153, 0.14);
-  --brand-blue-border: rgba(52, 211, 153, 0.34);
-  --brand-gradient: linear-gradient(135deg, #34D399 0%, #10B981 100%);
-  --btn-primary-text: #0B1220;                /* High-contrast Midnight Navy text on #34D399 Emerald (WCAG AAA) */
+  --brand-blue-soft: rgba(52, 211, 153, 0.15);
+  --brand-blue-border: rgba(52, 211, 153, 0.35);
+  --brand-gradient: linear-gradient(135deg, #34D399 0%, #10B981 55%, #059669 100%);
+  --btn-primary-text: #04130E;
 
-  --brand-gold: var(--accent);
-  --brand-gold-soft: rgba(52, 211, 153, 0.14);
-  --brand-gold-border: rgba(52, 211, 153, 0.32);
-  --gold-gradient: linear-gradient(135deg, #18263A 0%, #142B45 100%);
+  --brand-gold: #818CF8;
+  --brand-gold-soft: rgba(129, 140, 248, 0.14);
+  --brand-gold-border: rgba(129, 140, 248, 0.32);
+  --gold-gradient: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
 
-  --color-inflow: var(--color-success);       /* #4ADE80 */
-  --color-outflow: var(--color-danger);       /* #F87171 */
+  --color-inflow: #34D399;
+  --color-outflow: #FB7185;
 
-  /* Badge Surfaces & Text (Dark Mode — High Contrast Functional Pairings) */
-  --badge-info-bg: rgba(96, 165, 250, 0.14);
-  --badge-info-text: #60A5FA;
-  --badge-info-border: rgba(96, 165, 250, 0.32);
+  /* Badge Surfaces & Text */
+  --badge-info-bg: rgba(129, 140, 248, 0.15);
+  --badge-info-text: #A5B4FC;
+  --badge-info-border: rgba(129, 140, 248, 0.32);
 
-  --badge-success-bg: rgba(74, 222, 128, 0.14);
-  --badge-success-text: #4ADE80;
-  --badge-success-border: rgba(74, 222, 128, 0.32);
+  --badge-success-bg: rgba(52, 211, 153, 0.14);
+  --badge-success-text: #34D399;
+  --badge-success-border: rgba(52, 211, 153, 0.32);
 
   --badge-warning-bg: rgba(251, 191, 36, 0.14);
   --badge-warning-text: #FBBF24;
   --badge-warning-border: rgba(251, 191, 36, 0.32);
 
-  --badge-danger-bg: rgba(248, 113, 113, 0.14);
-  --badge-danger-text: #F87171;
-  --badge-danger-border: rgba(248, 113, 113, 0.32);
+  --badge-danger-bg: rgba(251, 113, 133, 0.14);
+  --badge-danger-text: #FDA4AF;
+  --badge-danger-border: rgba(251, 113, 133, 0.32);
 
-  --badge-neutral-bg: #18263A;
-  --badge-neutral-text: #E7EEF7;
-  --badge-neutral-border: #29384D;
+  --badge-neutral-bg: rgba(30, 41, 59, 0.85);
+  --badge-neutral-text: #E2E8F0;
+  --badge-neutral-border: rgba(148, 163, 184, 0.22);
 }
 
 * {
@@ -199,20 +214,22 @@ body {
   background-image: var(--bg-mesh);
   background-attachment: fixed;
   color: var(--text-primary);
-  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, sans-serif;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
-  letter-spacing: -0.012em;
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.01em;
   overflow-x: hidden;
   min-height: 100vh;
   min-height: 100dvh;
 }
 
+/* Silky-smooth Light <-> Dark Mode Theme Transitions */
 body,
 header,
 nav,
 main,
 section,
+aside,
+article,
 div,
 table,
 thead,
@@ -228,24 +245,32 @@ span,
 p,
 h1,
 h2,
-h3 {
+h3,
+h4 {
   transition:
-    background-color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-    color 0.18s ease,
-    box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    background-color 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.24s ease;
 }
 
 h1,
 h2,
 h3,
+h4,
 .font-luxury {
-  font-family: "Outfit", "Plus Jakarta Sans", -apple-system, sans-serif;
-  letter-spacing: -0.025em;
+  font-family: "Space Grotesk", "Plus Jakarta Sans", -apple-system, sans-serif;
+  letter-spacing: -0.03em;
   color: var(--heading-color);
 }
 
-/* Preserve white headings inside Primary Navy header bars */
+.font-mono {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Preserve crisp white headings inside dark glass header bars */
 .liquid-glass-header h1,
 .liquid-glass-header h2,
 .liquid-glass-header h3,
@@ -255,7 +280,7 @@ h3,
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
-  font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
+  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
   letter-spacing: -0.02em;
 }
 
@@ -284,22 +309,34 @@ h3,
   color: var(--color-warning);
 }
 
+/* Recessed 3D Glass Inputs */
 .liquid-input {
   background-color: var(--bg-input);
   border: 1px solid var(--border-outer);
   color: var(--text-primary);
-  box-shadow: inset 0 1px 2px 0 rgba(20, 43, 69, 0.04);
+  box-shadow:
+    inset 0 2px 4px 0 rgba(15, 23, 42, 0.06),
+    0 1px 0 0 rgba(255, 255, 255, 0.45);
+}
+
+.dark .liquid-input,
+[data-theme="dark"] .liquid-input {
+  box-shadow:
+    inset 0 2px 6px 0 rgba(0, 0, 0, 0.45),
+    0 1px 0 0 rgba(255, 255, 255, 0.06);
 }
 
 .liquid-input::placeholder {
   color: var(--text-muted);
-  opacity: 1;
+  opacity: 0.85;
 }
 
 .liquid-input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--brand-blue-soft);
+  box-shadow:
+    inset 0 1px 2px 0 rgba(15, 23, 42, 0.04),
+    0 0 0 3.5px var(--brand-blue-soft);
 }
 
 select.liquid-input option {
@@ -307,8 +344,11 @@ select.liquid-input option {
   color: var(--text-primary);
 }
 
+/* 3D Spatial Frosted Glass Cards */
 .liquid-glass {
   background-color: var(--bg-card);
+  backdrop-filter: blur(20px) saturate(165%);
+  -webkit-backdrop-filter: blur(20px) saturate(165%);
   border: 1px solid var(--border-outer);
   box-shadow: var(--glass-shadow);
   color: var(--text-primary);
@@ -316,40 +356,61 @@ select.liquid-input option {
 
 .liquid-glass-elevated {
   background-color: var(--bg-card-elevated);
+  backdrop-filter: blur(26px) saturate(175%);
+  -webkit-backdrop-filter: blur(26px) saturate(175%);
   border: 1px solid var(--border-outer);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--glass-shadow-elevated);
   color: var(--text-primary);
 }
 
 .liquid-glass-header {
-  background-color: var(--bg-header);
-  border-bottom: 1px solid var(--border-outer);
+  background: var(--bg-header);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow:
-    inset 0 -1px 0 0 rgba(255, 255, 255, 0.08),
-    0 8px 24px -8px rgba(11, 18, 32, 0.28);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+    0 12px 32px -10px rgba(6, 11, 22, 0.42);
 }
 
 .liquid-glass-subtle {
   background-color: var(--bg-subtle);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
   border: 1px solid var(--border-outer);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.50),
+    0 2px 6px -1px rgba(15, 23, 42, 0.05);
   color: var(--text-primary);
 }
 
+.dark .liquid-glass-subtle,
+[data-theme="dark"] .liquid-glass-subtle {
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.07),
+    0 3px 10px -2px rgba(2, 6, 16, 0.38);
+}
+
+/* 3D Tactile Push-Button Physics */
 .liquid-btn-primary {
   background: var(--brand-gradient);
   color: var(--btn-primary-text) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.25),
-    0 6px 16px -4px rgba(21, 150, 106, 0.35);
+    inset 0 1.5px 0 0 rgba(255, 255, 255, 0.38),
+    inset 0 -2.5px 0 0 rgba(0, 0, 0, 0.22),
+    0 8px 20px -4px rgba(5, 150, 105, 0.42),
+    0 2px 4px 0 rgba(0, 0, 0, 0.12);
 }
 
 .dark .liquid-btn-primary,
 [data-theme="dark"] .liquid-btn-primary {
-  border-color: rgba(52, 211, 153, 0.45);
+  border-color: rgba(110, 231, 183, 0.45);
   box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.35),
-    0 6px 18px -4px rgba(52, 211, 153, 0.28);
+    inset 0 1.5px 0 0 rgba(255, 255, 255, 0.45),
+    inset 0 -2.5px 0 0 rgba(0, 0, 0, 0.28),
+    0 8px 24px -4px rgba(52, 211, 153, 0.35),
+    0 2px 6px 0 rgba(0, 0, 0, 0.35);
 }
 
 .liquid-btn-primary *,
@@ -359,29 +420,66 @@ select.liquid-input option {
 }
 
 .liquid-btn-primary:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.04);
+  transform: translateY(-2px);
+  filter: brightness(1.06);
   box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.35),
-    0 10px 22px -4px rgba(21, 150, 106, 0.42);
+    inset 0 1.5px 0 0 rgba(255, 255, 255, 0.45),
+    inset 0 -2.5px 0 0 rgba(0, 0, 0, 0.22),
+    0 12px 28px -4px rgba(5, 150, 105, 0.50),
+    0 4px 8px 0 rgba(0, 0, 0, 0.14);
 }
 
 .liquid-btn-primary:active {
-  transform: translateY(0);
+  transform: translateY(1.5px) scale(0.985);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.25),
+    0 3px 8px -2px rgba(5, 150, 105, 0.35);
 }
 
 .liquid-btn-gold {
   background: var(--gold-gradient);
   color: #FFFFFF !important;
-  border: 1px solid var(--border-outer);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
-    0 6px 16px -4px rgba(20, 43, 69, 0.30);
+    inset 0 1.5px 0 0 rgba(255, 255, 255, 0.20),
+    inset 0 -2.5px 0 0 rgba(0, 0, 0, 0.30),
+    0 8px 20px -4px rgba(15, 23, 42, 0.36);
 }
 
 .liquid-btn-gold:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.06);
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+.liquid-btn-gold:active {
+  transform: translateY(1.5px) scale(0.985);
+}
+
+/* Gentle 3D Volumetric Orb Animations */
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(24px, 18px, 0) scale(1.05);
+  }
+}
+
+@keyframes floatReverse {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-22px, 20px, 0) scale(1.06);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 16s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: floatReverse 19s ease-in-out infinite;
 }
 
 .theme-divider > :not([hidden]) ~ :not([hidden]) {
