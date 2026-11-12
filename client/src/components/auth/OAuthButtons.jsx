@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-import { Mail, User, Store, Phone, MapPin, Globe, ShieldCheck } from 'lucide-react';
-import { apiFetch, setStoredToken } from '../../services/api';
-import { CURRENCY_OPTIONS } from '../../utils/currency';
-import { Modal } from '../ui/Modal';
+import React, { useState, useEffect, useRef } from 'react';
+import { Loader2, ExternalLink } from 'lucide-react';
+import { apiFetch, getStoredToken, setStoredToken } from '../../services/api';
 
 export const BUSINESS_TYPES = [
   'Supermarket & Grocery',
@@ -58,238 +56,170 @@ export function AppleIcon() {
 }
 
 export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onError }) {
-  const [oauthProvider, setOauthProvider] = useState(null); // 'GOOGLE' | 'APPLE'
-  const [submitting, setSubmitting] = useState(false);
-  const [oauthForm, setOauthForm] = useState({
-    email: '',
-    full_name: '',
-    business_name: '',
-    phone: '',
-    city: LAGOS_LOCATIONS[0],
-    currency: 'NGN',
-    role: 'USER',
-  });
+  const [connectingProvider, setConnectingProvider] = useState(null); // 'GOOGLE' | 'APPLE' | null
+  const popupRef = useRef(null);
+  const pollTimerRef = useRef(null);
+  const initialTokenRef = useRef('');
 
-  const handleOAuthSubmit = async (e) => {
-    e.preventDefault();
-    if (!oauthProvider) return;
-    setSubmitting(true);
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (!data || data.type !== 'STOCKFLOW_OAUTH_SUCCESS') return;
+
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+
+      if (data.token) {
+        setStoredToken(data.token);
+      }
+
+      setConnectingProvider(null);
+      if (data.user && onAuthenticated) {
+        onAuthenticated(data.user);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+      }
+    };
+  }, [onAuthenticated]);
+
+  const startOAuthPopup = (provider) => {
     if (onError) onError('');
-    try {
-      const data = await apiFetch('/api/v1/auth/oauth', {
-        method: 'POST',
-        body: JSON.stringify({
-          provider: oauthProvider,
-          email: oauthForm.email.trim(),
-          full_name: oauthForm.full_name.trim(),
-          business_name: oauthForm.business_name.trim(),
-          phone: oauthForm.phone.trim(),
-          city: oauthForm.city,
-          currency: oauthForm.currency,
-          role: oauthForm.role,
-        }),
-      });
-      if (data.token) setStoredToken(data.token);
-      setOauthProvider(null);
-      onAuthenticated(data.user);
-    } catch (err) {
-      if (onError) onError(err.message);
-      else alert(err.message);
-    } finally {
-      setSubmitting(false);
+    const providerSlug = provider.toLowerCase();
+    const authorizeUrl = `/api/v1/auth/oauth/${providerSlug}/authorize`;
+
+    initialTokenRef.current = getStoredToken() || '';
+    setConnectingProvider(provider);
+
+    // Center the OAuth 2.0 popup window over the current browser window
+    const width = 500;
+    const height = 660;
+    const dualScreenLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX;
+    const dualScreenTop = window.screenTop !== undefined ? window.screenTop : window.screenY;
+    const screenWidth = window.innerWidth || document.documentElement.clientWidth || screen.width;
+    const screenHeight = window.innerHeight || document.documentElement.clientHeight || screen.height;
+    const left = Math.max(0, Math.round(dualScreenLeft + (screenWidth - width) / 2));
+    const top = Math.max(0, Math.round(dualScreenTop + (screenHeight - height) / 2));
+
+    const features = `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=yes,status=no,resizable=yes,scrollbars=yes`;
+    const popup = window.open(authorizeUrl, `stockflow_${providerSlug}_oauth`, features);
+
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      // Popup blocked (common on mobile browsers) -> perform standard full-page OAuth redirect
+      window.location.href = authorizeUrl;
+      return;
     }
+
+    popupRef.current = popup;
+    try {
+      popup.focus();
+    } catch {
+      // Ignore focus error
+    }
+
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+    }
+
+    pollTimerRef.current = setInterval(async () => {
+      // Check if localStorage token was updated by the callback window
+      // (Handles cases where accounts.google.com / appleid.apple.com COOP headers sever window.opener)
+      const currentToken = getStoredToken() || '';
+      if (currentToken && currentToken !== initialTokenRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+        try {
+          const meData = await apiFetch('/api/v1/auth/me');
+          if (meData?.user && onAuthenticated) {
+            setConnectingProvider(null);
+            onAuthenticated(meData.user);
+            return;
+          }
+        } catch {
+          // Continue waiting or let close handler clean up
+        }
+      }
+
+      if (!popupRef.current || popupRef.current.closed) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+        setConnectingProvider(null);
+      }
+    }, 450);
   };
 
   return (
-    <>
+    <div className="space-y-2">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <button
           type="button"
-          onClick={() => {
-            if (onError) onError('');
-            setOauthProvider('GOOGLE');
-          }}
-          className="liquid-glass-subtle hover:scale-[1.01] active:scale-[0.99] py-3 px-4 rounded-2xl text-xs font-extrabold text-theme-primary flex items-center justify-center gap-2.5 cursor-pointer"
+          disabled={Boolean(connectingProvider)}
+          onClick={() => startOAuthPopup('GOOGLE')}
+          className="liquid-glass-subtle hover:scale-[1.01] active:scale-[0.99] py-3 px-4 rounded-2xl text-xs font-extrabold text-theme-primary flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 transition-all"
         >
-          <GoogleIcon />
-          <span>{actionLabel} with Google</span>
+          {connectingProvider === 'GOOGLE' ? (
+            <Loader2 className="w-4 h-4 animate-spin text-[#4285F4]" />
+          ) : (
+            <GoogleIcon />
+          )}
+          <span>
+            {connectingProvider === 'GOOGLE'
+              ? 'Connecting to Google...'
+              : `${actionLabel} with Google`}
+          </span>
         </button>
 
         <button
           type="button"
-          onClick={() => {
-            if (onError) onError('');
-            setOauthProvider('APPLE');
-          }}
-          className="liquid-glass-subtle hover:scale-[1.01] active:scale-[0.99] py-3 px-4 rounded-2xl text-xs font-extrabold text-theme-primary flex items-center justify-center gap-2.5 cursor-pointer"
+          disabled={Boolean(connectingProvider)}
+          onClick={() => startOAuthPopup('APPLE')}
+          className="liquid-glass-subtle hover:scale-[1.01] active:scale-[0.99] py-3 px-4 rounded-2xl text-xs font-extrabold text-theme-primary flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 transition-all"
         >
-          <AppleIcon />
-          <span>{actionLabel} with Apple</span>
+          {connectingProvider === 'APPLE' ? (
+            <Loader2 className="w-4 h-4 animate-spin text-theme-primary" />
+          ) : (
+            <AppleIcon />
+          )}
+          <span>
+            {connectingProvider === 'APPLE'
+              ? 'Connecting to Apple...'
+              : `${actionLabel} with Apple`}
+          </span>
         </button>
       </div>
 
-      <Modal
-        isOpen={Boolean(oauthProvider)}
-        onClose={() => setOauthProvider(null)}
-        title={`${actionLabel} with ${oauthProvider === 'GOOGLE' ? 'Google' : 'Apple'}`}
-        subtitle={
-          oauthProvider === 'GOOGLE'
-            ? 'Authenticate using your Google account'
-            : 'Authenticate using your Apple ID'
-        }
-      >
-        <form onSubmit={handleOAuthSubmit} className="space-y-3.5">
-          <div className="liquid-glass-subtle p-3.5 rounded-2xl flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 shadow-xs">
-              {oauthProvider === 'GOOGLE' ? <GoogleIcon /> : <AppleIcon />}
-            </div>
-            <div className="text-xs">
-              <div className="font-extrabold text-theme-primary">
-                {oauthProvider === 'GOOGLE' ? 'Google Authentication' : 'Apple ID Authentication'}
-              </div>
-              <div className="text-theme-secondary">
-                Returning accounts sign in immediately. New accounts are created with the details
-                below.
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold mb-1 text-theme-primary">
-              {oauthProvider === 'GOOGLE' ? 'Google Email' : 'Apple ID Email'}
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-              <input
-                type="email"
-                required
-                autoFocus
-                placeholder={
-                  oauthProvider === 'GOOGLE' ? 'name@gmail.com' : 'name@icloud.com'
-                }
-                value={oauthForm.email}
-                onChange={(e) => setOauthForm({ ...oauthForm, email: e.target.value })}
-                className="liquid-input w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold mb-1 text-theme-primary">
-                Full Name (New Accounts)
-              </label>
-              <div className="relative">
-                <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                <input
-                  type="text"
-                  placeholder="Full name"
-                  value={oauthForm.full_name}
-                  onChange={(e) => setOauthForm({ ...oauthForm, full_name: e.target.value })}
-                  className="liquid-input w-full pl-10 pr-3 py-2.5 rounded-xl text-xs"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold mb-1 text-theme-primary">
-                Business Name (New Accounts)
-              </label>
-              <div className="relative">
-                <Store className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                <input
-                  type="text"
-                  placeholder="Store or company name"
-                  value={oauthForm.business_name}
-                  onChange={(e) =>
-                    setOauthForm({ ...oauthForm, business_name: e.target.value })
-                  }
-                  className="liquid-input w-full pl-10 pr-3 py-2.5 rounded-xl text-xs"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3">
-            <div>
-              <label className="block text-xs font-bold mb-1 text-theme-primary">
-                Default Currency
-              </label>
-              <div className="relative">
-                <Globe className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                <select
-                  value={oauthForm.currency}
-                  onChange={(e) => setOauthForm({ ...oauthForm, currency: e.target.value })}
-                  className="liquid-input w-full pl-10 pr-3 py-2.5 rounded-xl text-xs"
-                >
-                  {CURRENCY_OPTIONS.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.symbol} — {c.code} ({c.name})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold mb-1 text-theme-primary">
-                Phone Number (Optional)
-              </label>
-              <div className="relative">
-                <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                <input
-                  type="tel"
-                  placeholder="+234 800 000 0000"
-                  value={oauthForm.phone}
-                  onChange={(e) => setOauthForm({ ...oauthForm, phone: e.target.value })}
-                  className="liquid-input w-full pl-10 pr-3 py-2.5 rounded-xl text-xs"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold mb-1 text-theme-primary">
-                Location
-              </label>
-              <div className="relative">
-                <MapPin className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                <select
-                  value={oauthForm.city}
-                  onChange={(e) => setOauthForm({ ...oauthForm, city: e.target.value })}
-                  className="liquid-input w-full pl-10 pr-3 py-2.5 rounded-xl text-xs"
-                >
-                  {LAGOS_LOCATIONS.map((loc) => (
-                    <option key={loc} value={loc}>
-                      {loc}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => setOauthProvider(null)}
-              className="px-4 py-2 text-xs font-bold text-theme-secondary cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="liquid-btn-primary px-5 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer disabled:opacity-50"
-            >
-              {submitting
-                ? 'Authenticating...'
-                : `Continue with ${oauthProvider === 'GOOGLE' ? 'Google' : 'Apple'}`}
-            </button>
-          </div>
-        </form>
-      </Modal>
-    </>
+      {connectingProvider && (
+        <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[11px] font-semibold text-theme-secondary">
+          <span className="flex items-center gap-1.5">
+            <ExternalLink className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+            Complete sign-in in the {connectingProvider === 'GOOGLE' ? 'Google' : 'Apple'} popup window
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              if (popupRef.current && !popupRef.current.closed) {
+                popupRef.current.close();
+              }
+              if (pollTimerRef.current) {
+                clearInterval(pollTimerRef.current);
+                pollTimerRef.current = null;
+              }
+              setConnectingProvider(null);
+            }}
+            className="text-xs font-extrabold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer ml-2"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

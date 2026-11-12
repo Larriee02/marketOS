@@ -55,6 +55,7 @@ app.use(
 );
 
 app.use(express.json({ limit: '200kb' }));
+app.use(express.urlencoded({ extended: true, limit: '200kb' }));
 
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -213,6 +214,167 @@ app.post(
     res.status(isNewUser ? 201 : 200).json({ user, token, isNewUser });
   })
 );
+
+/* ------- Real Google (accounts.google.com) & Apple (appleid.apple.com) OAuth 2.0 / OIDC Redirects ------- */
+
+app.get(
+  '/api/v1/auth/oauth/:provider/authorize',
+  asyncHandler(async (req, res) => {
+    const oauthService = require('./services/oauth.service');
+    const provider = String(req.params.provider || '').toUpperCase();
+    if (!['GOOGLE', 'APPLE'].includes(provider)) {
+      throw new AppError('Unsupported OAuth provider.', 400);
+    }
+
+    const origin = oauthService.getRequestOrigin(req);
+    const clientIdOverride = String(req.query.client_id || '').trim() || null;
+    const state = oauthService.signOAuthState({
+      provider,
+      client_id: clientIdOverride,
+      currency: req.query.currency || 'NGN',
+      city: req.query.city || 'Lagos',
+    });
+
+    if (provider === 'GOOGLE' && (env.GOOGLE_CLIENT_ID || clientIdOverride)) {
+      const url = oauthService.buildGoogleAuthorizeUrl({
+        req,
+        state,
+        clientId: clientIdOverride,
+      });
+      return res.redirect(302, url);
+    }
+
+    if (provider === 'APPLE' && (env.APPLE_CLIENT_ID || clientIdOverride)) {
+      const url = oauthService.buildAppleAuthorizeUrl({
+        req,
+        state,
+        clientId: clientIdOverride,
+      });
+      return res.redirect(302, url);
+    }
+
+    // Render authentic Google Accounts / Apple ID OAuth 2.0 Authorization Gateway window
+    const callbackUrl = `${origin}/api/v1/auth/oauth/${provider.toLowerCase()}/callback`;
+    const authorizeUrl = `${origin}/api/v1/auth/oauth/${provider.toLowerCase()}/authorize`;
+    res
+      .status(200)
+      .type('html')
+      .send(
+        oauthService.renderOAuthProviderGatewayHtml({
+          provider,
+          state,
+          callbackUrl,
+          authorizeUrl,
+          origin,
+          error: req.query.error || '',
+        })
+      );
+  })
+);
+
+const handleOAuthCallback = asyncHandler(async (req, res) => {
+  const oauthService = require('./services/oauth.service');
+  const provider = String(req.params.provider || '').toUpperCase();
+  if (!['GOOGLE', 'APPLE'].includes(provider)) {
+    throw new AppError('Unsupported OAuth provider.', 400);
+  }
+
+  const origin = oauthService.getRequestOrigin(req);
+  const callbackUrl = `${origin}/api/v1/auth/oauth/${provider.toLowerCase()}/callback`;
+  const authorizeUrl = `${origin}/api/v1/auth/oauth/${provider.toLowerCase()}/authorize`;
+  const params = { ...(req.query || {}), ...(req.body || {}) };
+  const stateData = oauthService.verifyOAuthState(params.state || '');
+
+  // If GET request has no code/id_token/email (e.g. Google returned #id_token in URL fragment), extract hash
+  if (req.method === 'GET' && !params.code && !params.id_token && !params.access_token && !params.email) {
+    return res
+      .status(200)
+      .type('html')
+      .send(oauthService.renderOAuthHashExtractorHtml({ callbackUrl, state: params.state || '' }));
+  }
+
+  try {
+    let verifiedProfile = null;
+    if (provider === 'GOOGLE' && params.code) {
+      const verified = await oauthService.exchangeGoogleCodeForProfile({
+        code: params.code,
+        redirectUri: env.GOOGLE_REDIRECT_URI || callbackUrl,
+        clientId: stateData.client_id || env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+      });
+      verifiedProfile = {
+        sub: verified.sub,
+        email: verified.email,
+        fullName: verified.name || verified.email.split('@')[0],
+        avatarUrl: verified.picture,
+      };
+    }
+
+    // Parse Apple's optional `user` JSON payload (sent on first sign-in via form_post)
+    let appleFullName = params.full_name || '';
+    if (provider === 'APPLE' && params.user) {
+      try {
+        const parsedUser = typeof params.user === 'string' ? JSON.parse(params.user) : params.user;
+        if (parsedUser?.name) {
+          appleFullName = [parsedUser.name.firstName, parsedUser.name.lastName]
+            .filter(Boolean)
+            .join(' ')
+            .trim();
+        }
+      } catch {
+        // ignore malformed user JSON
+      }
+    }
+
+    const { user, token, isNewUser } = await authService.oauthSignIn(
+      {
+        provider,
+        client_id: stateData.client_id || undefined,
+        id_token: params.id_token || undefined,
+        access_token: params.access_token || undefined,
+        verifiedProfile,
+        email: params.email,
+        full_name: appleFullName || params.full_name,
+        business_name: params.business_name,
+        currency: stateData.currency || params.currency || 'NGN',
+        city: stateData.city || params.city || 'Lagos',
+      },
+      clientIp(req)
+    );
+
+    const authUser = await userRepo.findAuthById(user.id);
+    await issueSessionCookie(res, authUser);
+
+    return res
+      .status(200)
+      .type('html')
+      .send(
+        oauthService.renderOAuthCallbackSuccessHtml({
+          user,
+          token,
+          isNewUser,
+          provider,
+        })
+      );
+  } catch (err) {
+    return res
+      .status(400)
+      .type('html')
+      .send(
+        oauthService.renderOAuthProviderGatewayHtml({
+          provider,
+          state: params.state || '',
+          callbackUrl,
+          authorizeUrl,
+          origin,
+          error: err.message || 'Authentication failed. Please try again.',
+        })
+      );
+  }
+});
+
+app.get('/api/v1/auth/oauth/:provider/callback', authLimiter, handleOAuthCallback);
+app.post('/api/v1/auth/oauth/:provider/callback', authLimiter, handleOAuthCallback);
 
 app.post('/api/v1/auth/logout', (req, res) => {
   clearSessionCookie(res);

@@ -238,6 +238,75 @@ async function runTests() {
   assert.strictEqual(allSalesInHistory.length, 4, 'All 4 SALE records must appear in Activity History');
   console.log('✅ Direct Product Sell & Batch Sell verified in Activity History and Cashbook');
 
+  // ==========================================
+  // MILESTONE 7: Google & Apple OAuth 2.0 / OIDC Authorize & Callback Flow
+  // ==========================================
+  console.log('\n📌 MILESTONE 7: Google & Apple OAuth 2.0 Authorize, Redirect & Callback Flow');
+  const oauthService = require('./src/services/oauth.service');
+
+  // 1. State signing & verification
+  const stateToken = oauthService.signOAuthState({
+    provider: 'GOOGLE',
+    nonce: 'test-nonce-123',
+    origin: 'https://stockflow-pro.vercel.app',
+  });
+  const verifiedState = oauthService.verifyOAuthState(stateToken);
+  assert.strictEqual(verifiedState.provider, 'GOOGLE', 'OAuth state provider must be GOOGLE');
+  assert.strictEqual(verifiedState.nonce, 'test-nonce-123', 'OAuth state nonce must match');
+
+  // 2. Google OAuth 2.0 Authorize URL (accounts.google.com)
+  const googleAuthUrl = oauthService.buildGoogleAuthorizeUrl({
+    clientId: '123456-test.apps.googleusercontent.com',
+    redirectUri: 'https://stockflow-pro.vercel.app/api/v1/auth/oauth/google/callback',
+    state: stateToken,
+    nonce: 'test-nonce-123',
+    useCodeFlow: true,
+  });
+  assert.ok(
+    googleAuthUrl.startsWith('https://accounts.google.com/o/oauth2/v2/auth?'),
+    'Google authorize URL must point to accounts.google.com/o/oauth2/v2/auth'
+  );
+  assert.ok(googleAuthUrl.includes('client_id=123456-test.apps.googleusercontent.com'), 'Google authorize URL must include client_id');
+
+  // 3. Apple OAuth 2.0 Authorize URL (appleid.apple.com)
+  const appleAuthUrl = oauthService.buildAppleAuthorizeUrl({
+    clientId: 'com.stockflow.web',
+    redirectUri: 'https://stockflow-pro.vercel.app/api/v1/auth/oauth/apple/callback',
+    state: stateToken,
+    nonce: 'test-nonce-123',
+  });
+  assert.ok(
+    appleAuthUrl.startsWith('https://appleid.apple.com/auth/authorize?'),
+    'Apple authorize URL must point to appleid.apple.com/auth/authorize'
+  );
+
+  // 4. OAuth Sign-In with Verified Provider Profile + Callback PostMessage HTML
+  const oauthEmail = `oauth.${Date.now()}@gmail.com`;
+  const oauthResult = await authService.oauthSignIn({
+    provider: 'GOOGLE',
+    verifiedProfile: {
+      provider: 'GOOGLE',
+      sub: `google-sub-${Date.now()}`,
+      email: oauthEmail,
+      email_verified: true,
+      full_name: 'Chidi Okafor',
+    },
+    business_name: 'Okafor Superstore',
+    currency: 'NGN',
+  });
+  assert.strictEqual(oauthResult.user.email, oauthEmail, 'OAuth user email must match verified Google profile');
+  assert.ok(oauthResult.token, 'OAuth sign-in must return a signed JWT session token');
+
+  const callbackHtml = oauthService.renderOAuthCallbackSuccessHtml({
+    provider: 'GOOGLE',
+    token: oauthResult.token,
+    user: oauthResult.user,
+    isNewUser: oauthResult.isNewUser,
+    origin: 'https://stockflow-pro.vercel.app',
+  });
+  assert.ok(callbackHtml.includes('STOCKFLOW_OAUTH_SUCCESS'), 'Callback HTML must post STOCKFLOW_OAUTH_SUCCESS to opener');
+  console.log('✅ Google (`accounts.google.com`) & Apple (`appleid.apple.com`) OAuth 2.0 Redirect, Gateway & Callback verified');
+
   console.log('\n🎉 ALL MILESTONES IN THE SIGNUP-TO-FIRST-SALE JOURNEY COMPLETED AND VERIFIED 100% GREEN!\n');
 }
 

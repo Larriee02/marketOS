@@ -343,9 +343,22 @@ function AppShell({ darkMode, setDarkMode }) {
     }
   };
 
-  // Check active session on mount
+  // Check active session on mount (and capture ?oauth_token=... from full-page OAuth redirects)
   const checkAuthSession = useCallback(async () => {
     try {
+      if (typeof window !== 'undefined' && window.location.search) {
+        const params = new URLSearchParams(window.location.search);
+        const oauthToken = params.get('oauth_token');
+        if (oauthToken) {
+          setStoredToken(oauthToken);
+          params.delete('oauth_token');
+          params.delete('oauth_provider');
+          const cleanQuery = params.toString();
+          const cleanUrl = `${window.location.pathname}${cleanQuery ? `?${cleanQuery}` : ''}${window.location.hash || ''}`;
+          window.history.replaceState({}, '', cleanUrl);
+        }
+      }
+
       const data = await apiFetch('/api/v1/auth/me');
       if (data?.user) {
         setCurrentUser(data.user);

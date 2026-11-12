@@ -5,7 +5,11 @@ const AppError = require('../utils/AppError');
 const { signSession } = require('../utils/session');
 const userRepo = require('../repositories/user.repository');
 const auditRepo = require('../repositories/audit.repository');
-const { verifyGoogleIdToken, verifyAppleIdToken } = require('./oauth.service');
+const {
+  verifyGoogleIdToken,
+  verifyGoogleAccessToken,
+  verifyAppleIdToken,
+} = require('./oauth.service');
 const { seedStarterCatalog } = require('../db/starterCatalog');
 const otpService = require('./otp.service');
 const { isOwnerEmail } = require('../config/owner');
@@ -279,11 +283,27 @@ class AuthService {
 
     let profile = null;
     let tokenVerified = false;
-    // 1. Verify cryptographic ID token if provided and client ID is configured
-    if (payload.id_token && ((provider === 'GOOGLE' && env.GOOGLE_CLIENT_ID) || (provider === 'APPLE' && env.APPLE_CLIENT_ID))) {
+    // 1. Verify cryptographic ID token or access token if provided
+    if (payload.verifiedProfile) {
+      tokenVerified = true;
+      const vp = payload.verifiedProfile;
+      const fallbackName =
+        String(vp.email || '')
+          .split('@')[0]
+          .replace(/[._-]+/g, ' ')
+          .replace(/\b\w/g, (l) => l.toUpperCase()) ||
+        `${provider === 'GOOGLE' ? 'Google' : 'Apple'} Trader`;
+      profile = {
+        sub: vp.sub,
+        email: vp.email,
+        fullName: vp.fullName || vp.full_name || vp.name || payload.full_name || fallbackName,
+        avatarUrl: vp.avatarUrl || vp.avatar_url || vp.picture || null,
+        businessName: vp.businessName || vp.business_name || payload.business_name || '',
+      };
+    } else if (payload.id_token) {
       tokenVerified = true;
       if (provider === 'GOOGLE') {
-        const verified = await verifyGoogleIdToken(payload.id_token);
+        const verified = await verifyGoogleIdToken(payload.id_token, payload.client_id);
         profile = {
           sub: verified.sub,
           email: verified.email,
@@ -291,7 +311,7 @@ class AuthService {
           avatarUrl: verified.picture,
         };
       } else {
-        const verified = await verifyAppleIdToken(payload.id_token);
+        const verified = await verifyAppleIdToken(payload.id_token, payload.client_id);
         profile = {
           sub: verified.sub,
           email: verified.email || String(payload.email || '').toLowerCase(),
@@ -299,6 +319,15 @@ class AuthService {
           avatarUrl: null,
         };
       }
+    } else if (provider === 'GOOGLE' && payload.access_token) {
+      tokenVerified = true;
+      const verified = await verifyGoogleAccessToken(payload.access_token);
+      profile = {
+        sub: verified.sub,
+        email: verified.email,
+        fullName: verified.name || payload.full_name || verified.email.split('@')[0],
+        avatarUrl: verified.picture,
+      };
     } else {
       // 2. Interactive OAuth flow (works immediately out-of-the-box without requiring external OAuth Client IDs)
       const nested = payload.profile && typeof payload.profile === 'object' ? payload.profile : {};

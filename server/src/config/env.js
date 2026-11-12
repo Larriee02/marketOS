@@ -37,7 +37,12 @@ const env = {
   AUTO_APPROVE_USERS: bool(process.env.AUTO_APPROVE_USERS, true),
 
   GOOGLE_CLIENT_ID: (process.env.GOOGLE_CLIENT_ID || '').trim(),
+  GOOGLE_CLIENT_SECRET: (process.env.GOOGLE_CLIENT_SECRET || '').trim(),
+  GOOGLE_REDIRECT_URI: (process.env.GOOGLE_REDIRECT_URI || '').trim(),
   APPLE_CLIENT_ID: (process.env.APPLE_CLIENT_ID || '').trim(),
+  APPLE_TEAM_ID: (process.env.APPLE_TEAM_ID || '').trim(),
+  APPLE_KEY_ID: (process.env.APPLE_KEY_ID || '').trim(),
+  APPLE_PRIVATE_KEY: (process.env.APPLE_PRIVATE_KEY || '').trim(),
   APPLE_REDIRECT_URI: (process.env.APPLE_REDIRECT_URI || '').trim(),
 
   // Email Notification Config (Resend, SendGrid, or SMTP)
