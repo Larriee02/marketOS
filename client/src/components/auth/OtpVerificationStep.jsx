@@ -16,6 +16,7 @@ export function OtpVerificationStep({
   phone,
   maskedDestination,
   otpPreview,
+  deliveryResults = [],
   submitting,
   error,
   onVerify,
@@ -70,13 +71,23 @@ export function OtpVerificationStep({
           <KeyRound className="w-6 h-6 text-white" />
         </div>
         <h3 className="text-lg font-extrabold font-luxury text-theme-primary">
-          {purpose === 'SIGNUP' ? 'Verify Your Account' : 'Security Verification'}
+          {purpose === 'SIGNUP' ? 'Verify Your Email' : 'Email OTP Verification'}
         </h3>
         <p className="text-xs text-theme-secondary max-w-sm mx-auto leading-relaxed">
-          A 6-digit one-time verification code has been dispatched via email and SMS notification to{' '}
+          A 6-digit verification code has been sent to{' '}
           <strong className="text-theme-primary">{maskedDestination || email}</strong>.
         </p>
       </div>
+
+      {Array.isArray(deliveryResults) &&
+        deliveryResults.some(
+          (d) => d.channel === 'EMAIL' && d.success && d.provider !== 'console-simulated'
+        ) && (
+          <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            <Mail className="w-4 h-4 shrink-0" />
+            <span>Email OTP delivered to {maskedDestination || email} — check your Inbox or Spam</span>
+          </div>
+        )}
 
       {otpPreview && (
         <div className="p-3 rounded-2xl bg-sky-500/10 border border-sky-400/30 flex items-center justify-between gap-2">

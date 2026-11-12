@@ -39,7 +39,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
     business_name: '',
     email: '',
     phone: '',
-    channel: 'BOTH', // 'EMAIL' | 'SMS' | 'BOTH'
+    channel: 'EMAIL', // 'EMAIL' | 'BOTH' | 'SMS'
     business_type: BUSINESS_TYPES[0],
     city: LAGOS_LOCATIONS[0],
     currency: 'NGN',
@@ -223,6 +223,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
                 phone={signupForm.phone}
                 maskedDestination={otpInfo?.maskedDestination}
                 otpPreview={otpInfo?.otpPreview}
+                deliveryResults={otpInfo?.deliveryResults}
                 submitting={submitting}
                 error={error}
                 onVerify={handleVerifyOtpAndRegister}
@@ -362,8 +363,8 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
+                        { id: 'EMAIL', label: 'Email OTP' },
                         { id: 'BOTH', label: 'Email & SMS' },
-                        { id: 'EMAIL', label: 'Email Only' },
                         { id: 'SMS', label: 'SMS Only' },
                       ].map((ch) => (
                         <button

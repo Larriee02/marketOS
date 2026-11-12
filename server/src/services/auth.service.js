@@ -12,6 +12,7 @@ const {
 } = require('./oauth.service');
 const { seedStarterCatalog } = require('../db/starterCatalog');
 const otpService = require('./otp.service');
+const notificationService = require('./notification.service');
 const { isOwnerEmail } = require('../config/owner');
 
 const MAX_FAILED_ATTEMPTS = 6;
@@ -38,7 +39,7 @@ class AuthService {
     const fullName = String(payload.full_name || '').trim();
     const businessName = String(payload.business_name || '').trim();
     const phone = String(payload.phone || '').trim() || null;
-    const channel = String(payload.channel || (phone ? 'BOTH' : 'EMAIL')).toUpperCase();
+    const channel = String(payload.channel || 'EMAIL').toUpperCase();
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new AppError('Please enter a valid email address.', 400, 'INVALID_EMAIL');
@@ -86,7 +87,7 @@ class AuthService {
       throw new AppError('Account not found with this email.', 404, 'USER_NOT_FOUND');
     }
 
-    const channel = String(payload.channel || (user.phone ? 'BOTH' : 'EMAIL')).toUpperCase();
+    const channel = String(payload.channel || 'EMAIL').toUpperCase();
 
     return otpService.requestOtp({
       purpose: 'LOGIN',
@@ -188,6 +189,16 @@ class AuthService {
     const publicUser = await userRepo.findPublicById(userId);
     const token = await signSession(authUser);
 
+    // Send Welcome Email Notification asynchronously
+    notificationService
+      .sendWelcomeEmail({
+        to: email,
+        recipientName: fullName,
+        businessName,
+        currency,
+      })
+      .catch(() => {});
+
     return { user: publicUser, token };
   }
 
@@ -229,9 +240,9 @@ class AuthService {
       throw new AppError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
     }
 
-    // Two-factor OTP step: if OTP was not supplied, issue an OTP challenge via Email and/or SMS
+    // Two-factor OTP step: if OTP was not supplied, issue an OTP challenge via Email
     if (!otp) {
-      const defaultChannel = payload.channel || (user.phone ? 'BOTH' : 'EMAIL');
+      const defaultChannel = payload.channel || 'EMAIL';
       const otpRes = await otpService.requestOtp({
         purpose: 'LOGIN',
         email: user.email,
@@ -250,6 +261,7 @@ class AuthService {
         message: otpRes.message,
         expiresInSeconds: otpRes.expiresInSeconds,
         otpPreview: otpRes.otpPreview,
+        deliveryResults: otpRes.deliveryResults,
       };
     }
 
@@ -416,6 +428,16 @@ class AuthService {
       });
 
       user = await userRepo.findAuthById(newId);
+
+      // Send Welcome Email Notification asynchronously for new Google OAuth stores
+      notificationService
+        .sendWelcomeEmail({
+          to: profile.email,
+          recipientName: profile.fullName,
+          businessName,
+          currency,
+        })
+        .catch(() => {});
     } else {
       await userRepo.recordLoginSuccess(user.id);
       await auditRepo.log({

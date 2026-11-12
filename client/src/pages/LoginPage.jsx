@@ -201,6 +201,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
                 phone={otpInfo?.phone}
                 maskedDestination={otpInfo?.maskedDestination}
                 otpPreview={otpInfo?.otpPreview}
+                deliveryResults={otpInfo?.deliveryResults}
                 submitting={submitting}
                 error={error}
                 onVerify={handleVerifyOtpAndLogin}

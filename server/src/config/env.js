@@ -43,10 +43,19 @@ const env = {
   GOOGLE_CLIENT_SECRET: (process.env.GOOGLE_CLIENT_SECRET || '').trim(),
   GOOGLE_REDIRECT_URI: (process.env.GOOGLE_REDIRECT_URI || '').trim(),
 
-  // Email Notification Config (Resend, SendGrid, or SMTP)
+  // Email Notification Config (Gmail App Password, Resend, SendGrid, or Custom SMTP)
+  GMAIL_USER: (process.env.GMAIL_USER || process.env.EMAIL_USER || '').trim(),
+  GMAIL_APP_PASSWORD: (
+    process.env.GMAIL_APP_PASSWORD ||
+    process.env.EMAIL_PASS ||
+    process.env.EMAIL_APP_PASSWORD ||
+    ''
+  )
+    .replace(/\s+/g, '')
+    .trim(),
   RESEND_API_KEY: (process.env.RESEND_API_KEY || '').trim(),
   SENDGRID_API_KEY: (process.env.SENDGRID_API_KEY || '').trim(),
-  EMAIL_FROM: process.env.EMAIL_FROM || 'StockFlow <notifications@stockflowlagos.com>',
+  EMAIL_FROM: (process.env.EMAIL_FROM || '').trim(),
   SMTP_HOST: (process.env.SMTP_HOST || '').trim(),
   SMTP_PORT: Number(process.env.SMTP_PORT) || 587,
   SMTP_USER: (process.env.SMTP_USER || '').trim(),
