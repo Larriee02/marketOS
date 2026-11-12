@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Custom 480px breakpoint so `xs:` utilities work across phones & small tablets */
+@theme {
+  --breakpoint-xs: 30rem;
+}
+
 /* CRITICAL FOR TAILWIND V4: Make `dark:` utilities respond to both `.dark` and `[data-theme="dark"]` */
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
@@ -204,6 +209,7 @@ html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-behavior: smooth;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -220,6 +226,12 @@ body {
   overflow-x: hidden;
   min-height: 100vh;
   min-height: 100dvh;
+}
+
+@media (max-width: 767px), (hover: none) {
+  body {
+    background-attachment: scroll;
+  }
 }
 
 /* Silky-smooth Light <-> Dark Mode Theme Transitions */
@@ -251,9 +263,7 @@ h4 {
     background-color 0.42s cubic-bezier(0.22, 1, 0.36, 1),
     border-color 0.42s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-    filter 0.24s ease;
+    box-shadow 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 h1,

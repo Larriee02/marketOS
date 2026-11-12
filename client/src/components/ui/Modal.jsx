@@ -28,7 +28,7 @@ export function Modal({ isOpen, onClose, title, subtitle, maxWidth = 'max-w-lg',
     >
       <div
         style={{ color: 'var(--text-primary)' }}
-        className={`liquid-glass-elevated rounded-t-3xl sm:rounded-3xl ${maxWidth} w-full p-5 sm:p-6 space-y-4 max-h-[92dvh] overflow-y-auto pb-safe transition-all`}
+        className={`liquid-glass-elevated rounded-t-3xl sm:rounded-3xl ${maxWidth} w-full p-4 sm:p-6 space-y-4 max-h-[90dvh] overflow-y-auto overscroll-contain pb-safe transition-all`}
         onClick={(e) => e.stopPropagation()}
       >
         <div

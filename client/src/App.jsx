@@ -1822,11 +1822,11 @@ function AppShell({ darkMode, setDarkMode }) {
   }
 
   return (
-    <div className="min-h-screen pb-24 md:pb-10">
+    <div className="min-h-screen pb-36 md:pb-10">
       {/* Top Navigation Header */}
       <header className="liquid-glass-header text-slate-100 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2.5 min-w-0">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div className="p-2 rounded-2xl liquid-btn-primary shrink-0">
               <Package className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
@@ -1845,7 +1845,7 @@ function AppShell({ darkMode, setDarkMode }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
             {/* Navigate to Admin Console (For Admin Users) */}
             {currentUser.role === 'ADMIN' && (
               <button
@@ -4665,29 +4665,29 @@ function AppShell({ darkMode, setDarkMode }) {
 
       {/* FLOATING MOBILE BASKET REVIEW & CHECKOUT BAR */}
       {activeTab === 'counter' && cartItems.length > 0 && (
-        <div className="lg:hidden fixed bottom-16 left-3 right-3 z-30">
+        <div className="lg:hidden fixed bottom-[calc(4.35rem+env(safe-area-inset-bottom))] md:bottom-4 left-3 right-3 z-30">
           <button
             type="button"
             onClick={() => setIsMobileCartOpen(true)}
-            className="liquid-glass-header w-full text-white px-4 py-3.5 rounded-2xl shadow-2xl border border-white/20 flex items-center justify-between active:scale-[0.99] transition cursor-pointer"
+            className="liquid-glass-header w-full text-white px-3.5 sm:px-4 py-3 sm:py-3.5 rounded-2xl shadow-2xl border border-white/20 flex items-center justify-between gap-2 active:scale-[0.99] transition cursor-pointer"
           >
-            <div className="flex items-center gap-2">
-              <div className="relative">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="relative shrink-0">
                 <ShoppingCart className="w-5 h-5 text-emerald-300" />
                 <span className="absolute -top-1.5 -right-2 bg-emerald-500 text-white rounded-full text-[10px] font-black w-4 h-4 flex items-center justify-center">
                   {cartItemCount}
                 </span>
               </div>
-              <span className="text-xs font-bold pl-1">
-                Review Basket ({cartItemCount} items)
+              <span className="text-xs font-bold pl-1 truncate">
+                Basket ({cartItemCount})
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-sm font-black font-luxury tabular-nums text-emerald-300">
                 {formatNaira(cartTotal)}
               </span>
-              <span className="text-xs bg-emerald-500/25 text-emerald-100 border border-emerald-400/30 px-2.5 py-1 rounded-xl font-bold">
-                Review & Pay →
+              <span className="text-[11px] sm:text-xs bg-emerald-500/25 text-emerald-100 border border-emerald-400/30 px-2.5 py-1 rounded-xl font-bold whitespace-nowrap">
+                Pay →
               </span>
             </div>
           </button>
@@ -4709,7 +4709,7 @@ function AppShell({ darkMode, setDarkMode }) {
               key={t.id}
               type="button"
               onClick={() => handleSelectTab(t.id, true)}
-              className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold cursor-pointer select-none ${
+              className={`min-w-0 py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold cursor-pointer select-none ${
                 isActive ? 'liquid-btn-primary shadow-sm' : 'text-theme-secondary'
               }`}
             >
