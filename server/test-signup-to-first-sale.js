@@ -190,7 +190,55 @@ async function runTests() {
   assert.strictEqual(saleMovements.length, 2, 'Two SALE movements should be recorded');
   console.log('✅ Stock movements audit trail verified for both sold items');
 
-  console.log('\n🎉 ALL 5 MILESTONES IN THE SIGNUP-TO-FIRST-SALE JOURNEY COMPLETED AND VERIFIED 100% GREEN!\n');
+  // ==========================================
+  // MILESTONE 6: Direct Product Sell (Modal & Batch Adjust) -> Reflects in History & Cashbook
+  // ==========================================
+  console.log('\n📌 MILESTONE 6: Direct Product Sell (Stock Modal & Batch Adjust) -> History Reflection');
+  const directSaleResult = await inventoryService.recordMovement(userId, {
+    product_id: peakMilk.id,
+    movement_type: 'SALE',
+    quantity: 1,
+    record_cash: true,
+    payment_method: 'POS',
+    counterparty_name: 'Walk-in Customer',
+    note: 'Direct product sell from Inventory tab',
+  });
+
+  assert.strictEqual(directSaleResult.movement.movement_type, 'SALE', 'Movement type must be SALE');
+  assert.strictEqual(Number(directSaleResult.movement.quantity_change), -1, 'Quantity change must be -1');
+  assert.strictEqual(Number(directSaleResult.movement.previous_stock), 8, 'Previous stock must be 8');
+  assert.strictEqual(Number(directSaleResult.movement.new_stock), 7, 'New stock must be 7');
+  assert.strictEqual(
+    Number(directSaleResult.movement.total_value),
+    Number(peakMilk.selling_price),
+    'Sale value must use retail selling_price'
+  );
+  assert.ok(directSaleResult.cashTransaction, 'Direct sale must create a cashbook INFLOW transaction');
+  assert.strictEqual(directSaleResult.cashTransaction.type, 'INFLOW');
+  assert.strictEqual(directSaleResult.cashTransaction.payment_method, 'POS');
+
+  // Also test batch sale via batchStockAdjustment
+  const batchSaleResult = await inventoryService.batchStockAdjustment(userId, {
+    adjustments: [
+      {
+        product_id: indomie.id,
+        quantity: 2,
+        mode: 'DELTA',
+        movement_type: 'SALE',
+        note: 'Batch recorded sold items',
+      },
+    ],
+  });
+  assert.strictEqual(batchSaleResult.updatedCount, 1);
+  assert.strictEqual(batchSaleResult.movements[0].movement_type, 'SALE');
+  assert.strictEqual(Number(batchSaleResult.movements[0].new_stock), 5);
+
+  const historyAfterDirectSales = await inventoryService.getRecentMovements(userId, 30);
+  const allSalesInHistory = historyAfterDirectSales.filter((m) => m.movement_type === 'SALE');
+  assert.strictEqual(allSalesInHistory.length, 4, 'All 4 SALE records must appear in Activity History');
+  console.log('✅ Direct Product Sell & Batch Sell verified in Activity History and Cashbook');
+
+  console.log('\n🎉 ALL MILESTONES IN THE SIGNUP-TO-FIRST-SALE JOURNEY COMPLETED AND VERIFIED 100% GREEN!\n');
 }
 
 runTests().catch((err) => {

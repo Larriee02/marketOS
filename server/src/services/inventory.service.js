@@ -375,14 +375,14 @@ class InventoryService {
       );
 
       let cashTransaction = null;
-      if (record_cash && (movement_type === 'SALE' || movement_type === 'RESTOCK')) {
+      if (record_cash && (normalizedType === 'SALE' || normalizedType === 'RESTOCK')) {
         const cashAmount =
           amount_paid !== undefined && amount_paid !== '' ? Number(amount_paid) : totalValue;
 
         if (cashAmount > 0) {
-          const cashType = movement_type === 'SALE' ? 'INFLOW' : 'OUTFLOW';
-          const cashCategory = movement_type === 'SALE' ? 'Counter Sales' : 'Market Restock';
-          const actionLabel = movement_type === 'SALE' ? 'Sold' : 'Restocked';
+          const cashType = normalizedType === 'SALE' ? 'INFLOW' : 'OUTFLOW';
+          const cashCategory = normalizedType === 'SALE' ? 'Counter Sales' : 'Market Restock';
+          const actionLabel = normalizedType === 'SALE' ? 'Sold' : 'Restocked';
           const description =
             note.trim() ||
             `${actionLabel} ${Math.abs(quantityChange)} ${product.unit} of ${product.name}`;
@@ -633,7 +633,7 @@ class InventoryService {
           qtyChange = newStock - prevStock;
         } else {
           // DELTA mode
-          if (['DAMAGED', 'DAMAGE', 'EXPIRED', 'MISSING'].includes(movementType)) {
+          if (['SALE', 'DAMAGED', 'DAMAGE', 'EXPIRED', 'MISSING'].includes(movementType)) {
             const deductQty = Math.abs(qtyInput);
             if (prevStock < deductQty) {
               throw new AppError(`Deduction for "${prod.name}" (${deductQty}) exceeds stock (${prevStock}).`);
@@ -655,7 +655,10 @@ class InventoryService {
 
         if (qtyChange === 0) continue;
 
-        const unitPrice = Number(prod.cost_price || 0);
+        const unitPrice =
+          movementType === 'SALE'
+            ? Number(prod.selling_price || 0)
+            : Number(prod.cost_price || 0);
         const lineTotal = multiplyCurrency(unitPrice, Math.abs(qtyChange));
         totalValueChange += lineTotal;
 
@@ -684,6 +687,23 @@ class InventoryService {
             note,
           ]
         );
+
+        if (movementType === 'SALE' && adj.record_cash !== false && lineTotal > 0) {
+          await client.query(
+            `INSERT INTO cash_transactions (
+              user_id, type, category, amount, payment_method,
+              counterparty_name, description, stock_movement_id
+            ) VALUES ($1, 'INFLOW', 'Counter Sales', $2, $3, $4, $5, $6)`,
+            [
+              userId,
+              lineTotal,
+              adj.payment_method || 'CASH',
+              adj.counterparty_name || 'Walk-in Customer',
+              `Sold ${Math.abs(qtyChange)} ${prod.unit} of ${prod.name}`,
+              movRes.rows[0].id,
+            ]
+          );
+        }
 
         movements.push(movRes.rows[0]);
         updatedCount++;

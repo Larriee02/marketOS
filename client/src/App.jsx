@@ -22,6 +22,7 @@ import {
   Sun,
   Moon,
   Calendar,
+  X,
   XCircle,
   ShieldCheck,
   UserCheck,
@@ -1365,12 +1366,12 @@ function AppShell({ darkMode, setDarkMode }) {
     }
   };
 
-  // Record Stock Movement (Restock / Shelf Count / Damaged)
+  // Record Stock Movement (Sale / Restock / Shelf Count / Damaged / Expired / Missing)
   const handleRecordMovement = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await apiFetch('/api/v1/inventory/movements', {
+      const res = await apiFetch('/api/v1/inventory/movements', {
         method: 'POST',
         headers: {
           'Idempotency-Key': `${selectedProduct.id}-${Date.now()}`,
@@ -1381,11 +1382,50 @@ function AppShell({ darkMode, setDarkMode }) {
         }),
       });
 
+      const isSale = movementForm.movement_type === 'SALE';
+      const qtyNum = Math.abs(Number(movementForm.quantity || 0));
+      const unitSelling = Number(selectedProduct.selling_price || 0);
+      const totalSaleVal = qtyNum * unitSelling;
+
+      if (isSale && res?.movement) {
+        setLastReceipt({
+          receiptNo: `SFL-${String(res.movement.id).padStart(6, '0')}`,
+          timestamp: new Date().toLocaleString(),
+          businessName: currentUser?.business_name || 'StockFlow Lagos Store',
+          location: currentUser?.location || 'Lagos, Nigeria',
+          cashierName: currentUser?.full_name || 'Store Owner',
+          customerName: movementForm.counterparty_name?.trim() || 'Walk-in Customer',
+          customerPhone: '',
+          paymentMethod: movementForm.payment_method || 'CASH',
+          items: [
+            {
+              name: selectedProduct.name,
+              unit: selectedProduct.unit,
+              quantity: qtyNum,
+              unitPrice: unitSelling,
+              lineTotal: totalSaleVal,
+            },
+          ],
+          totalBill: totalSaleVal,
+          amountPaid:
+            movementForm.amount_paid !== '' && movementForm.amount_paid !== undefined
+              ? Number(movementForm.amount_paid)
+              : totalSaleVal,
+          balanceDue: 0,
+        });
+      }
+
+      const prodName = selectedProduct.name;
+      const prodUnit = selectedProduct.unit;
       setSelectedProduct(null);
-      showSuccessToast('Stock level updated and logged in History!');
+      showSuccessToast(
+        isSale
+          ? `Sold ${qtyNum} ${prodUnit} of "${prodName}" (${formatNaira(totalSaleVal)}) — logged in Activity History!`
+          : 'Stock level updated and logged in History!'
+      );
       fetchAllData();
     } catch (err) {
-      alert(err.message);
+      toastError?.(err.message) || alert(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -2518,6 +2558,29 @@ function AppShell({ darkMode, setDarkMode }) {
                         onClick={() => {
                           setSelectedProduct(p);
                           setMovementForm({
+                            movement_type: 'SALE',
+                            quantity: '1',
+                            record_cash: true,
+                            amount_paid: '',
+                            payment_method: 'CASH',
+                            counterparty_name: '',
+                            note: '',
+                          });
+                        }}
+                        disabled={Number(p.stock_quantity) <= 0}
+                        title={
+                          Number(p.stock_quantity) <= 0
+                            ? 'Out of stock — Restock first to sell'
+                            : `Sell ${p.name} and record in History`
+                        }
+                        className="px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1 cursor-pointer bg-emerald-500/15 text-emerald-400 border border-emerald-500/35 hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <ShoppingCart className="w-3.5 h-3.5" /> Sell
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedProduct(p);
+                          setMovementForm({
                             movement_type: 'RESTOCK',
                             quantity: '',
                             record_cash: true,
@@ -2633,6 +2696,29 @@ function AppShell({ darkMode, setDarkMode }) {
                               title="Edit price or details"
                             >
                               <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedProduct(p);
+                                setMovementForm({
+                                  movement_type: 'SALE',
+                                  quantity: '1',
+                                  record_cash: true,
+                                  amount_paid: '',
+                                  payment_method: 'CASH',
+                                  counterparty_name: '',
+                                  note: '',
+                                });
+                              }}
+                              disabled={Number(p.stock_quantity) <= 0}
+                              title={
+                                Number(p.stock_quantity) <= 0
+                                  ? 'Out of stock — Restock first to sell'
+                                  : `Sell ${p.name} and record in History`
+                              }
+                              className="px-3 py-1.5 rounded-xl text-xs font-extrabold inline-flex items-center gap-1 cursor-pointer bg-emerald-500/15 text-emerald-400 border border-emerald-500/35 hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <ShoppingCart className="w-3.5 h-3.5" /> Sell
                             </button>
                             <button
                               onClick={() => {
@@ -4562,7 +4648,7 @@ function AppShell({ darkMode, setDarkMode }) {
         })}
       </nav>
 
-      {/* MODAL 1: RESTOCK / PHYSICAL SHELF COUNT / DAMAGED */}
+      {/* MODAL 1: SELL / RESTOCK / PHYSICAL SHELF COUNT / DAMAGED */}
       <Modal
         isOpen={Boolean(selectedProduct)}
         onClose={() => setSelectedProduct(null)}
@@ -4574,8 +4660,9 @@ function AppShell({ darkMode, setDarkMode }) {
         )}`}
       >
         <form onSubmit={handleRecordMovement} className="space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
             {[
+              { id: 'SALE', label: 'Sell Item (-)' },
               { id: 'RESTOCK', label: 'Restock (+)' },
               { id: 'ADJUSTMENT', label: 'Shelf Count' },
               { id: 'DAMAGED', label: 'Damaged (-)' },
@@ -4585,8 +4672,19 @@ function AppShell({ darkMode, setDarkMode }) {
               <button
                 type="button"
                 key={t.id}
-                onClick={() => setMovementForm({ ...movementForm, movement_type: t.id })}
-                className={`py-2 px-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                onClick={() =>
+                  setMovementForm({
+                    ...movementForm,
+                    movement_type: t.id,
+                    counterparty_name:
+                      t.id === 'RESTOCK'
+                        ? selectedProduct?.supplier_name || ''
+                        : t.id === 'SALE'
+                        ? ''
+                        : movementForm.counterparty_name,
+                  })
+                }
+                className={`py-2 px-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${
                   movementForm.movement_type === t.id
                     ? 'liquid-btn-primary'
                     : 'liquid-glass-subtle'
@@ -4600,7 +4698,11 @@ function AppShell({ darkMode, setDarkMode }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold mb-1 text-theme-primary">
-                {movementForm.movement_type === 'ADJUSTMENT'
+                {movementForm.movement_type === 'SALE'
+                  ? `How many ${selectedProduct?.unit} sold? (Max: ${Number(
+                      selectedProduct?.stock_quantity || 0
+                    )})`
+                  : movementForm.movement_type === 'ADJUSTMENT'
                   ? `How many ${selectedProduct?.unit} on the shelf?`
                   : ['DAMAGED', 'EXPIRED', 'MISSING'].includes(movementForm.movement_type)
                   ? `How many ${selectedProduct?.unit} written off?`
@@ -4609,6 +4711,12 @@ function AppShell({ darkMode, setDarkMode }) {
               <input
                 type="number"
                 step="any"
+                min={movementForm.movement_type === 'ADJUSTMENT' ? '0' : '1'}
+                max={
+                  ['SALE', 'DAMAGED', 'EXPIRED', 'MISSING'].includes(movementForm.movement_type)
+                    ? Number(selectedProduct?.stock_quantity || 0)
+                    : undefined
+                }
                 required
                 value={movementForm.quantity}
                 onChange={(e) => setMovementForm({ ...movementForm, quantity: e.target.value })}
@@ -4618,7 +4726,9 @@ function AppShell({ darkMode, setDarkMode }) {
             </div>
             <div>
               <label className="block text-xs font-bold mb-1 text-theme-primary">
-                Supplier / Market Name
+                {movementForm.movement_type === 'SALE'
+                  ? 'Customer Name (Optional)'
+                  : 'Supplier / Market Name'}
               </label>
               <input
                 type="text"
@@ -4626,13 +4736,17 @@ function AppShell({ darkMode, setDarkMode }) {
                 onChange={(e) =>
                   setMovementForm({ ...movementForm, counterparty_name: e.target.value })
                 }
-                placeholder="e.g. Oke-Arin / Mushin"
+                placeholder={
+                  movementForm.movement_type === 'SALE'
+                    ? 'e.g. Walk-in Customer / Mama Tobi'
+                    : 'e.g. Oke-Arin / Mushin'
+                }
                 className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
               />
             </div>
           </div>
 
-          {movementForm.movement_type === 'RESTOCK' && (
+          {(movementForm.movement_type === 'SALE' || movementForm.movement_type === 'RESTOCK') && (
             <div className="liquid-glass-subtle p-3.5 rounded-2xl space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <label className="flex items-center gap-2 text-xs font-bold cursor-pointer text-theme-primary">
@@ -4643,10 +4757,13 @@ function AppShell({ darkMode, setDarkMode }) {
                       setMovementForm({ ...movementForm, record_cash: e.target.checked })
                     }
                   />
-                  Deduct this market purchase from my Cashbook
+                  {movementForm.movement_type === 'SALE'
+                    ? 'Add this sale money to my Cashbook'
+                    : 'Deduct this market purchase from my Cashbook'}
                 </label>
                 <span className="text-xs font-extrabold tabular-nums shrink-0 text-theme-primary">
-                  Cost: {formatNaira(expectedMovementValue)}
+                  {movementForm.movement_type === 'SALE' ? 'Sale Total' : 'Cost'}:{' '}
+                  {formatNaira(expectedMovementValue)}
                 </span>
               </div>
 
@@ -4654,7 +4771,8 @@ function AppShell({ darkMode, setDarkMode }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs mb-1 text-theme-secondary">
-                      Amount Paid (Blank = {formatNaira(expectedMovementValue)})
+                      {movementForm.movement_type === 'SALE' ? 'Amount Received' : 'Amount Paid'}{' '}
+                      (Blank = {formatNaira(expectedMovementValue)})
                     </label>
                     <input
                       type="number"
@@ -4668,7 +4786,9 @@ function AppShell({ darkMode, setDarkMode }) {
                   </div>
                   <div>
                     <label className="block text-xs mb-1 text-theme-secondary">
-                      How did you pay?
+                      {movementForm.movement_type === 'SALE'
+                        ? 'How did customer pay?'
+                        : 'How did you pay?'}
                     </label>
                     <select
                       value={movementForm.payment_method}
@@ -4678,8 +4798,9 @@ function AppShell({ darkMode, setDarkMode }) {
                       className="liquid-input w-full rounded-xl px-2.5 py-1.5 text-xs"
                     >
                       <option value="CASH">Cash (Naira)</option>
+                      <option value="POS">POS Terminal</option>
                       <option value="BANK_TRANSFER">Bank Transfer (OPay / Bank)</option>
-                      <option value="POS">POS</option>
+                      <option value="MOBILE_MONEY">Mobile Wallet / USSD</option>
                     </select>
                   </div>
                 </div>
@@ -4695,7 +4816,11 @@ function AppShell({ darkMode, setDarkMode }) {
               type="text"
               value={movementForm.note}
               onChange={(e) => setMovementForm({ ...movementForm, note: e.target.value })}
-              placeholder="e.g. Bought from Mushin depot or weekly shelf count"
+              placeholder={
+                movementForm.movement_type === 'SALE'
+                  ? 'e.g. Sold at shop counter'
+                  : 'e.g. Bought from Mushin depot or weekly shelf count'
+              }
               className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
             />
           </div>
@@ -4713,7 +4838,11 @@ function AppShell({ darkMode, setDarkMode }) {
               disabled={submitting}
               className="liquid-btn-primary px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
             >
-              {submitting ? 'Saving...' : 'Update Shelf Stock'}
+              {submitting
+                ? 'Saving...'
+                : movementForm.movement_type === 'SALE'
+                ? 'Complete Sale & Deduct Stock'
+                : 'Update Shelf Stock'}
             </button>
           </div>
         </form>

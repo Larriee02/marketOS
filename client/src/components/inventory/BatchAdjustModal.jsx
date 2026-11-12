@@ -20,6 +20,7 @@ import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 
 const MOVEMENT_TYPES = [
+  { id: 'SALE', label: 'Sold (- Record Items Sold)', direction: 'subtract', color: 'text-sky-400 bg-sky-500/10 border-sky-500/30' },
   { id: 'RESTOCK', label: 'Restock (+ Add Stock)', direction: 'add', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
   { id: 'DAMAGED', label: 'Damaged / Broken (-)', direction: 'subtract', color: 'text-rose-400 bg-rose-500/10 border-rose-500/30' },
   { id: 'EXPIRED', label: 'Expired (-)', direction: 'subtract', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
@@ -164,7 +165,7 @@ export function BatchAdjustModal({
         stockDiff = numVal - curStock;
       } else {
         // DELTA
-        if (['DAMAGED', 'EXPIRED', 'MISSING'].includes(movement_type)) {
+        if (['SALE', 'DAMAGED', 'EXPIRED', 'MISSING'].includes(movement_type)) {
           const deduct = Math.abs(numVal);
           if (curStock < deduct) {
             errors.push(`${product.name}: Deduction (${deduct}) exceeds current stock (${curStock})`);
@@ -182,8 +183,14 @@ export function BatchAdjustModal({
       }
 
       netStockDiff += stockDiff;
-      const unitCost = Number(product.cost_price) || 0;
-      netValueImpact += stockDiff * unitCost;
+      const unitPrice =
+        movement_type === 'SALE'
+          ? Number(product.selling_price) || 0
+          : Number(product.cost_price) || 0;
+      netValueImpact +=
+        movement_type === 'SALE'
+          ? Math.abs(stockDiff) * unitPrice
+          : stockDiff * unitPrice;
     });
 
     return {
@@ -219,18 +226,14 @@ export function BatchAdjustModal({
 
     setIsSubmitting(true);
     try {
-      const res = await apiFetch('/api/v1/inventory/batch-adjust', {
+      const data = await apiFetch('/api/v1/inventory/batch-adjust', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to apply batch adjustments');
-      }
-
-      toastSuccess?.(`Successfully updated ${data.data?.updatedCount || payload.adjustments.length} product(s)!`);
+      toastSuccess?.(
+        `Successfully updated ${data?.updatedCount || payload.adjustments.length} product(s) and logged in History!`
+      );
       setItems({});
       onSuccess?.();
       onClose();
@@ -386,7 +389,7 @@ export function BatchAdjustModal({
                       projectedStock = numVal;
                       diff = projectedStock - curStock;
                     } else {
-                      if (['DAMAGED', 'EXPIRED', 'MISSING'].includes(movement_type)) {
+                      if (['SALE', 'DAMAGED', 'EXPIRED', 'MISSING'].includes(movement_type)) {
                         diff = -Math.abs(numVal);
                       } else if (['RESTOCK', 'SURPLUS'].includes(movement_type)) {
                         diff = Math.abs(numVal);
