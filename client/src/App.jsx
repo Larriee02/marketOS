@@ -1708,6 +1708,8 @@ function AppShell({ darkMode, setDarkMode }) {
         onUserUpdated={(updatedUser) => setCurrentUser(updatedUser)}
         onNavigate={navigate}
         onLogout={handleLogout}
+        toast={toast}
+        onToast={showSuccessToast}
       />
     );
   }

@@ -31,6 +31,16 @@ export function SettingsPage({
 }) {
   const [submittingProfile, setSubmittingProfile] = useState(false);
   const [submittingPassword, setSubmittingPassword] = useState(false);
+  const [localToast, setLocalToast] = useState('');
+
+  const notifyToast = (msg) => {
+    if (typeof onToast === 'function') {
+      onToast(msg);
+    } else {
+      setLocalToast(msg);
+      setTimeout(() => setLocalToast(''), 3500);
+    }
+  };
 
   const [profileForm, setProfileForm] = useState({
     full_name: currentUser?.full_name || '',
@@ -58,7 +68,7 @@ export function SettingsPage({
       if (data?.user) {
         onUserUpdated(data.user);
       }
-      onToast('Account & currency preferences saved.');
+      notifyToast('Account & currency preferences saved.');
     } catch (err) {
       alert(err.message);
     } finally {
@@ -77,7 +87,7 @@ export function SettingsPage({
       if (data?.user) {
         onUserUpdated(data.user);
       }
-      onToast(`Display currency updated to ${code}.`);
+      notifyToast(`Display currency updated to ${code}.`);
     } catch (err) {
       alert(err.message);
     }
@@ -98,7 +108,7 @@ export function SettingsPage({
         }),
       });
       setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
-      onToast('Password updated successfully.');
+      notifyToast('Password updated successfully.');
     } catch (err) {
       alert(err.message);
     } finally {
@@ -164,10 +174,10 @@ export function SettingsPage({
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {toast && (
+        {(toast || localToast) && (
           <div className="liquid-btn-primary px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>{toast}</span>
+            <span>{toast || localToast}</span>
           </div>
         )}
 
