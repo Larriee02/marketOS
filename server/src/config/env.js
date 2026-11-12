@@ -36,7 +36,10 @@ const env = {
 
   AUTO_APPROVE_USERS: bool(process.env.AUTO_APPROVE_USERS, true),
 
-  GOOGLE_CLIENT_ID: (process.env.GOOGLE_CLIENT_ID || '').trim(),
+  GOOGLE_CLIENT_ID: (
+    process.env.GOOGLE_CLIENT_ID ||
+    '7652655046-941j1no6adnoimmiqfa7laef255iv2su.apps.googleusercontent.com'
+  ).trim(),
   GOOGLE_CLIENT_SECRET: (process.env.GOOGLE_CLIENT_SECRET || '').trim(),
   GOOGLE_REDIRECT_URI: (process.env.GOOGLE_REDIRECT_URI || '').trim(),
   APPLE_CLIENT_ID: (process.env.APPLE_CLIENT_ID || '').trim(),

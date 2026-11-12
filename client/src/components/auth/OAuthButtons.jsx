@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, ExternalLink } from 'lucide-react';
 import { apiFetch, getStoredToken, setStoredToken } from '../../services/api';
 
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  '7652655046-941j1no6adnoimmiqfa7laef255iv2su.apps.googleusercontent.com';
+
 export const BUSINESS_TYPES = [
   'Supermarket & Grocery',
   'Provision & Convenience Store',
@@ -93,6 +97,67 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
 
   const startOAuthPopup = (provider) => {
     if (onError) onError('');
+
+    // Use official Google Identity Services (accounts.google.com/gsi/client) popup when available
+    if (
+      provider === 'GOOGLE' &&
+      GOOGLE_CLIENT_ID &&
+      typeof window !== 'undefined' &&
+      window.google?.accounts?.oauth2?.initTokenClient
+    ) {
+      setConnectingProvider('GOOGLE');
+      try {
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'openid email profile',
+          prompt: 'select_account',
+          callback: async (tokenResponse) => {
+            if (tokenResponse?.error) {
+              setConnectingProvider(null);
+              if (tokenResponse.error !== 'popup_closed_by_user' && onError) {
+                onError(tokenResponse.error_description || 'Google sign-in was cancelled.');
+              }
+              return;
+            }
+            if (!tokenResponse?.access_token) {
+              setConnectingProvider(null);
+              return;
+            }
+            try {
+              const data = await apiFetch('/api/v1/auth/oauth', {
+                method: 'POST',
+                body: JSON.stringify({
+                  provider: 'GOOGLE',
+                  access_token: tokenResponse.access_token,
+                  client_id: GOOGLE_CLIENT_ID,
+                }),
+              });
+              if (data?.token) {
+                setStoredToken(data.token);
+              }
+              setConnectingProvider(null);
+              if (data?.user && onAuthenticated) {
+                onAuthenticated(data.user);
+              }
+            } catch (err) {
+              setConnectingProvider(null);
+              if (onError) onError(err.message || 'Failed to verify Google account.');
+            }
+          },
+          error_callback: (err) => {
+            setConnectingProvider(null);
+            if (err?.type && err.type !== 'popup_closed' && onError) {
+              onError('Google sign-in window closed before completing.');
+            }
+          },
+        });
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+        return;
+      } catch {
+        // Fall through to standard OAuth 2.0 /authorize popup redirect
+      }
+    }
+
     const providerSlug = provider.toLowerCase();
     const authorizeUrl = `/api/v1/auth/oauth/${providerSlug}/authorize`;
 
@@ -131,7 +196,6 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
 
     pollTimerRef.current = setInterval(async () => {
       // Check if localStorage token was updated by the callback window
-      // (Handles cases where accounts.google.com / appleid.apple.com COOP headers sever window.opener)
       const currentToken = getStoredToken() || '';
       if (currentToken && currentToken !== initialTokenRef.current) {
         clearInterval(pollTimerRef.current);
