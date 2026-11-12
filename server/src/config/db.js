@@ -25,15 +25,19 @@ function sanitizeDatabaseUrl(raw) {
     cleaned = `${prefix}${encodeURIComponent(decoded)}${suffix}`;
   }
   try {
-    // eslint-disable-next-line no-new
-    new URL(cleaned);
-    return cleaned;
+    const parsed = new URL(cleaned);
+    // Strip libpq-specific sslmode/channel_binding params so node-postgres (`pg`)
+    // uses the explicit `ssl: { rejectUnauthorized: false }` config cleanly on Neon poolers.
+    parsed.searchParams.delete('sslmode');
+    parsed.searchParams.delete('channel_binding');
+    return parsed.toString();
   } catch {
     return null;
   }
 }
 
-const connectionString = sanitizeDatabaseUrl(env.DATABASE_URL);
+const isTestEnv = process.env.NODE_ENV === 'test';
+const connectionString = isTestEnv ? null : sanitizeDatabaseUrl(env.DATABASE_URL);
 const hasValidPgUrl = Boolean(connectionString) && !connectionString.includes('YOUR-PASSWORD');
 
 let mode = 'embedded';
