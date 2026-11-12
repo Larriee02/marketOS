@@ -157,8 +157,10 @@ export default function App() {
     const root = document.documentElement;
     if (darkMode) {
       root.classList.add('dark');
+      root.setAttribute('data-theme', 'dark');
     } else {
       root.classList.remove('dark');
+      root.setAttribute('data-theme', 'light');
     }
     try {
       localStorage.setItem('stockflow_theme', darkMode ? 'dark' : 'light');
@@ -1763,7 +1765,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 <h1 className="text-base sm:text-xl font-extrabold font-luxury tracking-tight truncate text-white">
                   {currentUser.business_name || 'StockFlow'}
                 </h1>
-                <span className="hidden xs:inline-block text-[10px] sm:text-[11px] bg-sky-400/20 text-sky-200 border border-sky-300/35 px-2.5 py-0.5 rounded-full font-extrabold">
+                <span className="hidden xs:inline-block text-[10px] sm:text-[11px] bg-emerald-500/20 text-emerald-200 border border-emerald-400/35 px-2.5 py-0.5 rounded-full font-extrabold">
                   {currentUser.role === 'ADMIN' ? 'Admin' : 'Verified'} • {currencyCode} ({currencySymbol})
                 </span>
               </div>
@@ -1792,16 +1794,16 @@ function AppShell({ darkMode, setDarkMode }) {
               onClick={() => setDarkMode(!darkMode)}
               title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               aria-label="Toggle color theme"
-              className="flex items-center gap-1.5 bg-white/12 hover:bg-white/20 text-slate-100 border border-white/25 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
+              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/18 text-slate-100 border border-white/20 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
             >
               {darkMode ? (
                 <>
-                  <Sun className="w-4 h-4 text-sky-300" />
+                  <Sun className="w-4 h-4 text-emerald-300" />
                   <span className="hidden lg:inline">Light</span>
                 </>
               ) : (
                 <>
-                  <Moon className="w-4 h-4 text-sky-200" />
+                  <Moon className="w-4 h-4 text-emerald-200" />
                   <span className="hidden lg:inline">Dark</span>
                 </>
               )}
@@ -1813,7 +1815,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 setProductForm(INITIAL_PRODUCT_FORM);
                 setShowProductModal(true);
               }}
-              className="flex items-center gap-1 bg-white/12 hover:bg-white/20 text-slate-100 border border-white/25 px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
+              className="flex items-center gap-1 bg-white/10 hover:bg-white/18 text-slate-100 border border-white/20 px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden xs:inline">New</span>
@@ -1836,9 +1838,9 @@ function AppShell({ darkMode, setDarkMode }) {
               type="button"
               onClick={() => navigate('/settings')}
               title="Account & Currency Settings"
-              className="flex items-center gap-1 bg-white/12 hover:bg-white/20 text-slate-100 border border-white/25 px-2.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
+              className="flex items-center gap-1 bg-white/10 hover:bg-white/18 text-slate-100 border border-white/20 px-2.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
             >
-              <Settings className="w-4 h-4 text-sky-300" />
+              <Settings className="w-4 h-4 text-emerald-300" />
               <span className="hidden md:inline">Settings</span>
             </button>
 
@@ -1846,9 +1848,9 @@ function AppShell({ darkMode, setDarkMode }) {
               type="button"
               onClick={handleLogout}
               title="Sign Out"
-              className="flex items-center gap-1 bg-rose-500/25 hover:bg-rose-500/40 text-slate-100 border border-rose-300/35 px-2.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
+              className="flex items-center gap-1 bg-red-500/20 hover:bg-red-500/35 text-slate-100 border border-red-400/35 px-2.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
             >
-              <LogOut className="w-4 h-4 text-rose-200" />
+              <LogOut className="w-4 h-4 text-red-200" />
               <span className="hidden sm:inline">Sign Out</span>
             </button>
           </div>
@@ -1859,7 +1861,7 @@ function AppShell({ darkMode, setDarkMode }) {
         {/* Toast Alert */}
         {toast && (
           <div className="liquid-btn-primary px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-sky-200 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{toast}</span>
           </div>
         )}
@@ -2293,7 +2295,7 @@ function AppShell({ darkMode, setDarkMode }) {
 
                   {/* Total Bill Banner */}
                   <div className="liquid-glass-header text-white p-4 rounded-2xl flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-sky-200">
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
                       Total Customer Bill
                     </span>
                     <span className="text-xl font-extrabold font-luxury tabular-nums text-white">
@@ -4597,12 +4599,12 @@ function AppShell({ darkMode, setDarkMode }) {
           <button
             type="button"
             onClick={() => setIsMobileCartOpen(true)}
-            className="liquid-glass-header w-full text-white px-4 py-3.5 rounded-2xl shadow-2xl border border-white/25 flex items-center justify-between active:scale-[0.99] transition cursor-pointer"
+            className="liquid-glass-header w-full text-white px-4 py-3.5 rounded-2xl shadow-2xl border border-white/20 flex items-center justify-between active:scale-[0.99] transition cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <div className="relative">
-                <ShoppingCart className="w-5 h-5 text-sky-300" />
-                <span className="absolute -top-1.5 -right-2 bg-rose-500 text-white rounded-full text-[10px] font-black w-4 h-4 flex items-center justify-center">
+                <ShoppingCart className="w-5 h-5 text-emerald-300" />
+                <span className="absolute -top-1.5 -right-2 bg-emerald-500 text-white rounded-full text-[10px] font-black w-4 h-4 flex items-center justify-center">
                   {cartItemCount}
                 </span>
               </div>
@@ -4611,10 +4613,10 @@ function AppShell({ darkMode, setDarkMode }) {
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-black font-luxury tabular-nums text-sky-200">
+              <span className="text-sm font-black font-luxury tabular-nums text-emerald-300">
                 {formatNaira(cartTotal)}
               </span>
-              <span className="text-xs bg-sky-500/30 text-sky-100 px-2.5 py-1 rounded-xl font-bold">
+              <span className="text-xs bg-emerald-500/25 text-emerald-100 border border-emerald-400/30 px-2.5 py-1 rounded-xl font-bold">
                 Review & Pay →
               </span>
             </div>
@@ -5442,10 +5444,10 @@ function AppShell({ darkMode, setDarkMode }) {
         <div className="space-y-4">
           <div className="liquid-glass-header text-white p-4 rounded-2xl flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-sky-200 block">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 block">
                 Estimated Market Capital Needed
               </span>
-              <span className="text-xs text-stone-300">
+              <span className="text-xs text-slate-300">
                 Across {lowStockRestockPlan.length} provision item(s) at reorder threshold
               </span>
             </div>

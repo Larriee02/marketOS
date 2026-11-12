@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
-export function Modal({ isOpen, onClose, title, subtitle, children }) {
+export function Modal({ isOpen, onClose, title, subtitle, maxWidth = 'max-w-lg', children }) {
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
@@ -23,12 +23,12 @@ export function Modal({ isOpen, onClose, title, subtitle, children }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/55 backdrop-blur-md p-0 sm:p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0B1220]/65 backdrop-blur-sm p-0 sm:p-4"
       onClick={onClose}
     >
       <div
         style={{ color: 'var(--text-primary)' }}
-        className="liquid-glass-elevated rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 max-h-[92dvh] overflow-y-auto pb-safe transition-all"
+        className={`liquid-glass-elevated rounded-t-3xl sm:rounded-3xl ${maxWidth} w-full p-5 sm:p-6 space-y-4 max-h-[92dvh] overflow-y-auto pb-safe transition-all`}
         onClick={(e) => e.stopPropagation()}
       >
         <div

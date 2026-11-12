@@ -251,28 +251,35 @@ export function BatchAdjustModal({
       title="Quick Multi-Product Stock Adjustments"
       maxWidth="max-w-5xl"
     >
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Banner / Instructions */}
-        <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="p-4 liquid-glass-subtle rounded-2xl text-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <div
+              style={{
+                backgroundColor: 'var(--brand-blue-soft)',
+                borderColor: 'var(--brand-blue-border)',
+                color: 'var(--brand-blue)',
+              }}
+              className="w-9 h-9 rounded-xl border flex items-center justify-center shrink-0"
+            >
               <SlidersHorizontal className="w-5 h-5" />
             </div>
             <div>
-              <p className="font-semibold text-slate-100">
+              <p className="font-bold text-theme-primary">
                 Simultaneous Batch Stock Update
               </p>
-              <p className="text-xs text-slate-400">
-                Log restocks, write off expired or damaged goods, or adjust shelves across multiple products simultaneously in one atomic transaction.
+              <p className="text-xs text-theme-secondary">
+                Record sales, log restocks, write off expired or damaged goods, or adjust shelves across multiple products simultaneously.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-slate-400">Quick Reason:</span>
+            <span className="text-xs font-semibold text-theme-secondary">Quick Reason:</span>
             <select
               value={globalReason}
               onChange={(e) => handleApplyGlobalReason(e.target.value)}
-              className="bg-slate-950 border border-slate-700 text-xs text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500"
+              className="liquid-input text-xs rounded-xl px-2.5 py-1.5 font-semibold"
             >
               {MOVEMENT_TYPES.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -286,35 +293,35 @@ export function BatchAdjustModal({
         {/* Product Picker Section */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           {/* Left: Product Search & Quick Add */}
-          <div className="md:col-span-5 bg-slate-950/80 rounded-xl border border-slate-800/80 p-3 flex flex-col h-[400px]">
+          <div className="md:col-span-5 liquid-glass-subtle rounded-2xl p-3 flex flex-col h-[400px]">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              <span className="text-xs font-bold text-theme-secondary uppercase tracking-wider">
                 Select Products ({unselectedProducts.length} available)
               </span>
               {filteredUnselected.length > 0 && (
                 <button
                   type="button"
                   onClick={handleAddAllFiltered}
-                  className="text-xs text-emerald-400 hover:text-emerald-300 font-medium"
+                  className="text-xs text-theme-brand hover:underline font-bold cursor-pointer"
                 >
                   + Add Filtered ({filteredUnselected.length})
                 </button>
               )}
             </div>
             <div className="relative mb-2">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-theme-muted" />
               <input
                 type="text"
                 placeholder="Search products by name or SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full pl-9 pr-3 py-1.5 liquid-input rounded-xl text-xs"
               />
             </div>
             <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
               {filteredUnselected.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-4 text-slate-500">
-                  <PackageCheck className="w-8 h-8 mb-2 opacity-40 text-emerald-400" />
+                <div className="h-full flex flex-col items-center justify-center text-center p-4 text-theme-muted">
+                  <PackageCheck className="w-8 h-8 mb-2 opacity-60 text-theme-brand" />
                   <p className="text-xs">
                     {unselectedProducts.length === 0
                       ? 'All store products are in the batch list.'
@@ -326,21 +333,21 @@ export function BatchAdjustModal({
                   <div
                     key={prod.id}
                     onClick={() => handleAddProduct(prod)}
-                    className="flex items-center justify-between p-2 rounded-lg bg-slate-900/40 hover:bg-slate-800/60 border border-slate-800/60 cursor-pointer transition-colors group"
+                    className="flex items-center justify-between p-2.5 rounded-xl liquid-glass hover:opacity-90 cursor-pointer transition-colors group"
                   >
                     <div className="min-w-0 pr-2">
-                      <p className="text-xs font-medium text-slate-200 truncate group-hover:text-emerald-300">
+                      <p className="text-xs font-bold text-theme-primary truncate group-hover:text-theme-brand">
                         {prod.name}
                       </p>
-                      <p className="text-[10px] text-slate-400">
+                      <p className="text-[10px] text-theme-secondary">
                         SKU: {prod.sku || 'N/A'} • On Hand:{' '}
-                        <span className="font-semibold text-slate-300">{prod.stock_quantity}</span>{' '}
+                        <span className="font-bold text-theme-primary">{prod.stock_quantity}</span>{' '}
                         {prod.unit || 'units'}
                       </p>
                     </div>
                     <button
                       type="button"
-                      className="w-6 h-6 rounded bg-slate-800 group-hover:bg-emerald-500/20 text-slate-400 group-hover:text-emerald-400 flex items-center justify-center shrink-0"
+                      className="w-6 h-6 rounded-lg liquid-glass-subtle group-hover:liquid-btn-primary text-theme-secondary flex items-center justify-center shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
@@ -351,17 +358,20 @@ export function BatchAdjustModal({
           </div>
 
           {/* Right: Selected Adjustment Table */}
-          <div className="md:col-span-7 bg-slate-950/80 rounded-xl border border-slate-800/80 p-3 flex flex-col h-[400px]">
-            <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-800/60">
-              <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="md:col-span-7 liquid-glass-subtle rounded-2xl p-3 flex flex-col h-[400px]">
+            <div
+              style={{ borderColor: 'var(--border-outer)' }}
+              className="flex items-center justify-between mb-2 pb-2 border-b"
+            >
+              <span className="text-xs font-bold text-theme-secondary uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-theme-brand" />
                 Adjustment Batch ({selectedList.length} item{selectedList.length === 1 ? '' : 's'})
               </span>
               {selectedList.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setItems({})}
-                  className="text-xs text-rose-400 hover:text-rose-300"
+                  className="text-xs font-bold text-theme-outflow hover:underline cursor-pointer"
                 >
                   Clear All
                 </button>
@@ -370,10 +380,10 @@ export function BatchAdjustModal({
 
             <div className="flex-1 overflow-y-auto space-y-2 pr-1">
               {selectedList.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500">
-                  <SlidersHorizontal className="w-8 h-8 mb-2 opacity-30 text-slate-400" />
-                  <p className="text-xs font-medium text-slate-400">Batch is currently empty</p>
-                  <p className="text-[11px] text-slate-500 mt-1 max-w-xs">
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-theme-muted">
+                  <SlidersHorizontal className="w-8 h-8 mb-2 opacity-40" />
+                  <p className="text-xs font-bold text-theme-secondary">Batch is currently empty</p>
+                  <p className="text-[11px] text-theme-muted mt-1 max-w-xs">
                     Select products from the left panel to build your stock adjustment batch.
                   </p>
                 </div>
@@ -407,27 +417,31 @@ export function BatchAdjustModal({
                   return (
                     <div
                       key={product.id}
-                      className={`p-2.5 rounded-lg border transition-colors ${
+                      className={`p-2.5 rounded-xl border transition-colors ${
                         isError
-                          ? 'bg-rose-950/20 border-rose-800/50'
-                          : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'
+                          ? 'bg-red-500/10 border-red-500/40'
+                          : 'liquid-glass'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold text-slate-200 truncate">
+                          <p className="text-xs font-bold text-theme-primary truncate">
                             {product.name}
                           </p>
-                          <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                          <div className="flex items-center gap-2 text-[10px] text-theme-secondary">
                             <span>SKU: {product.sku || 'N/A'}</span>
                             <span>•</span>
                             <span>
-                              Shelf: <strong className="text-slate-200">{curStock}</strong> {product.unit}
+                              Shelf: <strong className="text-theme-primary">{curStock}</strong> {product.unit}
                             </span>
                             {product.cost_price > 0 && (
                               <>
                                 <span>•</span>
-                                <span>Cost: {formatCurrency(product.cost_price)}</span>
+                                <span>
+                                  {movement_type === 'SALE'
+                                    ? `Price: ${formatCurrency(product.selling_price)}`
+                                    : `Cost: ${formatCurrency(product.cost_price)}`}
+                                </span>
                               </>
                             )}
                           </div>
@@ -435,7 +449,7 @@ export function BatchAdjustModal({
                         <button
                           type="button"
                           onClick={() => handleRemoveProduct(product.id)}
-                          className="text-slate-500 hover:text-rose-400 p-1"
+                          className="text-theme-muted hover:text-theme-outflow p-1 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -445,7 +459,7 @@ export function BatchAdjustModal({
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
                         {/* Reason / Movement Type */}
                         <div>
-                          <label className="block text-[9px] text-slate-400 uppercase font-medium mb-0.5">
+                          <label className="block text-[9px] text-theme-secondary uppercase font-bold mb-0.5">
                             Reason
                           </label>
                           <select
@@ -453,7 +467,7 @@ export function BatchAdjustModal({
                             onChange={(e) =>
                               updateItemField(product.id, 'movement_type', e.target.value)
                             }
-                            className="w-full bg-slate-950 border border-slate-700/80 rounded px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-emerald-500"
+                            className="w-full liquid-input rounded-lg px-2 py-1 text-[11px] font-semibold"
                           >
                             {MOVEMENT_TYPES.map((t) => (
                               <option key={t.id} value={t.id}>
@@ -466,7 +480,7 @@ export function BatchAdjustModal({
                         {/* Mode & Quantity */}
                         <div>
                           <div className="flex items-center justify-between mb-0.5">
-                            <label className="text-[9px] text-slate-400 uppercase font-medium">
+                            <label className="text-[9px] text-theme-secondary uppercase font-bold">
                               {mode === 'DELTA' ? 'Units Change' : 'New Total'}
                             </label>
                             <button
@@ -478,7 +492,7 @@ export function BatchAdjustModal({
                                   mode === 'DELTA' ? 'SET_COUNT' : 'DELTA'
                                 )
                               }
-                              className="text-[9px] text-emerald-400 hover:underline"
+                              className="text-[9px] font-bold text-theme-brand hover:underline cursor-pointer"
                             >
                               Switch to {mode === 'DELTA' ? 'Set Total' : '+/- Diff'}
                             </button>
@@ -486,30 +500,30 @@ export function BatchAdjustModal({
                           <input
                             type="number"
                             min={mode === 'SET_COUNT' ? '0' : undefined}
-                            placeholder={mode === 'DELTA' ? 'e.g. 10 or -3' : `Shelf count`}
+                            placeholder={mode === 'DELTA' ? 'e.g. 10 or 3' : `Shelf count`}
                             value={quantity}
                             onChange={(e) =>
                               updateItemField(product.id, 'quantity', e.target.value)
                             }
-                            className="w-full bg-slate-950 border border-slate-700/80 rounded px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+                            className="w-full liquid-input rounded-lg px-2 py-1 text-xs font-bold"
                           />
                         </div>
 
                         {/* Outcome Preview */}
-                        <div className="flex flex-col justify-end bg-slate-950/60 p-1.5 rounded border border-slate-800">
-                          <span className="text-[9px] text-slate-400 uppercase">Projected Stock</span>
+                        <div className="flex flex-col justify-end liquid-glass-subtle p-1.5 rounded-lg">
+                          <span className="text-[9px] text-theme-secondary uppercase font-bold">Projected Stock</span>
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-300">
-                              {curStock} <ArrowRight className="w-3 h-3 inline text-slate-500 mx-0.5" />
+                            <span className="text-xs font-bold text-theme-primary">
+                              {curStock} <ArrowRight className="w-3 h-3 inline text-theme-muted mx-0.5" />
                               <span
                                 className={
                                   isError
-                                    ? 'text-rose-400'
+                                    ? 'text-theme-outflow'
                                     : diff > 0
-                                    ? 'text-emerald-400'
+                                    ? 'text-theme-inflow'
                                     : diff < 0
-                                    ? 'text-amber-400'
-                                    : 'text-slate-300'
+                                    ? 'text-theme-warning'
+                                    : 'text-theme-primary'
                                 }
                               >
                                 {projectedStock}
@@ -517,8 +531,8 @@ export function BatchAdjustModal({
                             </span>
                             {diff !== 0 && (
                               <span
-                                className={`text-[10px] font-semibold ${
-                                  diff > 0 ? 'text-emerald-400' : 'text-rose-400'
+                                className={`text-[10px] font-bold ${
+                                  diff > 0 ? 'text-theme-inflow' : 'text-theme-outflow'
                                 }`}
                               >
                                 {diff > 0 ? `+${diff}` : diff}
@@ -532,10 +546,10 @@ export function BatchAdjustModal({
                       <div className="mt-1.5">
                         <input
                           type="text"
-                          placeholder="Optional line note (e.g., invoice #, rack location, cause)"
+                          placeholder="Optional line note (e.g., invoice #, rack location, customer)"
                           value={note}
                           onChange={(e) => updateItemField(product.id, 'note', e.target.value)}
-                          className="w-full bg-slate-950/50 border border-slate-800/80 rounded px-2 py-0.5 text-[10px] text-slate-300 placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                          className="w-full liquid-input rounded-lg px-2 py-1 text-[10px]"
                         />
                       </div>
                     </div>
@@ -547,50 +561,50 @@ export function BatchAdjustModal({
         </div>
 
         {/* Global Batch Notes & Impact Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-3.5 liquid-glass-subtle rounded-2xl">
           <div className="md:col-span-6">
-            <label className="block text-xs font-medium text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-theme-primary mb-1">
               General Batch Reference Note
             </label>
             <input
               type="text"
               value={globalNote}
               onChange={(e) => setGlobalNote(e.target.value)}
-              placeholder="e.g. Weekly restock from Alaba Market or Monthly spoilage write-off"
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+              placeholder="e.g. Weekly restock from Alaba Market or Counter sales batch"
+              className="w-full liquid-input rounded-xl px-3 py-1.5 text-xs"
             />
           </div>
 
           <div className="md:col-span-6 grid grid-cols-3 gap-2 text-center">
-            <div className="bg-slate-950/80 p-2 rounded-lg border border-slate-800">
-              <span className="text-[10px] text-slate-400 block uppercase">Products Ready</span>
-              <span className="text-sm font-bold text-slate-100">
+            <div className="liquid-glass p-2 rounded-xl">
+              <span className="text-[10px] font-bold text-theme-secondary block uppercase">Products Ready</span>
+              <span className="text-sm font-extrabold font-luxury text-theme-primary">
                 {summary.validAdjustments} / {summary.totalItems}
               </span>
             </div>
-            <div className="bg-slate-950/80 p-2 rounded-lg border border-slate-800">
-              <span className="text-[10px] text-slate-400 block uppercase">Net Units</span>
+            <div className="liquid-glass p-2 rounded-xl">
+              <span className="text-[10px] font-bold text-theme-secondary block uppercase">Net Units</span>
               <span
-                className={`text-sm font-bold ${
+                className={`text-sm font-extrabold font-luxury ${
                   summary.netStockDiff > 0
-                    ? 'text-emerald-400'
+                    ? 'text-theme-inflow'
                     : summary.netStockDiff < 0
-                    ? 'text-rose-400'
-                    : 'text-slate-300'
+                    ? 'text-theme-outflow'
+                    : 'text-theme-primary'
                 }`}
               >
                 {summary.netStockDiff > 0 ? `+${summary.netStockDiff}` : summary.netStockDiff}
               </span>
             </div>
-            <div className="bg-slate-950/80 p-2 rounded-lg border border-slate-800">
-              <span className="text-[10px] text-slate-400 block uppercase">Est. Value Diff</span>
+            <div className="liquid-glass p-2 rounded-xl">
+              <span className="text-[10px] font-bold text-theme-secondary block uppercase">Est. Value</span>
               <span
-                className={`text-xs font-bold truncate block ${
+                className={`text-xs font-extrabold font-luxury truncate block ${
                   summary.netValueImpact > 0
-                    ? 'text-emerald-400'
+                    ? 'text-theme-inflow'
                     : summary.netValueImpact < 0
-                    ? 'text-rose-400'
-                    : 'text-slate-300'
+                    ? 'text-theme-outflow'
+                    : 'text-theme-primary'
                 }`}
               >
                 {formatCurrency(summary.netValueImpact)}
@@ -600,14 +614,17 @@ export function BatchAdjustModal({
         </div>
 
         {summary.errors.length > 0 && (
-          <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-theme-outflow text-xs font-semibold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{summary.errors[0]}</span>
           </div>
         )}
 
         {/* Modal Action Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-800">
+        <div
+          style={{ borderColor: 'var(--border-outer)' }}
+          className="flex items-center justify-end gap-3 pt-2 border-t"
+        >
           <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>

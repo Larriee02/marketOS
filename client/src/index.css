@@ -1,148 +1,183 @@
 @import "tailwindcss";
 
-/* CRITICAL FOR TAILWIND V4: Make `dark:` utilities respond to the `.dark` class toggle! */
-@custom-variant dark (&:where(.dark, .dark *));
+/* CRITICAL FOR TAILWIND V4: Make `dark:` utilities respond to both `.dark` and `[data-theme="dark"]` */
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+/* ==========================================================================
+   DESIGN SYSTEM SPECIFICATION: NAVY & EMERALD
+   A coordinated light and dark colour system for a professional retail,
+   POS and stock management application.
+   ========================================================================== */
 
 :root {
   color-scheme: light;
 
-  /* LIGHT MODE: Harmonized with Gradient Lab Palette
-     [#1a2a4a, #3a5a8a, #8aa8d0, #d0dcf0, #f4f7fc] */
-  --bg-app: #f4f7fc;
+  /* 5. Core Design System CSS Variables — Light Mode */
+  --bg: #F5F7FA;               /* App Background: Main page and dashboard background */
+  --surface: #FFFFFF;          /* Surface / Cards: Cards, tables, modals and panels */
+  --surface-elevated: #FFFFFF; /* Raised cards, modals and dropdowns */
+  --primary: #142B45;          /* Primary Navy: Sidebar, brand foundation, headings */
+  --accent: #15966A;           /* Primary Emerald: Primary actions, active navigation, highlights */
+  --text: #25364A;             /* Primary Text: Body copy and important labels */
+  --text-muted: #64748B;       /* Secondary Text: Helper text and metadata */
+  --border: #E2E8F0;           /* Dividers, table borders and outlines */
+
+  /* 3. Functional Colours — Light Mode */
+  --color-success: #16A34A;    /* Completed sales, successful payments, healthy stock */
+  --color-warning: #D97706;    /* Low stock, reorder reminders, pending attention */
+  --color-danger: #DC2626;     /* Out of stock, failed transactions, destructive actions */
+  --color-info: #2563EB;       /* Neutral notices and informational messages */
+
+  /* Semantic Application Surface Mappings (Light Mode) */
+  --bg-app: var(--bg);
   --bg-mesh:
-    radial-gradient(at 12% 10%, rgba(26, 42, 74, 0.14) 0px, transparent 50%),
-    radial-gradient(at 88% 15%, rgba(58, 90, 138, 0.16) 0px, transparent 52%),
-    radial-gradient(at 50% 90%, rgba(138, 168, 208, 0.25) 0px, transparent 58%),
-    linear-gradient(180deg, #f4f7fc 0%, #d0dcf0 100%);
+    radial-gradient(at 10% 8%, rgba(20, 43, 69, 0.05) 0px, transparent 48%),
+    radial-gradient(at 90% 12%, rgba(21, 150, 106, 0.06) 0px, transparent 50%),
+    linear-gradient(180deg, #F5F7FA 0%, #EFF3F8 100%);
 
-  --bg-card: rgba(244, 247, 252, 0.78);
-  --bg-card-elevated: rgba(255, 255, 255, 0.90);
-  --bg-subtle: rgba(208, 220, 240, 0.50);
-  --bg-input: rgba(255, 255, 255, 0.90);
-  --bg-option: #f4f7fc;
-  --bg-header: rgba(26, 42, 74, 0.92);
+  --bg-card: var(--surface);
+  --bg-card-elevated: var(--surface-elevated);
+  --bg-subtle: #F8FAFC;
+  --bg-input: #FFFFFF;
+  --bg-option: #FFFFFF;
+  --bg-header: var(--primary); /* #142B45 Navy Navigation & Header Foundation */
 
-  --border-color: rgba(255, 255, 255, 0.94);
-  --border-outer: rgba(138, 168, 208, 0.45);
-  --divider-color: rgba(138, 168, 208, 0.32);
+  --border-color: #FFFFFF;
+  --border-outer: var(--border);
+  --divider-color: var(--border);
 
   --glass-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.96),
-    0 16px 38px -10px rgba(26, 42, 74, 0.12),
-    0 4px 12px -2px rgba(26, 42, 74, 0.06);
+    0 1px 3px 0 rgba(20, 43, 69, 0.06),
+    0 8px 24px -6px rgba(20, 43, 69, 0.06);
 
-  /* High-Contrast Oxford Navy & Steel Blue Typography (Light Mode) */
-  --text-primary: #14223d;
-  --text-secondary: #35517d;
-  --text-muted: #6882aa;
+  /* Typography Roles (Light Mode) */
+  --heading-color: var(--primary); /* #142B45 Primary Navy for headings */
+  --text-primary: var(--text);     /* #25364A Primary Text for body copy & labels */
+  --text-secondary: var(--text-muted); /* #64748B Secondary Text for helper & metadata */
 
-  /* Gradient Lab Steel Ocean & Deep Navy Accents (Light Mode) */
-  --brand-blue: #2f4f80;
-  --brand-blue-hover: #1a2a4a;
-  --brand-blue-soft: rgba(58, 90, 138, 0.13);
-  --brand-blue-border: rgba(58, 90, 138, 0.32);
-  --brand-gradient: linear-gradient(135deg, #1a2a4a 0%, #3a5a8a 58%, #5278b0 100%);
+  /* Brand & Primary Action Roles (Light Mode: #15966A Primary Emerald & #142B45 Primary Navy) */
+  --brand-blue: var(--accent);
+  --brand-blue-hover: #117A56;
+  --brand-blue-soft: rgba(21, 150, 106, 0.10);
+  --brand-blue-border: rgba(21, 150, 106, 0.28);
+  --brand-gradient: linear-gradient(135deg, #15966A 0%, #12825B 100%);
+  --btn-primary-text: #FFFFFF;
 
-  --brand-gold: #3a5a8a;
-  --brand-gold-soft: rgba(138, 168, 208, 0.22);
-  --brand-gold-border: rgba(58, 90, 138, 0.30);
-  --gold-gradient: linear-gradient(135deg, #3a5a8a 0%, #648bc4 100%);
+  --brand-gold: var(--primary);
+  --brand-gold-soft: rgba(20, 43, 69, 0.08);
+  --brand-gold-border: rgba(20, 43, 69, 0.22);
+  --gold-gradient: linear-gradient(135deg, #142B45 0%, #1E3E62 100%);
 
-  --color-inflow: #059669;
-  --color-outflow: #e11d48;
-  --color-warning: #d97706;
+  --color-inflow: var(--color-success);  /* #16A34A */
+  --color-outflow: var(--color-danger);  /* #DC2626 */
 
-  /* Badge Surfaces & Text (Light Mode) */
-  --badge-info-bg: rgba(58, 90, 138, 0.13);
-  --badge-info-text: #1a2a4a;
-  --badge-info-border: rgba(58, 90, 138, 0.30);
+  /* Badge Surfaces & Text (Light Mode — High Contrast Functional Pairings) */
+  --badge-info-bg: rgba(37, 99, 235, 0.10);
+  --badge-info-text: #1D4ED8;
+  --badge-info-border: rgba(37, 99, 235, 0.25);
 
-  --badge-success-bg: rgba(5, 150, 105, 0.12);
-  --badge-success-text: #065f46;
-  --badge-success-border: rgba(5, 150, 105, 0.28);
+  --badge-success-bg: rgba(22, 163, 74, 0.10);
+  --badge-success-text: #15803D;
+  --badge-success-border: rgba(22, 163, 74, 0.26);
 
-  --badge-warning-bg: rgba(217, 119, 6, 0.13);
-  --badge-warning-text: #92400e;
-  --badge-warning-border: rgba(217, 119, 6, 0.30);
+  --badge-warning-bg: rgba(217, 119, 6, 0.11);
+  --badge-warning-text: #B45309;
+  --badge-warning-border: rgba(217, 119, 6, 0.28);
 
-  --badge-danger-bg: rgba(225, 29, 72, 0.12);
-  --badge-danger-text: #9f1239;
-  --badge-danger-border: rgba(225, 29, 72, 0.28);
+  --badge-danger-bg: rgba(220, 38, 38, 0.10);
+  --badge-danger-text: #B91C1C;
+  --badge-danger-border: rgba(220, 38, 38, 0.26);
 
-  --badge-neutral-bg: rgba(138, 168, 208, 0.22);
-  --badge-neutral-text: #1a2a4a;
-  --badge-neutral-border: rgba(138, 168, 208, 0.40);
+  --badge-neutral-bg: #F1F5F9;
+  --badge-neutral-text: #25364A;
+  --badge-neutral-border: #CBD5E1;
 }
 
-.dark {
+.dark,
+[data-theme="dark"] {
   color-scheme: dark;
 
-  /* DARK MODE: Nocturnal Abyssal Navy, Steel Cobalt & Luminous Periwinkle
-     [#050912, #0b1528, #13223e, #1a2a4a, #2c466f] + [#8aa8d0, #d0dcf0, #f4f7fc] */
-  --bg-app: #050912;
+  /* 5. Core Design System CSS Variables — Dark Mode
+     Midnight navy surfaces with a softer, brighter emerald accent (#34D399) */
+  --bg: #0B1220;               /* Dark Background: App canvas and page background */
+  --surface: #111C2E;          /* Dark Surface: Sidebar, cards and main panels */
+  --surface-elevated: #18263A; /* Elevated Surface: Dropdowns, hover panels and raised cards */
+  --primary: #142B45;          /* Primary Navy foundation */
+  --accent: #34D399;           /* Dark Emerald: Primary buttons, active states and highlights */
+  --text: #E7EEF7;             /* Dark Text: Headings and primary body text */
+  --text-muted: #A7B4C5;       /* Muted Text: Secondary labels and helper text */
+  --border: #29384D;           /* Dark Border: Dividers, table borders and outlines */
+
+  /* 3. Functional Colours — Dark Mode */
+  --color-success: #4ADE80;    /* Completed sales, successful payments, healthy stock */
+  --color-warning: #FBBF24;    /* Low stock, reorder reminders, pending attention */
+  --color-danger: #F87171;     /* Out of stock, failed transactions, destructive actions */
+  --color-info: #60A5FA;       /* Neutral notices and informational messages */
+
+  /* Semantic Application Surface Mappings (Dark Mode) */
+  --bg-app: var(--bg);
   --bg-mesh:
-    radial-gradient(at 12% 10%, rgba(58, 90, 138, 0.25) 0px, transparent 50%),
-    radial-gradient(at 88% 15%, rgba(138, 168, 208, 0.16) 0px, transparent 52%),
-    radial-gradient(at 50% 90%, rgba(26, 42, 74, 0.38) 0px, transparent 58%),
-    linear-gradient(180deg, #0b1528 0%, #050912 100%);
+    radial-gradient(at 12% 10%, rgba(20, 43, 69, 0.45) 0px, transparent 52%),
+    radial-gradient(at 88% 14%, rgba(52, 211, 153, 0.07) 0px, transparent 50%),
+    linear-gradient(180deg, #0B1220 0%, #0B1220 100%);
 
-  --bg-card: rgba(13, 23, 42, 0.74);
-  --bg-card-elevated: rgba(20, 34, 62, 0.86);
-  --bg-subtle: rgba(26, 42, 74, 0.56);
-  --bg-input: rgba(10, 18, 34, 0.86);
-  --bg-option: #0b1528;
-  --bg-header: rgba(6, 11, 22, 0.88);
+  --bg-card: var(--surface);                  /* #111C2E */
+  --bg-card-elevated: var(--surface-elevated);/* #18263A */
+  --bg-subtle: var(--surface-elevated);       /* #18263A */
+  --bg-input: #0B1220;                        /* #0B1220 recessed input inside #111C2E/#18263A cards */
+  --bg-option: #111C2E;
+  --bg-header: var(--surface);                /* #111C2E Dark Surface for navigation & header */
 
-  --border-color: rgba(208, 220, 240, 0.12);
-  --border-outer: rgba(138, 168, 208, 0.24);
-  --divider-color: rgba(138, 168, 208, 0.16);
+  --border-color: rgba(231, 238, 247, 0.07);
+  --border-outer: var(--border);              /* #29384D */
+  --divider-color: var(--border);             /* #29384D */
 
   --glass-shadow:
-    inset 0 1px 0 0 rgba(208, 220, 240, 0.12),
-    0 22px 46px -12px rgba(2, 5, 12, 0.68),
-    0 4px 14px -2px rgba(2, 5, 12, 0.45);
+    inset 0 1px 0 0 rgba(231, 238, 247, 0.05),
+    0 18px 40px -12px rgba(5, 9, 18, 0.65),
+    0 4px 12px -2px rgba(5, 9, 18, 0.45);
 
-  /* Polar Alabaster & Periwinkle Mist Typography (Dark Mode) */
-  --text-primary: #f4f7fc;
-  --text-secondary: #a8bfe0;
-  --text-muted: #6c88b0;
+  /* Typography Roles (Dark Mode) */
+  --heading-color: var(--text);               /* #E7EEF7 */
+  --text-primary: var(--text);                /* #E7EEF7 */
+  --text-secondary: var(--text-muted);        /* #A7B4C5 */
 
-  /* Luminous Periwinkle & Steel Cobalt Accents (Dark Mode) */
-  --brand-blue: #8aa8d0;
-  --brand-blue-hover: #d0dcf0;
-  --brand-blue-soft: rgba(138, 168, 208, 0.16);
-  --brand-blue-border: rgba(138, 168, 208, 0.36);
-  --brand-gradient: linear-gradient(135deg, #243b66 0%, #3a5a8a 52%, #5b82b8 100%);
+  /* Brand & Primary Action Roles (Dark Mode: #34D399 Dark Emerald) */
+  --brand-blue: var(--accent);                /* #34D399 */
+  --brand-blue-hover: #6EE7B7;
+  --brand-blue-soft: rgba(52, 211, 153, 0.14);
+  --brand-blue-border: rgba(52, 211, 153, 0.34);
+  --brand-gradient: linear-gradient(135deg, #34D399 0%, #10B981 100%);
+  --btn-primary-text: #0B1220;                /* High-contrast Midnight Navy text on #34D399 Emerald (WCAG AAA) */
 
-  --brand-gold: #8aa8d0;
-  --brand-gold-soft: rgba(138, 168, 208, 0.16);
-  --brand-gold-border: rgba(138, 168, 208, 0.34);
-  --gold-gradient: linear-gradient(135deg, #3a5a8a 0%, #6890c8 100%);
+  --brand-gold: var(--accent);
+  --brand-gold-soft: rgba(52, 211, 153, 0.14);
+  --brand-gold-border: rgba(52, 211, 153, 0.32);
+  --gold-gradient: linear-gradient(135deg, #18263A 0%, #142B45 100%);
 
-  --color-inflow: #34d399;
-  --color-outflow: #fb7185;
-  --color-warning: #fbbf24;
+  --color-inflow: var(--color-success);       /* #4ADE80 */
+  --color-outflow: var(--color-danger);       /* #F87171 */
 
-  /* Badge Surfaces & Text (Dark Mode) */
-  --badge-info-bg: rgba(58, 90, 138, 0.32);
-  --badge-info-text: #d0dcf0;
-  --badge-info-border: rgba(138, 168, 208, 0.40);
+  /* Badge Surfaces & Text (Dark Mode — High Contrast Functional Pairings) */
+  --badge-info-bg: rgba(96, 165, 250, 0.14);
+  --badge-info-text: #60A5FA;
+  --badge-info-border: rgba(96, 165, 250, 0.32);
 
-  --badge-success-bg: rgba(16, 185, 129, 0.18);
-  --badge-success-text: #a7f3d0;
-  --badge-success-border: rgba(52, 211, 153, 0.34);
+  --badge-success-bg: rgba(74, 222, 128, 0.14);
+  --badge-success-text: #4ADE80;
+  --badge-success-border: rgba(74, 222, 128, 0.32);
 
-  --badge-warning-bg: rgba(245, 158, 11, 0.18);
-  --badge-warning-text: #fde68a;
-  --badge-warning-border: rgba(251, 191, 36, 0.34);
+  --badge-warning-bg: rgba(251, 191, 36, 0.14);
+  --badge-warning-text: #FBBF24;
+  --badge-warning-border: rgba(251, 191, 36, 0.32);
 
-  --badge-danger-bg: rgba(244, 63, 94, 0.18);
-  --badge-danger-text: #fecdd3;
-  --badge-danger-border: rgba(251, 113, 133, 0.34);
+  --badge-danger-bg: rgba(248, 113, 113, 0.14);
+  --badge-danger-text: #F87171;
+  --badge-danger-border: rgba(248, 113, 113, 0.32);
 
-  --badge-neutral-bg: rgba(138, 168, 208, 0.16);
-  --badge-neutral-text: #d0dcf0;
-  --badge-neutral-border: rgba(138, 168, 208, 0.28);
+  --badge-neutral-bg: #18263A;
+  --badge-neutral-text: #E7EEF7;
+  --badge-neutral-border: #29384D;
 }
 
 * {
@@ -195,10 +230,10 @@ h1,
 h2,
 h3 {
   transition:
-    background-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    color 0.2s ease,
-    box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    background-color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.18s ease,
+    box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 h1,
@@ -207,7 +242,15 @@ h3,
 .font-luxury {
   font-family: "Outfit", "Plus Jakarta Sans", -apple-system, sans-serif;
   letter-spacing: -0.025em;
-  color: var(--text-primary);
+  color: var(--heading-color);
+}
+
+/* Preserve white headings inside Primary Navy header bars */
+.liquid-glass-header h1,
+.liquid-glass-header h2,
+.liquid-glass-header h3,
+.liquid-glass-header .font-luxury {
+  color: #FFFFFF;
 }
 
 .tabular-nums {
@@ -245,7 +288,7 @@ h3,
   background-color: var(--bg-input);
   border: 1px solid var(--border-outer);
   color: var(--text-primary);
-  box-shadow: inset 0 1px 2px 0 rgba(26, 42, 74, 0.04);
+  box-shadow: inset 0 1px 2px 0 rgba(20, 43, 69, 0.04);
 }
 
 .liquid-input::placeholder {
@@ -255,7 +298,7 @@ h3,
 
 .liquid-input:focus {
   outline: none;
-  border-color: var(--brand-blue);
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--brand-blue-soft);
 }
 
@@ -266,8 +309,6 @@ select.liquid-input option {
 
 .liquid-glass {
   background-color: var(--bg-card);
-  backdrop-filter: blur(24px) saturate(185%);
-  -webkit-backdrop-filter: blur(24px) saturate(185%);
   border: 1px solid var(--border-outer);
   box-shadow: var(--glass-shadow);
   color: var(--text-primary);
@@ -275,8 +316,6 @@ select.liquid-input option {
 
 .liquid-glass-elevated {
   background-color: var(--bg-card-elevated);
-  backdrop-filter: blur(28px) saturate(195%);
-  -webkit-backdrop-filter: blur(28px) saturate(195%);
   border: 1px solid var(--border-outer);
   box-shadow: var(--glass-shadow);
   color: var(--text-primary);
@@ -284,37 +323,47 @@ select.liquid-input option {
 
 .liquid-glass-header {
   background-color: var(--bg-header);
-  backdrop-filter: blur(24px) saturate(185%);
-  -webkit-backdrop-filter: blur(24px) saturate(185%);
-  border-bottom: 1px solid rgba(138, 168, 208, 0.24);
+  border-bottom: 1px solid var(--border-outer);
   box-shadow:
-    inset 0 -1px 0 0 rgba(138, 168, 208, 0.18),
-    0 10px 30px -10px rgba(26, 42, 74, 0.36);
+    inset 0 -1px 0 0 rgba(255, 255, 255, 0.08),
+    0 8px 24px -8px rgba(11, 18, 32, 0.28);
 }
 
 .liquid-glass-subtle {
   background-color: var(--bg-subtle);
-  backdrop-filter: blur(16px) saturate(175%);
-  -webkit-backdrop-filter: blur(16px) saturate(175%);
   border: 1px solid var(--border-outer);
-  box-shadow: inset 0 1px 0 0 var(--border-color);
   color: var(--text-primary);
 }
 
 .liquid-btn-primary {
   background: var(--brand-gradient);
-  color: #f4f7fc !important;
-  border: 1px solid rgba(208, 220, 240, 0.28);
+  color: var(--btn-primary-text) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow:
-    inset 0 1px 0 0 rgba(244, 247, 252, 0.35),
-    0 8px 20px -4px rgba(26, 42, 74, 0.42);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.25),
+    0 6px 16px -4px rgba(21, 150, 106, 0.35);
+}
+
+.dark .liquid-btn-primary,
+[data-theme="dark"] .liquid-btn-primary {
+  border-color: rgba(52, 211, 153, 0.45);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.35),
+    0 6px 18px -4px rgba(52, 211, 153, 0.28);
+}
+
+.liquid-btn-primary *,
+.liquid-btn-primary svg,
+.liquid-btn-primary span {
+  color: inherit;
 }
 
 .liquid-btn-primary:hover {
   transform: translateY(-1px);
+  filter: brightness(1.04);
   box-shadow:
-    inset 0 1px 0 0 rgba(244, 247, 252, 0.48),
-    0 12px 26px -4px rgba(26, 42, 74, 0.54);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.35),
+    0 10px 22px -4px rgba(21, 150, 106, 0.42);
 }
 
 .liquid-btn-primary:active {
@@ -323,18 +372,16 @@ select.liquid-input option {
 
 .liquid-btn-gold {
   background: var(--gold-gradient);
-  color: #f4f7fc !important;
-  border: 1px solid rgba(208, 220, 240, 0.28);
+  color: #FFFFFF !important;
+  border: 1px solid var(--border-outer);
   box-shadow:
-    inset 0 1px 0 0 rgba(244, 247, 252, 0.38),
-    0 8px 20px -4px rgba(58, 90, 138, 0.40);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+    0 6px 16px -4px rgba(20, 43, 69, 0.30);
 }
 
 .liquid-btn-gold:hover {
   transform: translateY(-1px);
-  box-shadow:
-    inset 0 1px 0 0 rgba(244, 247, 252, 0.50),
-    0 12px 26px -4px rgba(58, 90, 138, 0.52);
+  filter: brightness(1.06);
 }
 
 .theme-divider > :not([hidden]) ~ :not([hidden]) {
