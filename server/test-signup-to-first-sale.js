@@ -239,9 +239,9 @@ async function runTests() {
   console.log('✅ Direct Product Sell & Batch Sell verified in Activity History and Cashbook');
 
   // ==========================================
-  // MILESTONE 7: Google & Apple OAuth 2.0 / OIDC Authorize & Callback Flow
+  // MILESTONE 7: Google OAuth 2.0 / OIDC Authorize & Callback Flow
   // ==========================================
-  console.log('\n📌 MILESTONE 7: Google & Apple OAuth 2.0 Authorize, Redirect & Callback Flow');
+  console.log('\n📌 MILESTONE 7: Google OAuth 2.0 Authorize, Redirect & Callback Flow');
   const oauthService = require('./src/services/oauth.service');
 
   // 1. State signing & verification
@@ -268,19 +268,7 @@ async function runTests() {
   );
   assert.ok(googleAuthUrl.includes('client_id=123456-test.apps.googleusercontent.com'), 'Google authorize URL must include client_id');
 
-  // 3. Apple OAuth 2.0 Authorize URL (appleid.apple.com)
-  const appleAuthUrl = oauthService.buildAppleAuthorizeUrl({
-    clientId: 'com.stockflow.web',
-    redirectUri: 'https://stockflow-pro.vercel.app/api/v1/auth/oauth/apple/callback',
-    state: stateToken,
-    nonce: 'test-nonce-123',
-  });
-  assert.ok(
-    appleAuthUrl.startsWith('https://appleid.apple.com/auth/authorize?'),
-    'Apple authorize URL must point to appleid.apple.com/auth/authorize'
-  );
-
-  // 4. OAuth Sign-In with Verified Provider Profile + Callback PostMessage HTML
+  // 3. OAuth Sign-In with Verified Provider Profile + Callback PostMessage HTML
   const oauthEmail = `oauth.${Date.now()}@gmail.com`;
   const oauthResult = await authService.oauthSignIn({
     provider: 'GOOGLE',
@@ -305,7 +293,7 @@ async function runTests() {
     origin: 'https://stockflow-pro.vercel.app',
   });
   assert.ok(callbackHtml.includes('STOCKFLOW_OAUTH_SUCCESS'), 'Callback HTML must post STOCKFLOW_OAUTH_SUCCESS to opener');
-  console.log('✅ Google (`accounts.google.com`) & Apple (`appleid.apple.com`) OAuth 2.0 Redirect, Gateway & Callback verified');
+  console.log('✅ Google (`accounts.google.com`) OAuth 2.0 Redirect, Gateway & Callback verified');
 
   console.log('\n🎉 ALL MILESTONES IN THE SIGNUP-TO-FIRST-SALE JOURNEY COMPLETED AND VERIFIED 100% GREEN!\n');
 }

@@ -215,14 +215,14 @@ app.post(
   })
 );
 
-/* ------- Real Google (accounts.google.com) & Apple (appleid.apple.com) OAuth 2.0 / OIDC Redirects ------- */
+/* ------- Real Google (accounts.google.com) OAuth 2.0 / OIDC Redirects ------- */
 
 app.get(
   '/api/v1/auth/oauth/:provider/authorize',
   asyncHandler(async (req, res) => {
     const oauthService = require('./services/oauth.service');
     const provider = String(req.params.provider || '').toUpperCase();
-    if (!['GOOGLE', 'APPLE'].includes(provider)) {
+    if (provider !== 'GOOGLE') {
       throw new AppError('Unsupported OAuth provider.', 400);
     }
 
@@ -235,7 +235,7 @@ app.get(
       city: req.query.city || 'Lagos',
     });
 
-    if (provider === 'GOOGLE' && (env.GOOGLE_CLIENT_ID || clientIdOverride)) {
+    if (env.GOOGLE_CLIENT_ID || clientIdOverride) {
       const url = oauthService.buildGoogleAuthorizeUrl({
         req,
         state,
@@ -244,18 +244,9 @@ app.get(
       return res.redirect(302, url);
     }
 
-    if (provider === 'APPLE' && (env.APPLE_CLIENT_ID || clientIdOverride)) {
-      const url = oauthService.buildAppleAuthorizeUrl({
-        req,
-        state,
-        clientId: clientIdOverride,
-      });
-      return res.redirect(302, url);
-    }
-
-    // Render authentic Google Accounts / Apple ID OAuth 2.0 Authorization Gateway window
-    const callbackUrl = `${origin}/api/v1/auth/oauth/${provider.toLowerCase()}/callback`;
-    const authorizeUrl = `${origin}/api/v1/auth/oauth/${provider.toLowerCase()}/authorize`;
+    // Render authentic Google Accounts OAuth 2.0 Authorization Gateway window
+    const callbackUrl = `${origin}/api/v1/auth/oauth/google/callback`;
+    const authorizeUrl = `${origin}/api/v1/auth/oauth/google/authorize`;
     res
       .status(200)
       .type('html')
@@ -275,13 +266,13 @@ app.get(
 const handleOAuthCallback = asyncHandler(async (req, res) => {
   const oauthService = require('./services/oauth.service');
   const provider = String(req.params.provider || '').toUpperCase();
-  if (!['GOOGLE', 'APPLE'].includes(provider)) {
+  if (provider !== 'GOOGLE') {
     throw new AppError('Unsupported OAuth provider.', 400);
   }
 
   const origin = oauthService.getRequestOrigin(req);
-  const callbackUrl = `${origin}/api/v1/auth/oauth/${provider.toLowerCase()}/callback`;
-  const authorizeUrl = `${origin}/api/v1/auth/oauth/${provider.toLowerCase()}/authorize`;
+  const callbackUrl = `${origin}/api/v1/auth/oauth/google/callback`;
+  const authorizeUrl = `${origin}/api/v1/auth/oauth/google/authorize`;
   const params = { ...(req.query || {}), ...(req.body || {}) };
   const stateData = oauthService.verifyOAuthState(params.state || '');
 
@@ -295,7 +286,7 @@ const handleOAuthCallback = asyncHandler(async (req, res) => {
 
   try {
     let verifiedProfile = null;
-    if (provider === 'GOOGLE' && params.code) {
+    if (params.code) {
       const verified = await oauthService.exchangeGoogleCodeForProfile({
         code: params.code,
         redirectUri: env.GOOGLE_REDIRECT_URI || callbackUrl,
@@ -310,22 +301,6 @@ const handleOAuthCallback = asyncHandler(async (req, res) => {
       };
     }
 
-    // Parse Apple's optional `user` JSON payload (sent on first sign-in via form_post)
-    let appleFullName = params.full_name || '';
-    if (provider === 'APPLE' && params.user) {
-      try {
-        const parsedUser = typeof params.user === 'string' ? JSON.parse(params.user) : params.user;
-        if (parsedUser?.name) {
-          appleFullName = [parsedUser.name.firstName, parsedUser.name.lastName]
-            .filter(Boolean)
-            .join(' ')
-            .trim();
-        }
-      } catch {
-        // ignore malformed user JSON
-      }
-    }
-
     const { user, token, isNewUser } = await authService.oauthSignIn(
       {
         provider,
@@ -334,7 +309,7 @@ const handleOAuthCallback = asyncHandler(async (req, res) => {
         access_token: params.access_token || undefined,
         verifiedProfile,
         email: params.email,
-        full_name: appleFullName || params.full_name,
+        full_name: params.full_name,
         business_name: params.business_name,
         currency: stateData.currency || params.currency || 'NGN',
         city: stateData.city || params.city || 'Lagos',

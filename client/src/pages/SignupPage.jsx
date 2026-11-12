@@ -250,7 +250,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
                   </button>
                 </div>
 
-                {/* Social OAuth Sign-Up Buttons (Google & Apple) */}
+                {/* Google OAuth Sign-Up Button */}
                 <OAuthButtons
                   actionLabel="Sign up"
                   onAuthenticated={onAuthenticated}

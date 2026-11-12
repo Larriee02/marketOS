@@ -51,16 +51,8 @@ export function GoogleIcon() {
   );
 }
 
-export function AppleIcon() {
-  return (
-    <svg className="w-4 h-4 shrink-0 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-    </svg>
-  );
-}
-
 export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onError }) {
-  const [connectingProvider, setConnectingProvider] = useState(null); // 'GOOGLE' | 'APPLE' | null
+  const [connectingGoogle, setConnectingGoogle] = useState(false);
   const popupRef = useRef(null);
   const pollTimerRef = useRef(null);
   const initialTokenRef = useRef('');
@@ -80,7 +72,7 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
         setStoredToken(data.token);
       }
 
-      setConnectingProvider(null);
+      setConnectingGoogle(false);
       if (data.user && onAuthenticated) {
         onAuthenticated(data.user);
       }
@@ -95,17 +87,16 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
     };
   }, [onAuthenticated]);
 
-  const startOAuthPopup = (provider) => {
+  const startGoogleOAuthPopup = () => {
     if (onError) onError('');
 
     // Use official Google Identity Services (accounts.google.com/gsi/client) popup when available
     if (
-      provider === 'GOOGLE' &&
       GOOGLE_CLIENT_ID &&
       typeof window !== 'undefined' &&
       window.google?.accounts?.oauth2?.initTokenClient
     ) {
-      setConnectingProvider('GOOGLE');
+      setConnectingGoogle(true);
       try {
         const tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: GOOGLE_CLIENT_ID,
@@ -113,14 +104,14 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
           prompt: 'select_account',
           callback: async (tokenResponse) => {
             if (tokenResponse?.error) {
-              setConnectingProvider(null);
+              setConnectingGoogle(false);
               if (tokenResponse.error !== 'popup_closed_by_user' && onError) {
                 onError(tokenResponse.error_description || 'Google sign-in was cancelled.');
               }
               return;
             }
             if (!tokenResponse?.access_token) {
-              setConnectingProvider(null);
+              setConnectingGoogle(false);
               return;
             }
             try {
@@ -135,17 +126,17 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
               if (data?.token) {
                 setStoredToken(data.token);
               }
-              setConnectingProvider(null);
+              setConnectingGoogle(false);
               if (data?.user && onAuthenticated) {
                 onAuthenticated(data.user);
               }
             } catch (err) {
-              setConnectingProvider(null);
+              setConnectingGoogle(false);
               if (onError) onError(err.message || 'Failed to verify Google account.');
             }
           },
           error_callback: (err) => {
-            setConnectingProvider(null);
+            setConnectingGoogle(false);
             if (err?.type && err.type !== 'popup_closed' && onError) {
               onError('Google sign-in window closed before completing.');
             }
@@ -158,11 +149,10 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
       }
     }
 
-    const providerSlug = provider.toLowerCase();
-    const authorizeUrl = `/api/v1/auth/oauth/${providerSlug}/authorize`;
+    const authorizeUrl = '/api/v1/auth/oauth/google/authorize';
 
     initialTokenRef.current = getStoredToken() || '';
-    setConnectingProvider(provider);
+    setConnectingGoogle(true);
 
     // Center the OAuth 2.0 popup window over the current browser window
     const width = 500;
@@ -175,7 +165,7 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
     const top = Math.max(0, Math.round(dualScreenTop + (screenHeight - height) / 2));
 
     const features = `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=yes,status=no,resizable=yes,scrollbars=yes`;
-    const popup = window.open(authorizeUrl, `stockflow_${providerSlug}_oauth`, features);
+    const popup = window.open(authorizeUrl, 'stockflow_google_oauth', features);
 
     if (!popup || popup.closed || typeof popup.closed === 'undefined') {
       // Popup blocked (common on mobile browsers) -> perform standard full-page OAuth redirect
@@ -203,7 +193,7 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
         try {
           const meData = await apiFetch('/api/v1/auth/me');
           if (meData?.user && onAuthenticated) {
-            setConnectingProvider(null);
+            setConnectingGoogle(false);
             onAuthenticated(meData.user);
             return;
           }
@@ -215,56 +205,32 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
       if (!popupRef.current || popupRef.current.closed) {
         clearInterval(pollTimerRef.current);
         pollTimerRef.current = null;
-        setConnectingProvider(null);
+        setConnectingGoogle(false);
       }
     }, 450);
   };
 
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        <button
-          type="button"
-          disabled={Boolean(connectingProvider)}
-          onClick={() => startOAuthPopup('GOOGLE')}
-          className="liquid-glass-subtle hover:scale-[1.01] active:scale-[0.99] py-3 px-4 rounded-2xl text-xs font-extrabold text-theme-primary flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 transition-all"
-        >
-          {connectingProvider === 'GOOGLE' ? (
-            <Loader2 className="w-4 h-4 animate-spin text-[#4285F4]" />
-          ) : (
-            <GoogleIcon />
-          )}
-          <span>
-            {connectingProvider === 'GOOGLE'
-              ? 'Connecting to Google...'
-              : `${actionLabel} with Google`}
-          </span>
-        </button>
+      <button
+        type="button"
+        disabled={connectingGoogle}
+        onClick={startGoogleOAuthPopup}
+        className="w-full liquid-glass-subtle hover:scale-[1.01] active:scale-[0.99] py-3 px-4 rounded-2xl text-xs font-extrabold text-theme-primary flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 transition-all"
+      >
+        {connectingGoogle ? (
+          <Loader2 className="w-4 h-4 animate-spin text-[#4285F4]" />
+        ) : (
+          <GoogleIcon />
+        )}
+        <span>{connectingGoogle ? 'Connecting to Google...' : `${actionLabel} with Google`}</span>
+      </button>
 
-        <button
-          type="button"
-          disabled={Boolean(connectingProvider)}
-          onClick={() => startOAuthPopup('APPLE')}
-          className="liquid-glass-subtle hover:scale-[1.01] active:scale-[0.99] py-3 px-4 rounded-2xl text-xs font-extrabold text-theme-primary flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 transition-all"
-        >
-          {connectingProvider === 'APPLE' ? (
-            <Loader2 className="w-4 h-4 animate-spin text-theme-primary" />
-          ) : (
-            <AppleIcon />
-          )}
-          <span>
-            {connectingProvider === 'APPLE'
-              ? 'Connecting to Apple...'
-              : `${actionLabel} with Apple`}
-          </span>
-        </button>
-      </div>
-
-      {connectingProvider && (
+      {connectingGoogle && (
         <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[11px] font-semibold text-theme-secondary">
           <span className="flex items-center gap-1.5">
             <ExternalLink className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-            Complete sign-in in the {connectingProvider === 'GOOGLE' ? 'Google' : 'Apple'} popup window
+            Complete sign-in in the Google popup window
           </span>
           <button
             type="button"
@@ -276,7 +242,7 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
                 clearInterval(pollTimerRef.current);
                 pollTimerRef.current = null;
               }
-              setConnectingProvider(null);
+              setConnectingGoogle(false);
             }}
             className="text-xs font-extrabold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer ml-2"
           >

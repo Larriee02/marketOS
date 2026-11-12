@@ -277,7 +277,7 @@ class AuthService {
 
   async oauthSignIn(payload, ip = null) {
     const provider = String(payload.provider || '').toUpperCase();
-    if (!['GOOGLE', 'APPLE'].includes(provider)) {
+    if (provider !== 'GOOGLE') {
       throw new AppError('Unsupported OAuth provider.', 400, 'INVALID_PROVIDER');
     }
 
@@ -292,7 +292,7 @@ class AuthService {
           .split('@')[0]
           .replace(/[._-]+/g, ' ')
           .replace(/\b\w/g, (l) => l.toUpperCase()) ||
-        `${provider === 'GOOGLE' ? 'Google' : 'Apple'} Trader`;
+        'Google Trader';
       profile = {
         sub: vp.sub,
         email: vp.email,
@@ -302,24 +302,14 @@ class AuthService {
       };
     } else if (payload.id_token) {
       tokenVerified = true;
-      if (provider === 'GOOGLE') {
-        const verified = await verifyGoogleIdToken(payload.id_token, payload.client_id);
-        profile = {
-          sub: verified.sub,
-          email: verified.email,
-          fullName: verified.name || payload.full_name || verified.email.split('@')[0],
-          avatarUrl: verified.picture,
-        };
-      } else {
-        const verified = await verifyAppleIdToken(payload.id_token, payload.client_id);
-        profile = {
-          sub: verified.sub,
-          email: verified.email || String(payload.email || '').toLowerCase(),
-          fullName: payload.full_name || 'Apple Trader',
-          avatarUrl: null,
-        };
-      }
-    } else if (provider === 'GOOGLE' && payload.access_token) {
+      const verified = await verifyGoogleIdToken(payload.id_token, payload.client_id);
+      profile = {
+        sub: verified.sub,
+        email: verified.email,
+        fullName: verified.name || payload.full_name || verified.email.split('@')[0],
+        avatarUrl: verified.picture,
+      };
+    } else if (payload.access_token) {
       tokenVerified = true;
       const verified = await verifyGoogleAccessToken(payload.access_token);
       profile = {
@@ -329,11 +319,11 @@ class AuthService {
         avatarUrl: verified.picture,
       };
     } else {
-      // 2. Interactive OAuth flow (works immediately out-of-the-box without requiring external OAuth Client IDs)
+      // 2. Interactive OAuth flow
       const nested = payload.profile && typeof payload.profile === 'object' ? payload.profile : {};
       const email = String(payload.email || nested.email || '').trim().toLowerCase();
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new AppError(`Please enter a valid ${provider === 'GOOGLE' ? 'Google' : 'Apple'} email address.`, 400, 'INVALID_EMAIL');
+        throw new AppError('Please enter a valid Google email address.', 400, 'INVALID_EMAIL');
       }
       const fullName =
         String(payload.full_name || nested.full_name || nested.name || '').trim() ||

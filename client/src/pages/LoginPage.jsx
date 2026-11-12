@@ -228,7 +228,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
                   </button>
                 </div>
 
-                {/* Social OAuth Buttons (Google & Apple) */}
+                {/* Google OAuth Button */}
                 <OAuthButtons
                   actionLabel="Sign in"
                   onAuthenticated={onAuthenticated}

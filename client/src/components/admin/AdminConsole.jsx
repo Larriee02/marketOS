@@ -390,8 +390,7 @@ export function AdminConsole({ currentUser, onToast }) {
           loading={loading}
           subtitle={
             <span>
-              Google: <strong className="text-theme-primary">{overview.google_users || 0}</strong> |
-              Apple: <strong className="text-theme-primary">{overview.apple_users || 0}</strong>
+              Google: <strong className="text-theme-primary">{overview.google_users || 0}</strong>
             </span>
           }
         />
@@ -499,7 +498,6 @@ export function AdminConsole({ currentUser, onToast }) {
               <option value="">All Sign-In Methods</option>
               <option value="EMAIL">Email & Password</option>
               <option value="GOOGLE">Google Account</option>
-              <option value="APPLE">Apple ID</option>
             </select>
 
             <div className="flex gap-1.5">
