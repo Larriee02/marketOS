@@ -405,48 +405,90 @@ class NotificationService {
   }
 
   /**
-   * Send SMS Notification with OTP
+   * Internal helper to deliver an SMS through Termii, Africa's Talking, Twilio, or Webhook
    */
-  async sendSmsOtp({ phone, code, purpose = 'LOGIN' }) {
+  async deliverSms({ phone, message, code = null, purpose = 'NOTIFICATION' }) {
     const formattedPhone = this.formatPhoneNumber(phone);
     if (!formattedPhone) {
       throw new Error('Valid phone number required for SMS notification.');
     }
 
-    const isSignup = purpose === 'SIGNUP';
-    const message = isSignup
-      ? `Your StockFlow registration code is ${code}. Valid for 10 minutes. Do not share this code.`
-      : `Your StockFlow sign-in verification code is ${code}. Valid for 10 minutes. Do not share.`;
-
-    console.log(`[Notification:SMS] Sending OTP ${code} to ${formattedPhone} (${purpose})`);
-
-    // 1. Try Termii API (Primary for Nigeria / West Africa)
+    // 1. Try Termii API (Primary for Nigeria / West Africa — with automatic DND fallback)
     if (env.TERMII_API_KEY) {
-      try {
-        const res = await fetch('https://api.ng.termii.com/api/sms/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: formattedPhone.replace('+', ''),
-            from: env.TERMII_SENDER_ID || 'StockFlow',
-            sms: message,
-            type: 'plain',
-            channel: 'generic',
-            api_key: env.TERMII_API_KEY,
-          }),
-        });
-        const data = await res.json();
-        if (res.ok && data.message_id) {
-          console.log('[Notification:SMS] Delivered via Termii:', data.message_id);
-          return { success: true, provider: 'termii', id: data.message_id };
+      const channelsToTry = env.TERMII_CHANNEL === 'dnd' ? ['dnd', 'generic'] : ['generic', 'dnd'];
+      for (const termiiChannel of channelsToTry) {
+        try {
+          const res = await fetch('https://api.ng.termii.com/api/sms/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: formattedPhone.replace('+', ''),
+              from: env.TERMII_SENDER_ID || 'StockFlow',
+              sms: message,
+              type: 'plain',
+              channel: termiiChannel,
+              api_key: env.TERMII_API_KEY,
+            }),
+          });
+          const data = await res.json();
+          if (res.ok && data.message_id) {
+            console.log(`[Notification:SMS] Delivered via Termii (${termiiChannel}):`, data.message_id);
+            return {
+              success: true,
+              provider: 'termii',
+              id: data.message_id,
+              phone: formattedPhone,
+            };
+          }
+          console.warn(`[Notification:SMS] Termii (${termiiChannel}) response:`, data);
+        } catch (err) {
+          console.warn(`[Notification:SMS] Termii (${termiiChannel}) delivery failed:`, err.message);
         }
-        console.warn('[Notification:SMS] Termii response:', data);
-      } catch (err) {
-        console.warn('[Notification:SMS] Termii delivery failed:', err.message);
       }
     }
 
-    // 2. Try Twilio API
+    // 2. Try Africa's Talking API (Nigeria / Kenya / Ghana / South Africa)
+    if (env.AFRICASTALKING_API_KEY && env.AFRICASTALKING_USERNAME) {
+      try {
+        const isSandbox = env.AFRICASTALKING_USERNAME.toLowerCase() === 'sandbox';
+        const endpoint = isSandbox
+          ? 'https://api.sandbox.africastalking.com/version1/messaging'
+          : 'https://api.africastalking.com/version1/messaging';
+        const params = new URLSearchParams({
+          username: env.AFRICASTALKING_USERNAME,
+          to: formattedPhone,
+          message,
+        });
+        if (env.AFRICASTALKING_SENDER_ID) {
+          params.set('from', env.AFRICASTALKING_SENDER_ID);
+        }
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            apiKey: env.AFRICASTALKING_API_KEY,
+          },
+          body: params.toString(),
+        });
+        const data = await res.json();
+        const recipients = data?.SMSMessageData?.Recipients || [];
+        if (res.ok && recipients.length > 0) {
+          console.log('[Notification:SMS] Delivered via Africa\'s Talking:', recipients[0]?.messageId);
+          return {
+            success: true,
+            provider: 'africastalking',
+            id: recipients[0]?.messageId,
+            phone: formattedPhone,
+          };
+        }
+        console.warn('[Notification:SMS] Africa\'s Talking response:', data);
+      } catch (err) {
+        console.warn('[Notification:SMS] Africa\'s Talking delivery failed:', err.message);
+      }
+    }
+
+    // 3. Try Twilio API
     if (env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_PHONE_NUMBER) {
       try {
         const auth = Buffer.from(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`).toString('base64');
@@ -469,7 +511,7 @@ class NotificationService {
         const data = await res.json();
         if (res.ok && data.sid) {
           console.log('[Notification:SMS] Delivered via Twilio:', data.sid);
-          return { success: true, provider: 'twilio', id: data.sid };
+          return { success: true, provider: 'twilio', id: data.sid, phone: formattedPhone };
         }
         console.warn('[Notification:SMS] Twilio response:', data);
       } catch (err) {
@@ -477,7 +519,7 @@ class NotificationService {
       }
     }
 
-    // 3. Try Generic Webhook
+    // 4. Try Generic SMS Webhook
     if (env.SMS_WEBHOOK_URL) {
       try {
         const res = await fetch(env.SMS_WEBHOOK_URL, {
@@ -492,16 +534,45 @@ class NotificationService {
         });
         if (res.ok) {
           console.log('[Notification:SMS] Delivered via SMS Webhook');
-          return { success: true, provider: 'webhook' };
+          return { success: true, provider: 'webhook', phone: formattedPhone };
         }
       } catch (err) {
         console.warn('[Notification:SMS] SMS Webhook delivery failed:', err.message);
       }
     }
 
-    // 4. Fallback: Log to console
-    console.log(`[Notification:SMS] (Simulated Delivery) To: ${formattedPhone} | Code: ${code} | Message: ${message}`);
+    // 5. Fallback: Log to console
+    console.log(`[Notification:SMS] (Simulated Delivery) To: ${formattedPhone} | Message: ${message}`);
     return { success: true, provider: 'console-simulated', phone: formattedPhone };
+  }
+
+  /**
+   * Send SMS Notification with 6-digit OTP
+   */
+  async sendSmsOtp({ phone, code, purpose = 'LOGIN' }) {
+    const formattedPhone = this.formatPhoneNumber(phone);
+    if (!formattedPhone) {
+      throw new Error('Valid phone number required for SMS notification.');
+    }
+
+    const isSignup = purpose === 'SIGNUP';
+    const message = isSignup
+      ? `StockFlow: Your registration verification code is ${code}. Valid for 10 minutes. Do not share this code.`
+      : `StockFlow: Your sign-in verification code is ${code}. Valid for 10 minutes. Do not share this code.`;
+
+    console.log(`[Notification:SMS] Sending OTP ${code} to ${formattedPhone} (${purpose})`);
+    return this.deliverSms({ phone: formattedPhone, message, code, purpose });
+  }
+
+  /**
+   * Send Welcome SMS Notification after account creation
+   */
+  async sendWelcomeSms({ phone, recipientName = '', businessName = '', currency = 'NGN' }) {
+    if (!phone) return { success: false };
+    const formattedPhone = this.formatPhoneNumber(phone);
+    if (!formattedPhone) return { success: false };
+    const message = `Welcome to StockFlow, ${recipientName || 'Trader'}! Your store workspace (${businessName || 'Retail Store'}) is now active (${currency}).`;
+    return this.deliverSms({ phone: formattedPhone, message, purpose: 'WELCOME' });
   }
 }
 

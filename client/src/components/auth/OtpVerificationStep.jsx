@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ShieldCheck,
   Mail,
   Phone,
-  RefreshCw,
   ArrowRight,
   ArrowLeft,
   KeyRound,
@@ -24,6 +22,8 @@ export function OtpVerificationStep({
   onBack,
 }) {
   const [code, setCode] = useState('');
+  const [customPhone, setCustomPhone] = useState(phone || '');
+  const [showPhoneInput, setShowPhoneInput] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(30);
   const [resending, setResending] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
@@ -43,16 +43,29 @@ export function OtpVerificationStep({
     onVerify(code.trim());
   };
 
+  const activePhone = (customPhone || phone || '').trim();
+
   const handleTriggerResend = async (channel) => {
+    if (channel === 'SMS' && !activePhone) {
+      setShowPhoneInput(true);
+      return;
+    }
     if (resendCooldown > 0 || resending) return;
     setResending(true);
     setResendMessage('');
     try {
-      await onResend(channel);
-      setResendMessage(`New code sent via ${channel === 'SMS' ? 'SMS' : 'Email'}!`);
+      await onResend(channel, activePhone);
+      setResendMessage(
+        channel === 'SMS'
+          ? `New SMS OTP sent to ${activePhone}!`
+          : channel === 'BOTH'
+          ? 'New OTP sent via Email & SMS!'
+          : `New Email OTP sent to ${email}!`
+      );
+      setShowPhoneInput(false);
       setResendCooldown(30);
     } catch {
-      // error handled by parent or toast
+      // error handled by parent
     } finally {
       setResending(false);
     }
@@ -64,6 +77,18 @@ export function OtpVerificationStep({
     }
   };
 
+  const emailDelivered =
+    Array.isArray(deliveryResults) &&
+    deliveryResults.some(
+      (d) => d.channel === 'EMAIL' && d.success && d.provider !== 'console-simulated'
+    );
+
+  const smsDelivered =
+    Array.isArray(deliveryResults) &&
+    deliveryResults.some(
+      (d) => d.channel === 'SMS' && d.success && d.provider !== 'console-simulated'
+    );
+
   return (
     <div className="space-y-4">
       <div className="text-center space-y-1">
@@ -71,28 +96,35 @@ export function OtpVerificationStep({
           <KeyRound className="w-6 h-6 text-white" />
         </div>
         <h3 className="text-lg font-extrabold font-luxury text-theme-primary">
-          {purpose === 'SIGNUP' ? 'Verify Your Email' : 'Email OTP Verification'}
+          {purpose === 'SIGNUP' ? 'Verify Your Account (Email & SMS OTP)' : 'Two-Factor OTP Verification'}
         </h3>
         <p className="text-xs text-theme-secondary max-w-sm mx-auto leading-relaxed">
-          A 6-digit verification code has been sent to{' '}
+          A 6-digit verification code has been dispatched to{' '}
           <strong className="text-theme-primary">{maskedDestination || email}</strong>.
         </p>
       </div>
 
-      {Array.isArray(deliveryResults) &&
-        deliveryResults.some(
-          (d) => d.channel === 'EMAIL' && d.success && d.provider !== 'console-simulated'
-        ) && (
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-            <Mail className="w-4 h-4 shrink-0" />
-            <span>Email OTP delivered to {maskedDestination || email} — check your Inbox or Spam</span>
-          </div>
-        )}
+      {(emailDelivered || smsDelivered) && (
+        <div className="space-y-1.5">
+          {emailDelivered && (
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <Mail className="w-4 h-4 shrink-0" />
+              <span>Email OTP delivered — check your Inbox or Spam</span>
+            </div>
+          )}
+          {smsDelivered && (
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <Phone className="w-4 h-4 shrink-0" />
+              <span>SMS OTP delivered to your phone</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {otpPreview && (
         <div className="p-3 rounded-2xl bg-sky-500/10 border border-sky-400/30 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 text-xs text-sky-300">
-            <Sparkles className="w-4 h-4 shrink-0 text-sky-400" />
+          <div className="flex items-center gap-1.5 text-xs text-sky-600 dark:text-sky-300">
+            <Sparkles className="w-4 h-4 shrink-0 text-sky-500" />
             <span>
               Preview Code: <strong className="font-mono text-sm tracking-widest">{otpPreview}</strong>
             </span>
@@ -100,7 +132,7 @@ export function OtpVerificationStep({
           <button
             type="button"
             onClick={handleUsePreview}
-            className="text-[11px] font-extrabold text-sky-400 hover:text-sky-300 underline cursor-pointer shrink-0"
+            className="text-[11px] font-extrabold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer shrink-0"
           >
             Auto-Fill
           </button>
@@ -108,7 +140,7 @@ export function OtpVerificationStep({
       )}
 
       {resendMessage && (
-        <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold text-center">
+        <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-xs font-bold text-center">
           {resendMessage}
         </div>
       )}
@@ -159,10 +191,34 @@ export function OtpVerificationStep({
         </button>
 
         {/* Resend Options via Email & SMS */}
-        <div className="pt-2 border-t theme-divider space-y-2">
+        <div className="pt-2 border-t theme-divider space-y-2.5">
           <div className="text-center text-[11px] text-theme-secondary">
-            Didn&apos;t receive the notification?
+            Didn&apos;t receive the verification code?
           </div>
+
+          {showPhoneInput && (
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Phone className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-theme-secondary" />
+                <input
+                  type="tel"
+                  placeholder="Enter phone (e.g. 0803 000 0000)"
+                  value={customPhone}
+                  onChange={(e) => setCustomPhone(e.target.value)}
+                  className="liquid-input w-full pl-9 pr-3 py-2 rounded-xl text-xs"
+                />
+              </div>
+              <button
+                type="button"
+                disabled={!customPhone.trim() || resending}
+                onClick={() => handleTriggerResend('SMS')}
+                className="liquid-btn-primary px-3 py-2 rounded-xl text-xs font-extrabold cursor-pointer disabled:opacity-50"
+              >
+                Send SMS
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -170,19 +226,19 @@ export function OtpVerificationStep({
               onClick={() => handleTriggerResend('EMAIL')}
               className="liquid-glass-subtle py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 text-theme-primary disabled:opacity-40 cursor-pointer"
             >
-              <Mail className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-              <span>Resend Email</span>
+              <Mail className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+              <span>Resend Email OTP</span>
             </button>
 
             <button
               type="button"
-              disabled={resendCooldown > 0 || resending || !phone}
+              disabled={(resendCooldown > 0 && Boolean(activePhone)) || resending}
               onClick={() => handleTriggerResend('SMS')}
               className="liquid-glass-subtle py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 text-theme-primary disabled:opacity-40 cursor-pointer"
-              title={phone ? 'Resend via SMS' : 'No phone number linked'}
+              title={activePhone ? `Send SMS OTP to ${activePhone}` : 'Enter phone number for SMS OTP'}
             >
-              <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Resend SMS</span>
+              <Phone className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span>{activePhone ? 'Resend SMS OTP' : 'Send via SMS'}</span>
             </button>
           </div>
 
@@ -190,7 +246,7 @@ export function OtpVerificationStep({
             {resendCooldown > 0 ? (
               <span>Resend available in {resendCooldown}s</span>
             ) : (
-              <span>You can request a new code above</span>
+              <span>You can request a new code via Email or SMS above</span>
             )}
           </div>
         </div>

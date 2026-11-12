@@ -78,13 +78,14 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
     }
   };
 
-  const handleResendOtp = async (preferredChannel) => {
+  const handleResendOtp = async (preferredChannel, phoneOverride) => {
     setError('');
     const data = await apiFetch('/api/v1/auth/otp/request', {
       method: 'POST',
       body: JSON.stringify({
         purpose: 'LOGIN',
         email: email.trim(),
+        phone: phoneOverride || otpInfo?.phone || undefined,
         channel: preferredChannel || 'EMAIL',
       }),
     });

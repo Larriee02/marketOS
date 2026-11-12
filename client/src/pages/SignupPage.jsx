@@ -39,7 +39,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
     business_name: '',
     email: '',
     phone: '',
-    channel: 'EMAIL', // 'EMAIL' | 'BOTH' | 'SMS'
+    channel: 'BOTH', // 'BOTH' | 'EMAIL' | 'SMS'
     business_type: BUSINESS_TYPES[0],
     city: LAGOS_LOCATIONS[0],
     currency: 'NGN',
@@ -98,14 +98,18 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
     }
   };
 
-  const handleResendOtp = async (preferredChannel) => {
+  const handleResendOtp = async (preferredChannel, phoneOverride) => {
     setError('');
+    const nextPhone = phoneOverride || signupForm.phone.trim();
+    if (phoneOverride && phoneOverride !== signupForm.phone) {
+      setSignupForm((prev) => ({ ...prev, phone: phoneOverride }));
+    }
     const data = await apiFetch('/api/v1/auth/otp/request', {
       method: 'POST',
       body: JSON.stringify({
         purpose: 'SIGNUP',
         email: signupForm.email.trim(),
-        phone: signupForm.phone.trim(),
+        phone: nextPhone,
         full_name: signupForm.full_name.trim(),
         channel: preferredChannel || signupForm.channel,
       }),
@@ -363,9 +367,9 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { id: 'EMAIL', label: 'Email OTP' },
                         { id: 'BOTH', label: 'Email & SMS' },
-                        { id: 'SMS', label: 'SMS Only' },
+                        { id: 'EMAIL', label: 'Email OTP' },
+                        { id: 'SMS', label: 'SMS OTP' },
                       ].map((ch) => (
                         <button
                           type="button"

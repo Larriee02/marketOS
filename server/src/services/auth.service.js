@@ -39,10 +39,17 @@ class AuthService {
     const fullName = String(payload.full_name || '').trim();
     const businessName = String(payload.business_name || '').trim();
     const phone = String(payload.phone || '').trim() || null;
-    const channel = String(payload.channel || 'EMAIL').toUpperCase();
+    const channel = String(payload.channel || (phone ? 'BOTH' : 'EMAIL')).toUpperCase();
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new AppError('Please enter a valid email address.', 400, 'INVALID_EMAIL');
+    }
+    if (channel === 'SMS' && !phone) {
+      throw new AppError(
+        'Please enter a phone number to receive an SMS verification code.',
+        400,
+        'PHONE_REQUIRED'
+      );
     }
     if (!fullName || fullName.length < 2) {
       throw new AppError('Please enter your full name.', 400, 'INVALID_NAME');
@@ -87,12 +94,20 @@ class AuthService {
       throw new AppError('Account not found with this email.', 404, 'USER_NOT_FOUND');
     }
 
-    const channel = String(payload.channel || 'EMAIL').toUpperCase();
+    const phone = String(payload.phone || user.phone || '').trim() || null;
+    const channel = String(payload.channel || (phone ? 'BOTH' : 'EMAIL')).toUpperCase();
+    if (channel === 'SMS' && !phone) {
+      throw new AppError(
+        'No phone number is linked to this account. Please enter a phone number or use Email OTP.',
+        400,
+        'PHONE_REQUIRED'
+      );
+    }
 
     return otpService.requestOtp({
       purpose: 'LOGIN',
       email: user.email,
-      phone: user.phone,
+      phone,
       channel: ['EMAIL', 'SMS', 'BOTH'].includes(channel) ? channel : 'EMAIL',
       recipientName: user.full_name,
       payload: { userId: user.id },
@@ -189,7 +204,7 @@ class AuthService {
     const publicUser = await userRepo.findPublicById(userId);
     const token = await signSession(authUser);
 
-    // Send Welcome Email Notification asynchronously
+    // Send Welcome Email & SMS Notifications asynchronously
     notificationService
       .sendWelcomeEmail({
         to: email,
@@ -198,6 +213,17 @@ class AuthService {
         currency,
       })
       .catch(() => {});
+
+    if (phone) {
+      notificationService
+        .sendWelcomeSms({
+          phone,
+          recipientName: fullName,
+          businessName,
+          currency,
+        })
+        .catch(() => {});
+    }
 
     return { user: publicUser, token };
   }
@@ -240,13 +266,14 @@ class AuthService {
       throw new AppError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
     }
 
-    // Two-factor OTP step: if OTP was not supplied, issue an OTP challenge via Email
+    // Two-factor OTP step: if OTP was not supplied, issue an OTP challenge via Email and/or SMS
     if (!otp) {
-      const defaultChannel = payload.channel || 'EMAIL';
+      const targetPhone = String(payload.phone || user.phone || '').trim() || null;
+      const defaultChannel = payload.channel || (targetPhone ? 'BOTH' : 'EMAIL');
       const otpRes = await otpService.requestOtp({
         purpose: 'LOGIN',
         email: user.email,
-        phone: user.phone,
+        phone: targetPhone,
         channel: defaultChannel,
         recipientName: user.full_name,
         payload: { userId: user.id },
@@ -255,7 +282,7 @@ class AuthService {
       return {
         otpRequired: true,
         email: user.email,
-        phone: user.phone,
+        phone: targetPhone,
         maskedDestination: otpRes.maskedDestination,
         channel: otpRes.channel,
         message: otpRes.message,
