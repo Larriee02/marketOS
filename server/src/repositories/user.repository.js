@@ -42,6 +42,33 @@ class UserRepository {
     return rows[0] || null;
   }
 
+  async findAuthByPhone(phone, q = db) {
+    const digits = String(phone || '').replace(/\D/g, '');
+    if (!digits || digits.length < 7) return null;
+    const tail10 = digits.length >= 10 ? digits.slice(-10) : digits;
+    const { rows } = await q.query(
+      `SELECT * FROM users
+       WHERE phone IS NOT NULL
+         AND (
+           REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $1
+           OR (LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '', 'g')) >= 10 AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 10) = $2)
+         )
+       ORDER BY id DESC
+       LIMIT 1`,
+      [digits, tail10]
+    );
+    return rows[0] || null;
+  }
+
+  async findAuthByIdentifier(identifier, q = db) {
+    const clean = String(identifier || '').trim();
+    if (!clean) return null;
+    if (clean.includes('@')) {
+      return this.findAuthByEmail(clean.toLowerCase(), q);
+    }
+    return this.findAuthByPhone(clean, q);
+  }
+
   async findAuthByProviderSub(provider, sub, q = db) {
     const column = provider === 'GOOGLE' ? 'google_sub' : 'apple_sub';
     const { rows } = await q.query(`SELECT * FROM users WHERE ${column} = $1`, [sub]);

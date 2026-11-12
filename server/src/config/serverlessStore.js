@@ -178,6 +178,17 @@ async function executeQuery(text, params = []) {
     return { rows: u ? [{ ...u }] : [], rowCount: u ? 1 : 0 };
   }
 
+  if (upper.includes('FROM USERS') && upper.includes('REGEXP_REPLACE(PHONE')) {
+    const digits = String(params[0] || '').replace(/\D/g, '');
+    const tail10 = String(params[1] || '');
+    const u = state.users.find((x) => {
+      if (!x.phone) return false;
+      const pDigits = String(x.phone).replace(/\D/g, '');
+      return pDigits === digits || (pDigits.length >= 10 && pDigits.slice(-10) === tail10);
+    });
+    return { rows: u ? [{ ...u }] : [], rowCount: u ? 1 : 0 };
+  }
+
   if (upper.startsWith('SELECT * FROM USERS WHERE GOOGLE_SUB = $1')) {
     const u = state.users.find((x) => x.google_sub && x.google_sub === params[0]);
     return { rows: u ? [{ ...u }] : [], rowCount: u ? 1 : 0 };

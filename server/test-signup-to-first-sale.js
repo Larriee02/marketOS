@@ -28,12 +28,13 @@ async function runTests() {
   // ==========================================
   console.log('📌 MILESTONE 1: Create Account & Auto-Approval');
   const testEmail = `retailer_first_sale_${Date.now()}@stockflow.test`;
+  const testPhone = `080${String(Date.now()).slice(-8)}`;
   const registerResult = await authService.register({
     email: testEmail,
     password: 'SecureRetailPassword123#',
     full_name: 'Alhaja Bisi Adeyemi',
     business_name: 'Bisi Provisions & Cold Drinks',
-    phone: '08033221100',
+    phone: testPhone,
     business_type: 'Provision Store',
     city: 'Lagos Island',
     currency: 'NGN',
@@ -294,6 +295,27 @@ async function runTests() {
   });
   assert.ok(callbackHtml.includes('STOCKFLOW_OAUTH_SUCCESS'), 'Callback HTML must post STOCKFLOW_OAUTH_SUCCESS to opener');
   console.log('✅ Google (`accounts.google.com`) OAuth 2.0 Redirect, Gateway & Callback verified');
+
+  // ==========================================
+  // MILESTONE 8: Sign In with Phone Number or Email + Email OTP
+  // ==========================================
+  console.log('\n📌 MILESTONE 8: Sign In with Phone Number or Email');
+  const phoneChallenge = await authService.login({
+    identifier: testPhone,
+    password: 'SecureRetailPassword123#',
+  });
+  assert.strictEqual(phoneChallenge.otpRequired, true, 'Phone login must issue Email OTP challenge');
+  assert.strictEqual(phoneChallenge.email, testEmail, 'Phone login must resolve to the user email');
+  assert.ok(phoneChallenge.otpPreview, 'Email OTP preview must be returned in test mode');
+
+  const phoneLoginResult = await authService.login({
+    identifier: testPhone,
+    password: 'SecureRetailPassword123#',
+    otp: phoneChallenge.otpPreview,
+  });
+  assert.strictEqual(phoneLoginResult.user.id, userId, 'Phone login must authenticate the same user');
+  assert.ok(phoneLoginResult.token, 'Phone login must issue a valid session token');
+  console.log(`✅ Sign in with Phone Number (${testPhone}) + Email OTP verified`);
 
   console.log('\n🎉 ALL MILESTONES IN THE SIGNUP-TO-FIRST-SALE JOURNEY COMPLETED AND VERIFIED 100% GREEN!\n');
 }

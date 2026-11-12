@@ -38,18 +38,9 @@ class AuthService {
     const email = String(payload.email || '').trim().toLowerCase();
     const fullName = String(payload.full_name || '').trim();
     const businessName = String(payload.business_name || '').trim();
-    const phone = String(payload.phone || '').trim() || null;
-    const channel = String(payload.channel || (phone ? 'BOTH' : 'EMAIL')).toUpperCase();
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new AppError('Please enter a valid email address.', 400, 'INVALID_EMAIL');
-    }
-    if (channel === 'SMS' && !phone) {
-      throw new AppError(
-        'Please enter a phone number to receive an SMS verification code.',
-        400,
-        'PHONE_REQUIRED'
-      );
     }
     if (!fullName || fullName.length < 2) {
       throw new AppError('Please enter your full name.', 400, 'INVALID_NAME');
@@ -74,41 +65,27 @@ class AuthService {
     return otpService.requestOtp({
       purpose: 'SIGNUP',
       email,
-      phone,
-      channel: ['EMAIL', 'SMS', 'BOTH'].includes(channel) ? channel : 'EMAIL',
       recipientName: fullName,
     });
   }
 
   /**
-   * Request/Resend OTP for Login
+   * Request/Resend Email OTP for Login (accepts email or phone number)
    */
   async requestLoginOtp(payload) {
-    const email = String(payload.email || '').trim().toLowerCase();
-    if (!email) {
-      throw new AppError('Please enter your email address.', 400, 'INVALID_EMAIL');
+    const identifier = String(payload.identifier || payload.email || payload.phone || '').trim();
+    if (!identifier) {
+      throw new AppError('Please enter your email address or phone number.', 400, 'INVALID_IDENTIFIER');
     }
 
-    const user = await userRepo.findAuthByEmail(email);
+    const user = await userRepo.findAuthByIdentifier(identifier);
     if (!user) {
-      throw new AppError('Account not found with this email.', 404, 'USER_NOT_FOUND');
-    }
-
-    const phone = String(payload.phone || user.phone || '').trim() || null;
-    const channel = String(payload.channel || (phone ? 'BOTH' : 'EMAIL')).toUpperCase();
-    if (channel === 'SMS' && !phone) {
-      throw new AppError(
-        'No phone number is linked to this account. Please enter a phone number or use Email OTP.',
-        400,
-        'PHONE_REQUIRED'
-      );
+      throw new AppError('Account not found with this email or phone number.', 404, 'USER_NOT_FOUND');
     }
 
     return otpService.requestOtp({
       purpose: 'LOGIN',
       email: user.email,
-      phone,
-      channel: ['EMAIL', 'SMS', 'BOTH'].includes(channel) ? channel : 'EMAIL',
       recipientName: user.full_name,
       payload: { userId: user.id },
     });
@@ -204,7 +181,7 @@ class AuthService {
     const publicUser = await userRepo.findPublicById(userId);
     const token = await signSession(authUser);
 
-    // Send Welcome Email & SMS Notifications asynchronously
+    // Send Welcome Email Notification asynchronously
     notificationService
       .sendWelcomeEmail({
         to: email,
@@ -214,35 +191,28 @@ class AuthService {
       })
       .catch(() => {});
 
-    if (phone) {
-      notificationService
-        .sendWelcomeSms({
-          phone,
-          recipientName: fullName,
-          businessName,
-          currency,
-        })
-        .catch(() => {});
-    }
-
     return { user: publicUser, token };
   }
 
   async login(payload, ip = null) {
-    const email = String(payload.email || '').trim().toLowerCase();
+    const identifier = String(payload.identifier || payload.email || payload.phone || '').trim();
     const password = String(payload.password || '');
     const otp = payload.otp ? String(payload.otp).trim() : null;
 
-    if (!email || !password) {
-      throw new AppError('Please enter both your email and password.', 400, 'MISSING_CREDENTIALS');
+    if (!identifier || !password) {
+      throw new AppError(
+        'Please enter your email or phone number and password.',
+        400,
+        'MISSING_CREDENTIALS'
+      );
     }
 
-    const user = await userRepo.findAuthByEmail(email);
+    const user = await userRepo.findAuthByIdentifier(identifier);
     if (!user || !user.password_hash) {
       throw new AppError(
         user && !user.password_hash
           ? `This account uses ${user.auth_provider} sign-in. Please continue with ${user.auth_provider}.`
-          : 'Invalid email or password.',
+          : 'Invalid email/phone or password.',
         401,
         'INVALID_CREDENTIALS'
       );
@@ -263,18 +233,14 @@ class AuthService {
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
       await userRepo.recordLoginFailure(user.id, MAX_FAILED_ATTEMPTS, LOCK_MINUTES);
-      throw new AppError('Invalid email or password.', 401, 'INVALID_CREDENTIALS');
+      throw new AppError('Invalid email/phone or password.', 401, 'INVALID_CREDENTIALS');
     }
 
-    // Two-factor OTP step: if OTP was not supplied, issue an OTP challenge via Email and/or SMS
+    // Two-factor Email OTP step: if OTP was not supplied, issue an Email OTP challenge
     if (!otp) {
-      const targetPhone = String(payload.phone || user.phone || '').trim() || null;
-      const defaultChannel = payload.channel || (targetPhone ? 'BOTH' : 'EMAIL');
       const otpRes = await otpService.requestOtp({
         purpose: 'LOGIN',
         email: user.email,
-        phone: targetPhone,
-        channel: defaultChannel,
         recipientName: user.full_name,
         payload: { userId: user.id },
       });
@@ -282,7 +248,6 @@ class AuthService {
       return {
         otpRequired: true,
         email: user.email,
-        phone: targetPhone,
         maskedDestination: otpRes.maskedDestination,
         channel: otpRes.channel,
         message: otpRes.message,
@@ -292,11 +257,10 @@ class AuthService {
       };
     }
 
-    // Verify submitted OTP
+    // Verify submitted Email OTP
     await otpService.verifyOtp({
       purpose: 'LOGIN',
       email: user.email,
-      phone: user.phone,
       code: otp,
     });
 

@@ -62,18 +62,6 @@ const env = {
   SMTP_PASS: process.env.SMTP_PASS || '',
   SMTP_SECURE: bool(process.env.SMTP_SECURE, false),
 
-  // SMS Notification Config (Termii, Africa's Talking, Twilio, or Webhook)
-  TERMII_API_KEY: (process.env.TERMII_API_KEY || '').trim(),
-  TERMII_SENDER_ID: (process.env.TERMII_SENDER_ID || 'StockFlow').trim(),
-  TERMII_CHANNEL: (process.env.TERMII_CHANNEL || 'generic').trim(),
-  AFRICASTALKING_API_KEY: (process.env.AFRICASTALKING_API_KEY || '').trim(),
-  AFRICASTALKING_USERNAME: (process.env.AFRICASTALKING_USERNAME || 'sandbox').trim(),
-  AFRICASTALKING_SENDER_ID: (process.env.AFRICASTALKING_SENDER_ID || '').trim(),
-  TWILIO_ACCOUNT_SID: (process.env.TWILIO_ACCOUNT_SID || '').trim(),
-  TWILIO_AUTH_TOKEN: (process.env.TWILIO_AUTH_TOKEN || '').trim(),
-  TWILIO_PHONE_NUMBER: (process.env.TWILIO_PHONE_NUMBER || '').trim(),
-  SMS_WEBHOOK_URL: (process.env.SMS_WEBHOOK_URL || '').trim(),
-
   // Allow preview of OTP in response for development / sandbox testing only.
   // Defaults to FALSE in production so codes are never exposed over the wire.
   ALLOW_OTP_PREVIEW: bool(process.env.ALLOW_OTP_PREVIEW, !IS_PROD),

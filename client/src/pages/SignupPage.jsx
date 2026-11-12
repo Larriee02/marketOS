@@ -14,7 +14,6 @@ import {
   LogIn,
   ShieldCheck,
   Globe,
-  BellRing,
 } from 'lucide-react';
 import { apiFetch, setStoredToken } from '../services/api';
 import { CURRENCY_OPTIONS } from '../utils/currency';
@@ -39,7 +38,6 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
     business_name: '',
     email: '',
     phone: '',
-    channel: 'BOTH', // 'BOTH' | 'EMAIL' | 'SMS'
     business_type: BUSINESS_TYPES[0],
     city: LAGOS_LOCATIONS[0],
     currency: 'NGN',
@@ -62,10 +60,8 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
         body: JSON.stringify({
           purpose: 'SIGNUP',
           email: signupForm.email.trim(),
-          phone: signupForm.phone.trim(),
           full_name: signupForm.full_name.trim(),
           business_name: signupForm.business_name.trim(),
-          channel: signupForm.channel,
         }),
       });
 
@@ -98,20 +94,14 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
     }
   };
 
-  const handleResendOtp = async (preferredChannel, phoneOverride) => {
+  const handleResendOtp = async () => {
     setError('');
-    const nextPhone = phoneOverride || signupForm.phone.trim();
-    if (phoneOverride && phoneOverride !== signupForm.phone) {
-      setSignupForm((prev) => ({ ...prev, phone: phoneOverride }));
-    }
     const data = await apiFetch('/api/v1/auth/otp/request', {
       method: 'POST',
       body: JSON.stringify({
         purpose: 'SIGNUP',
         email: signupForm.email.trim(),
-        phone: nextPhone,
         full_name: signupForm.full_name.trim(),
-        channel: preferredChannel || signupForm.channel,
       }),
     });
     setOtpInfo(data);
@@ -179,8 +169,8 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
           </h1>
 
           <p className="text-xs sm:text-sm text-theme-secondary leading-relaxed">
-            Protect your retail store records and cashbook ledger with one-time verification
-            notifications sent to your email and phone.
+            Protect your retail store records and cashbook ledger with one-time email verification
+            and sign in seamlessly with your email or phone number.
           </p>
 
           <div className="space-y-2.5">
@@ -192,8 +182,8 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
               },
               {
                 step: '02',
-                title: 'Email & SMS OTP Notification',
-                desc: 'Receive a secure 6-digit verification code directly on your email and phone.',
+                title: 'Email OTP Verification',
+                desc: 'Receive a secure 6-digit verification code directly in your email inbox.',
               },
               {
                 step: '03',
@@ -224,7 +214,6 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
               <OtpVerificationStep
                 purpose="SIGNUP"
                 email={signupForm.email}
-                phone={signupForm.phone}
                 maskedDestination={otpInfo?.maskedDestination}
                 otpPreview={otpInfo?.otpPreview}
                 deliveryResults={otpInfo?.deliveryResults}
@@ -323,7 +312,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold mb-1 text-theme-primary">
-                        Email Address (for OTP Email)
+                        Email Address (for Email OTP)
                       </label>
                       <div className="relative">
                         <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
@@ -342,7 +331,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
 
                     <div>
                       <label className="block text-xs font-bold mb-1 text-theme-primary">
-                        Phone Number (for OTP SMS)
+                        Phone Number (for Sign-In)
                       </label>
                       <div className="relative">
                         <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
@@ -356,34 +345,6 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
                           className="liquid-input w-full pl-10 pr-3 py-2.5 rounded-xl text-xs"
                         />
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Preferred OTP Notification Channel */}
-                  <div>
-                    <label className="block text-xs font-bold mb-1 text-theme-primary flex items-center gap-1.5">
-                      <BellRing className="w-3.5 h-3.5 text-theme-brand" />
-                      <span>Send OTP Notification To:</span>
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { id: 'BOTH', label: 'Email & SMS' },
-                        { id: 'EMAIL', label: 'Email OTP' },
-                        { id: 'SMS', label: 'SMS OTP' },
-                      ].map((ch) => (
-                        <button
-                          type="button"
-                          key={ch.id}
-                          onClick={() => setSignupForm({ ...signupForm, channel: ch.id })}
-                          className={`py-2 px-2 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
-                            signupForm.channel === ch.id
-                              ? 'liquid-btn-primary'
-                              : 'liquid-glass-subtle text-theme-secondary'
-                          }`}
-                        >
-                          {ch.label}
-                        </button>
-                      ))}
                     </div>
                   </div>
 

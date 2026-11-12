@@ -39,33 +39,23 @@ function maskEmail(email) {
   return `${local.slice(0, 2)}***${local.slice(-1)}@${domain}`;
 }
 
-function maskPhone(phone) {
-  if (!phone) return null;
-  const cleaned = String(phone).replace(/\s+/g, '');
-  if (cleaned.length <= 4) return cleaned;
-  return `${cleaned.slice(0, 4)}***${cleaned.slice(-3)}`;
-}
-
 class OtpService {
   /**
-   * Request an OTP for SIGNUP or LOGIN
+   * Request an Email OTP for SIGNUP or LOGIN
    */
   async requestOtp({
     purpose = 'LOGIN',
     email,
-    phone = null,
-    channel = 'EMAIL',
     recipientName = '',
     payload = null, // e.g. temporary signup data or userId
   }) {
     const cleanEmail = email ? String(email).trim().toLowerCase() : null;
-    const cleanPhone = phone ? String(phone).trim() : null;
 
-    if (!cleanEmail && !cleanPhone) {
-      throw new AppError('An email address or phone number is required for verification.', 400);
+    if (!cleanEmail) {
+      throw new AppError('An email address is required for verification.', 400);
     }
 
-    const key = `${purpose}:${cleanEmail || cleanPhone}`;
+    const key = `${purpose}:${cleanEmail}`;
     const existing = challengeStore.get(key);
 
     if (existing && Date.now() - existing.lastRequestedAt < COOLDOWN_MS) {
@@ -85,8 +75,7 @@ class OtpService {
       codeHash,
       purpose,
       email: cleanEmail,
-      phone: cleanPhone,
-      channel,
+      channel: 'EMAIL',
       payload,
       recipientName,
       attempts: 0,
@@ -95,56 +84,26 @@ class OtpService {
       expiresAt,
     });
 
-    const deliveries = [];
+    const emailResult = await notificationService
+      .sendEmailOtp({
+        to: cleanEmail,
+        code,
+        recipientName,
+        purpose,
+      })
+      .then((res) => ({ channel: 'EMAIL', ...res }))
+      .catch((err) => {
+        console.warn('[OtpService] Email notification error:', err.message);
+        return { channel: 'EMAIL', error: err.message };
+      });
 
-    // Send via Email
-    if (cleanEmail && (channel === 'EMAIL' || channel === 'BOTH')) {
-      deliveries.push(
-        notificationService
-          .sendEmailOtp({
-            to: cleanEmail,
-            code,
-            recipientName,
-            purpose,
-          })
-          .then((res) => ({ channel: 'EMAIL', ...res }))
-          .catch((err) => {
-            console.warn('[OtpService] Email notification error:', err.message);
-            return { channel: 'EMAIL', error: err.message };
-          })
-      );
-    }
-
-    // Send via SMS
-    if (cleanPhone && (channel === 'SMS' || channel === 'BOTH')) {
-      deliveries.push(
-        notificationService
-          .sendSmsOtp({
-            phone: cleanPhone,
-            code,
-            purpose,
-          })
-          .then((res) => ({ channel: 'SMS', ...res }))
-          .catch((err) => {
-            console.warn('[OtpService] SMS notification error:', err.message);
-            return { channel: 'SMS', error: err.message };
-          })
-      );
-    }
-
-    const deliveryResults = await Promise.all(deliveries);
-
-    const maskedDestination =
-      channel === 'BOTH'
-        ? `${maskEmail(cleanEmail)} and ${maskPhone(cleanPhone)}`
-        : channel === 'SMS'
-        ? maskPhone(cleanPhone)
-        : maskEmail(cleanEmail);
+    const deliveryResults = [emailResult];
+    const maskedDestination = maskEmail(cleanEmail);
 
     const response = {
       success: true,
       purpose,
-      channel,
+      channel: 'EMAIL',
       maskedDestination,
       expiresInSeconds: Math.floor(OTP_EXPIRY_MS / 1000),
       message: `Verification code sent to ${maskedDestination}.`,
@@ -163,18 +122,17 @@ class OtpService {
   }
 
   /**
-   * Verify an OTP challenge
+   * Verify an Email OTP challenge
    */
-  async verifyOtp({ purpose, email, phone = null, code }) {
+  async verifyOtp({ purpose, email, code }) {
     const cleanEmail = email ? String(email).trim().toLowerCase() : null;
-    const cleanPhone = phone ? String(phone).trim() : null;
     const cleanCode = String(code || '').trim();
 
     if (!cleanCode) {
       throw new AppError('Please enter the 6-digit verification code.', 400, 'OTP_REQUIRED');
     }
 
-    const key = `${purpose}:${cleanEmail || cleanPhone}`;
+    const key = `${purpose}:${cleanEmail}`;
     const challenge = challengeStore.get(key);
 
     // Stateless HMAC window check (ensures Vercel multi-instance serverless cold starts never drop OTP state)
@@ -189,7 +147,6 @@ class OtpService {
           verified: true,
           purpose,
           email: cleanEmail,
-          phone: cleanPhone,
           payload: null,
         };
       }
@@ -236,7 +193,6 @@ class OtpService {
       verified: true,
       purpose: challenge.purpose,
       email: challenge.email,
-      phone: challenge.phone,
       payload: challenge.payload,
     };
   }

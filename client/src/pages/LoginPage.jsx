@@ -4,6 +4,7 @@ import {
   Sun,
   Moon,
   Mail,
+  Phone,
   Lock,
   Eye,
   EyeOff,
@@ -17,7 +18,8 @@ import { OAuthButtons } from '../components/auth/OAuthButtons';
 import { OtpVerificationStep } from '../components/auth/OtpVerificationStep';
 
 export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }) {
-  const [email, setEmail] = useState('');
+  const [loginMethod, setLoginMethod] = useState('EMAIL'); // 'EMAIL' | 'PHONE'
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -35,12 +37,12 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
       const data = await apiFetch('/api/v1/auth/login', {
         method: 'POST',
         body: JSON.stringify({
-          email: email.trim(),
+          identifier: identifier.trim(),
           password,
         }),
       });
 
-      // Two-Factor OTP required
+      // Two-Factor Email OTP required
       if (data.otpRequired) {
         setOtpInfo(data);
         setStep('OTP');
@@ -63,7 +65,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
       const data = await apiFetch('/api/v1/auth/login', {
         method: 'POST',
         body: JSON.stringify({
-          email: email.trim(),
+          identifier: otpInfo?.email || identifier.trim(),
           password,
           otp: otpCode,
         }),
@@ -78,15 +80,13 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
     }
   };
 
-  const handleResendOtp = async (preferredChannel, phoneOverride) => {
+  const handleResendOtp = async () => {
     setError('');
     const data = await apiFetch('/api/v1/auth/otp/request', {
       method: 'POST',
       body: JSON.stringify({
         purpose: 'LOGIN',
-        email: email.trim(),
-        phone: phoneOverride || otpInfo?.phone || undefined,
-        channel: preferredChannel || 'EMAIL',
+        identifier: otpInfo?.email || identifier.trim(),
       }),
     });
     setOtpInfo(data);
@@ -166,8 +166,8 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
                 desc: 'Isolated inventory, cashbook ledger, and credit records per account.',
               },
               {
-                title: 'Email & SMS OTP Verification',
-                desc: 'Fast, secure one-time passcode verification for enhanced account protection.',
+                title: 'Email OTP Verification',
+                desc: 'Fast, secure one-time email verification code for enhanced account protection.',
               },
               {
                 title: 'Multi-Currency Support',
@@ -198,8 +198,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
             {step === 'OTP' ? (
               <OtpVerificationStep
                 purpose="LOGIN"
-                email={email}
-                phone={otpInfo?.phone}
+                email={otpInfo?.email || identifier}
                 maskedDestination={otpInfo?.maskedDestination}
                 otpPreview={otpInfo?.otpPreview}
                 deliveryResults={otpInfo?.deliveryResults}
@@ -240,7 +239,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
                 <div className="relative flex items-center justify-center">
                   <div className="border-t w-full theme-divider" />
                   <span className="px-3 text-[11px] font-bold uppercase tracking-wider text-theme-muted whitespace-nowrap">
-                    or continue with email
+                    or sign in with email or phone
                   </span>
                   <div className="border-t w-full theme-divider" />
                 </div>
@@ -255,19 +254,61 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
                 )}
 
                 <form onSubmit={handleLogin} className="space-y-4">
+                  {/* Sign-In Method Switcher: Email or Phone Number */}
+                  <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl liquid-glass-subtle">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginMethod('EMAIL');
+                        setIdentifier('');
+                        setError('');
+                      }}
+                      className={`py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                        loginMethod === 'EMAIL'
+                          ? 'liquid-btn-primary'
+                          : 'text-theme-secondary hover:text-theme-primary'
+                      }`}
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Email Address</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginMethod('PHONE');
+                        setIdentifier('');
+                        setError('');
+                      }}
+                      className={`py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                        loginMethod === 'PHONE'
+                          ? 'liquid-btn-primary'
+                          : 'text-theme-secondary hover:text-theme-primary'
+                      }`}
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>Phone Number</span>
+                    </button>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold mb-1.5 text-theme-primary">
-                      Email Address
+                      {loginMethod === 'PHONE' ? 'Phone Number' : 'Email Address'}
                     </label>
                     <div className="relative">
-                      <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
+                      {loginMethod === 'PHONE' ? (
+                        <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
+                      ) : (
+                        <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
+                      )}
                       <input
-                        type="email"
+                        type={loginMethod === 'PHONE' ? 'tel' : 'email'}
                         required
-                        autoComplete="email"
-                        placeholder="name@company.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        autoComplete={loginMethod === 'PHONE' ? 'tel' : 'email'}
+                        placeholder={
+                          loginMethod === 'PHONE' ? '0803 000 0000' : 'name@company.com'
+                        }
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
                         className="liquid-input w-full pl-10 pr-4 py-3 rounded-2xl text-sm"
                       />
                     </div>
