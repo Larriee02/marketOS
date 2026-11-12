@@ -6,15 +6,9 @@ const GOOGLE_CLIENT_ID =
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
   '7652655046-941j1no6adnoimmiqfa7laef255iv2su.apps.googleusercontent.com';
 
-export const BUSINESS_TYPES = [
-  'Supermarket & Grocery',
-  'Provision & Convenience Store',
-  'Wholesale & Distribution',
-  'Beverage & Drinks Outlet',
-  'Pharmacy & Health Store',
-  'Cosmetics & Household Retail',
-  'General Merchandise',
-];
+import { BUSINESS_TYPES } from '../../utils/businessCategories';
+
+export { BUSINESS_TYPES };
 
 export const LAGOS_LOCATIONS = [
   'Ikeja / Yaba / Surulere',

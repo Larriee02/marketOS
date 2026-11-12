@@ -317,6 +317,26 @@ async function runTests() {
   assert.ok(phoneLoginResult.token, 'Phone login must issue a valid session token');
   console.log(`✅ Sign in with Phone Number (${testPhone}) + Email OTP verified`);
 
+  // ==========================================
+  // MILESTONE 9: Multi-Industry Business Categories & Tailored Starter Catalogs
+  // ==========================================
+  console.log('\n📌 MILESTONE 9: Multi-Industry Trade Categories (Car Dealers, Gadgets, Fabrics, Pharmacy)');
+  const carDealerReg = await authService.register({
+    email: `car_dealer_${Date.now()}@stockflow.test`,
+    password: 'SecureRetailPassword123#',
+    full_name: 'Tunde Motors',
+    business_name: 'Tunde Luxury Autos',
+    business_type: 'Car Dealership & Auto Trade',
+    currency: 'NGN',
+    seed_catalog: true,
+  });
+  const carProducts = await inventoryService.getProducts(carDealerReg.user.id);
+  assert.ok(
+    carProducts.some((p) => p.sku === 'CAR-001' && p.unit === 'Vehicle'),
+    'Car Dealership account must seed vehicle inventory with Vehicle unit'
+  );
+  console.log(`✅ Car Dealership & Auto Trade seeded ${carProducts.length} automotive items`);
+
   console.log('\n🎉 ALL MILESTONES IN THE SIGNUP-TO-FIRST-SALE JOURNEY COMPLETED AND VERIFIED 100% GREEN!\n');
 }
 

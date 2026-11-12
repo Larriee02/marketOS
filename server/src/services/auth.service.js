@@ -162,7 +162,7 @@ class AuthService {
         tx
       );
       if (seedCatalog) {
-        await seedStarterCatalog(tx, id);
+        await seedStarterCatalog(tx, id, businessType);
       }
       await auditRepo.log(
         {
@@ -404,7 +404,7 @@ class AuthService {
           },
           tx
         );
-        await seedStarterCatalog(tx, id);
+        await seedStarterCatalog(tx, id, payload.business_type || 'Wholesale & General Merchandise');
         await auditRepo.log(
           {
             actorUserId: id,

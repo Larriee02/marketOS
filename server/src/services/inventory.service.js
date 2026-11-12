@@ -3,6 +3,7 @@ const AppError = require('../utils/AppError');
 const { multiplyCurrency } = require('../utils/money');
 const cacheService = require('./cache.service');
 const inventoryRepo = require('../repositories/inventory.repository');
+const userRepo = require('../repositories/user.repository');
 const { seedStarterCatalog } = require('../db/starterCatalog');
 
 class InventoryService {
@@ -48,8 +49,9 @@ class InventoryService {
   }
 
   async seedStarterProducts(userId) {
+    const user = await userRepo.findAuthById(userId);
     await db.withTransaction(async (tx) => {
-      await seedStarterCatalog(tx, userId);
+      await seedStarterCatalog(tx, userId, user?.business_type);
     });
     cacheService.invalidatePrefix(`dashboard:${userId}`);
     return inventoryRepo.findAllProducts(userId, {});

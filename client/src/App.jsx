@@ -81,6 +81,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { RouterProvider, useRouter } from './router/RouterContext';
 import { apiFetch, setStoredToken } from './services/api';
 import { formatCurrency, getCurrencySymbol } from './utils/currency';
+import { getBusinessProfile, getAllCommonUnits } from './utils/businessCategories';
 
 const PAYMENT_CHANNEL_LABELS = {
   CASH: 'Cash (Notes)',
@@ -193,6 +194,7 @@ function AppShell({ darkMode, setDarkMode }) {
 
   const currencyCode = currentUser?.currency || 'NGN';
   const currencySymbol = getCurrencySymbol(currencyCode);
+  const businessProfile = getBusinessProfile(currentUser?.business_type);
   const formatNaira = useCallback(
     (val) => formatCurrency(val, currencyCode),
     [currencyCode]
@@ -1321,7 +1323,7 @@ function AppShell({ darkMode, setDarkMode }) {
         : '/api/v1/products';
       const method = editingProduct ? 'PUT' : 'POST';
       const autoSku =
-        productForm.sku.trim() || `PRV-${Math.floor(100 + Math.random() * 900)}`;
+        productForm.sku.trim() || `${businessProfile.skuPrefix}-${Math.floor(100 + Math.random() * 900)}`;
 
       await apiFetch(url, {
         method,
@@ -1330,8 +1332,12 @@ function AppShell({ darkMode, setDarkMode }) {
 
       setShowProductModal(false);
       setEditingProduct(null);
-      setProductForm(INITIAL_PRODUCT_FORM);
-      showSuccessToast(editingProduct ? 'Product updated!' : 'New product added to shelf!');
+      setProductForm({
+        ...INITIAL_PRODUCT_FORM,
+        category: businessProfile.categories[0],
+        unit: businessProfile.units[0],
+      });
+      showSuccessToast(editingProduct ? 'Item updated!' : 'New item added to inventory!');
       fetchAllData();
     } catch (err) {
       alert(err.message);
@@ -1372,7 +1378,7 @@ function AppShell({ darkMode, setDarkMode }) {
       await apiFetch('/api/v1/products/seed-starter', {
         method: 'POST',
       });
-      showSuccessToast('Lagos Provision Starter Catalog loaded (0 stock)!');
+      showSuccessToast(`${currentUser?.business_type || 'Business'} Starter Catalog loaded (0 stock)!`);
       fetchAllData();
     } catch (err) {
       alert(err.message);
@@ -4871,18 +4877,20 @@ function AppShell({ darkMode, setDarkMode }) {
           setEditingProduct(null);
         }}
         title={
-          editingProduct ? `Update Goods: ${editingProduct.name}` : 'Add New Provision / Goods'
+          editingProduct
+            ? `Update ${businessProfile.itemLabel}: ${editingProduct.name}`
+            : `Add New ${businessProfile.itemLabel}`
         }
-        subtitle="Enter the price you buy from market and the price you sell at your shop"
+        subtitle={`Enter your buying cost and selling price (${currentUser?.business_type || 'Trade Business'})`}
       >
         <form onSubmit={handleSaveProduct} className="space-y-3">
           <div>
             <label className="block text-xs font-bold mb-1 text-theme-primary">
-              Product Name (e.g. Peak Milk Roll, Indomie Carton, Dangote Sugar)
+              Item / Product Name ({businessProfile.namePlaceholder})
             </label>
             <input
               required
-              placeholder="Enter item name..."
+              placeholder={businessProfile.namePlaceholder}
               value={productForm.name}
               onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
               className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
@@ -4895,19 +4903,24 @@ function AppShell({ darkMode, setDarkMode }) {
                 Category
               </label>
               <select
-                value={productForm.category}
+                value={
+                  businessProfile.categories.includes(productForm.category)
+                    ? productForm.category
+                    : productForm.category || businessProfile.categories[0]
+                }
                 onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
                 className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
               >
-                <option value="Milk & Drinks">Milk & Drinks</option>
-                <option value="Noodles & Pasta">Noodles & Pasta</option>
-                <option value="Swallow & Grains">Swallow & Grains (Rice/Semo/Garri)</option>
-                <option value="Cooking Oil">Cooking Oil & Seasoning</option>
-                <option value="Canned Food">Canned Food (Sardine/Tomato)</option>
-                <option value="Cereals & Snacks">Cereals, Biscuits & Snacks</option>
-                <option value="Soap & Household">Soap, Detergent & Toiletries</option>
-                <option value="Bread & Bakery">Bread & Bakery</option>
-                <option value="Provisions">Other Provisions</option>
+                {Array.from(
+                  new Set([
+                    ...businessProfile.categories,
+                    ...(productForm.category ? [productForm.category] : []),
+                  ])
+                ).map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -4915,19 +4928,23 @@ function AppShell({ darkMode, setDarkMode }) {
                 Selling Unit (How do you sell it?)
               </label>
               <select
-                value={productForm.unit}
+                value={
+                  productForm.unit || businessProfile.units[0]
+                }
                 onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
                 className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
               >
-                <option value="Piece">Single Piece</option>
-                <option value="Roll">Roll / Dozen</option>
-                <option value="Pack">Pack</option>
-                <option value="Carton">Carton</option>
-                <option value="Bag">Bag</option>
-                <option value="Tin">Tin / Can</option>
-                <option value="Loaf">Loaf</option>
-                <option value="Pouch">Pouch / Bottle</option>
-                <option value="Crate">Crate</option>
+                {Array.from(
+                  new Set([
+                    ...businessProfile.units,
+                    ...getAllCommonUnits(),
+                    ...(productForm.unit ? [productForm.unit] : []),
+                  ])
+                ).map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
