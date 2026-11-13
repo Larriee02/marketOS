@@ -147,53 +147,35 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
       {/* Main Content */}
       <main className="max-w-6xl w-full mx-auto my-auto py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
         {/* Left Column: Onboarding Highlights */}
-        <div className="lg:col-span-5 space-y-5 lg:sticky lg:top-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-subtle text-xs font-extrabold text-theme-brand">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Secure 2-Factor Registration</span>
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-luxury leading-tight text-theme-primary">
-            Set up your <span className="text-theme-brand">Retail Workspace</span> with OTP verification.
+        <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-10">
+          <h1 className="text-3xl lg:text-4xl font-extrabold font-luxury leading-tight text-theme-primary">
+            Set up your <span className="text-theme-brand">MarketOS</span> workspace.
           </h1>
 
-          <p className="text-xs sm:text-sm text-theme-secondary leading-relaxed">
-            Protect your retail store records and cashbook ledger with one-time email verification
-            and sign in seamlessly with your email or phone number.
+          <p className="text-sm text-theme-secondary leading-relaxed max-w-sm">
+            Create your store profile, verify with a quick email code, and start tracking stock and sales.
           </p>
 
-          <div className="space-y-2.5">
-            {[
-              {
-                step: '01',
-                title: 'Enter Account Details',
-                desc: 'Fill in your name, store info, and preferred currency.',
-              },
-              {
-                step: '02',
-                title: 'Email OTP Verification',
-                desc: 'Receive a secure 6-digit verification code directly in your email inbox.',
-              },
-              {
-                step: '03',
-                title: 'Instant Workspace Activation',
-                desc: 'Verify your code to activate your private inventory and cashbook platform.',
-              },
-            ].map((s) => (
-              <div
-                key={s.step}
-                className="liquid-glass-subtle p-3.5 rounded-2xl flex items-start gap-3"
-              >
-                <span className="px-2.5 py-1 rounded-xl liquid-btn-primary text-[11px] font-extrabold font-luxury shrink-0">
-                  {s.step}
-                </span>
-                <div>
-                  <div className="text-xs font-extrabold text-theme-primary">{s.title}</div>
-                  <p className="text-[11px] text-theme-secondary mt-0.5">{s.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ul className="space-y-3 text-sm text-theme-secondary">
+            <li className="flex items-center gap-3">
+              <span className="w-6 h-6 rounded-full liquid-btn-primary text-[11px] font-extrabold flex items-center justify-center shrink-0">
+                1
+              </span>
+              <span>Store details &amp; currency</span>
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="w-6 h-6 rounded-full liquid-btn-primary text-[11px] font-extrabold flex items-center justify-center shrink-0">
+                2
+              </span>
+              <span>6-digit email verification</span>
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="w-6 h-6 rounded-full liquid-btn-primary text-[11px] font-extrabold flex items-center justify-center shrink-0">
+                3
+              </span>
+              <span>Instant POS &amp; ledger access</span>
+            </li>
+          </ul>
         </div>
 
         {/* Right Column: Registration Card */}
@@ -215,14 +197,9 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
             ) : (
               <>
                 <div className="flex items-center justify-between border-b pb-4 theme-divider">
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-extrabold font-luxury text-theme-primary">
-                      Create Your Account
-                    </h2>
-                    <p className="text-xs text-theme-secondary mt-0.5">
-                      Enter your store details to receive an OTP verification code
-                    </p>
-                  </div>
+                  <h2 className="text-lg sm:text-xl font-extrabold font-luxury text-theme-primary">
+                    Create Your Account
+                  </h2>
                   <button
                     type="button"
                     onClick={() => onNavigate('/login')}

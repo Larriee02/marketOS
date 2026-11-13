@@ -33,7 +33,7 @@ export function OnboardingJourneyCard({
   onToggleDismiss,
   formatCurrency,
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   // Compute status for all 5 milestones
   // 1. Account created
@@ -60,6 +60,10 @@ export function OnboardingJourneyCard({
   const completedCount = [step1Done, step2Done, step3Done, step4Done, step5Done].filter(Boolean).length;
   const progressPercent = Math.round((completedCount / 5) * 100);
   const allComplete = completedCount === 5;
+
+  if (allComplete) {
+    return null;
+  }
 
   if (isDismissed) {
     return (
@@ -95,16 +99,13 @@ export function OnboardingJourneyCard({
             <span className="p-1.5 rounded-xl liquid-btn-primary">
               <Sparkles className="w-4 h-4" />
             </span>
-            <h3 className="font-extrabold font-luxury text-base sm:text-lg text-theme-primary">
-              Retail Launch Checklist: Signup to First Sale
+            <h3 className="font-extrabold font-luxury text-sm sm:text-base text-theme-primary">
+              Store Setup Checklist
             </h3>
             <Badge variant={allComplete ? 'success' : 'info'}>
-              {allComplete ? 'Ready for Business' : `${completedCount}/5 Steps`}
+              {allComplete ? 'Ready' : `${completedCount}/5`}
             </Badge>
           </div>
-          <p className="text-xs text-theme-secondary">
-            Set up your shop in 5 simple steps so your shelf stock is counted and counter is ready for buyers.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-center">

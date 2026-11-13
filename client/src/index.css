@@ -550,17 +550,19 @@ select.liquid-input option {
 .sf-grid {
   position: absolute;
   inset: 0;
+  opacity: 0.5;
   background-size: 64px 64px;
   background-image:
-    linear-gradient(to right, rgba(37, 99, 235, 0.12) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(11, 31, 68, 0.10) 1px, transparent 1px);
+    linear-gradient(to right, rgba(37, 99, 235, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(11, 31, 68, 0.08) 1px, transparent 1px);
   animation: sfGridFlow 14s linear infinite;
   transition: opacity 0.6s ease;
 }
 .sf-scene--dark .sf-grid {
+  opacity: 0.55;
   background-image:
-    linear-gradient(to right, rgba(96, 165, 250, 0.18) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(37, 99, 235, 0.18) 1px, transparent 1px);
+    linear-gradient(to right, rgba(96, 165, 250, 0.14) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(37, 99, 235, 0.14) 1px, transparent 1px);
 }
 @keyframes sfGridFlow {
   from { background-position: 0 0; }
@@ -602,8 +604,8 @@ select.liquid-input option {
   transform: translate3d(calc(var(--px) * 30px), calc(var(--py) * 40px), 0);
   animation: sfBreath 20s ease-in-out infinite;
 }
-.sf-scene--light .sf-orb { opacity: 0.75; }
-.sf-scene--dark .sf-orb { opacity: 1; }
+.sf-scene--light .sf-orb { opacity: 0.55; }
+.sf-scene--dark .sf-orb { opacity: 0.75; }
 @keyframes sfBreath {
   0%, 100% { scale: 1; }
   50% { scale: 1.12; }
@@ -613,6 +615,7 @@ select.liquid-input option {
 .sf-object {
   position: absolute;
   transform-style: preserve-3d;
+  opacity: 0.45;
   transition: opacity 0.7s ease;
 }
 .sf-object--cube {

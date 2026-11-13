@@ -142,50 +142,14 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
         className="max-w-6xl w-full mx-auto my-auto py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center"
       >
         {/* Left Column: MarketOS Brand Overview */}
-        <div className="lg:col-span-6 space-y-5">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-subtle text-xs font-extrabold text-theme-brand">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>BRAND OVERVIEW • TRACK • MANAGE • GROW</span>
-          </div>
-
-          <h1 className="text-2xl sm:text-4xl lg:text-[2.65rem] font-extrabold font-luxury leading-[1.12] text-theme-primary">
+        <div className="lg:col-span-6 space-y-6">
+          <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold font-luxury leading-[1.12] text-theme-primary">
             Everything your business needs, <span className="text-theme-brand">in one place.</span>
           </h1>
 
-          <p className="text-xs sm:text-sm text-theme-secondary leading-relaxed max-w-xl">
-            MarketOS helps you track your stock, record sales, manage cash, monitor debts and see
-            your profit — all in one simple, mobile-friendly platform.
+          <p className="text-sm text-theme-secondary leading-relaxed max-w-md">
+            Track stock, record sales, manage cash, and monitor debts — in one simple platform.
           </p>
-
-          {/* 5 Core Platform Modules matching Brand Iconography */}
-          <div className="grid grid-cols-5 gap-2 pt-1">
-            {[
-              { label: 'Stock', icon: Package },
-              { label: 'Sales', icon: ShoppingCart },
-              { label: 'Cash', icon: Wallet },
-              { label: 'Debts', icon: Users },
-              { label: 'Reports', icon: BarChart3 },
-            ].map((mod) => {
-              const Icon = mod.icon;
-              return (
-                <div
-                  key={mod.label}
-                  className="liquid-glass-subtle p-2.5 rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center"
-                >
-                  <div
-                    style={{
-                      backgroundColor: 'var(--brand-blue-soft)',
-                      color: 'var(--brand-blue)',
-                    }}
-                    className="p-2 rounded-xl"
-                  >
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <span className="text-[11px] font-bold text-theme-primary">{mod.label}</span>
-                </div>
-              );
-            })}
-          </div>
 
           {/* Live 3D Layered MarketOS App-Frame Preview */}
           <div className="app-frame-3d pt-1">

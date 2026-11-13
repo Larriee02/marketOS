@@ -1832,18 +1832,13 @@ function AppShell({ darkMode, setDarkMode }) {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-2.5">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <MarketOSLogo variant="icon" size="sm" />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-base sm:text-xl font-extrabold font-luxury tracking-tight truncate text-white">
-                  {currentUser.business_name || 'MarketOS'}
-                </h1>
-                <span className="hidden xs:inline-block text-[10px] sm:text-[11px] bg-blue-500/25 text-blue-100 border border-blue-400/40 px-2.5 py-0.5 rounded-full font-extrabold">
-                  {currentUser.role === 'ADMIN' ? 'Admin' : 'Verified'} • {currencyCode} ({currencySymbol})
-                </span>
-              </div>
-              <p className="text-[11px] sm:text-xs text-slate-300/90 truncate font-medium">
-                {currentUser.full_name} {currentUser.location ? `• ${currentUser.location}` : ''}
-              </p>
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className="text-base sm:text-lg font-extrabold font-luxury tracking-tight truncate text-white">
+                {currentUser.business_name || 'MarketOS'}
+              </h1>
+              <span className="hidden xs:inline-block text-[10px] sm:text-[11px] bg-blue-500/25 text-blue-100 border border-blue-400/40 px-2 py-0.5 rounded-full font-bold shrink-0">
+                {currencyCode}
+              </span>
             </div>
           </div>
 
@@ -1949,66 +1944,6 @@ function AppShell({ darkMode, setDarkMode }) {
             </button>
           </div>
         )}
-
-        {/* MarketOS Business Overview Hero Card */}
-        <section className="marketos-hero-card rounded-3xl p-4 sm:p-5 relative overflow-hidden">
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 360 90"
-            className="absolute right-0 bottom-0 w-64 sm:w-80 h-24 opacity-20 pointer-events-none"
-            fill="none"
-          >
-            <path
-              d="M0 78 C 55 72, 95 45, 145 52 C 195 58, 240 28, 305 20 L 340 8"
-              stroke="#FFFFFF"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-            />
-            <path
-              d="M326 6 L342 7 L339 23"
-              stroke="#FFFFFF"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest bg-white/15 text-blue-100 px-2.5 py-0.5 rounded-full">
-                  Business Overview
-                </span>
-                <span className="text-[11px] font-semibold text-blue-100/90">
-                  Run your market. Smarter.
-                </span>
-              </div>
-              <div className="flex items-baseline gap-2.5 flex-wrap">
-                <span className="text-2xl sm:text-3xl font-extrabold font-luxury tabular-nums text-white">
-                  {formatNaira(dashboard.net_cash_balance)}
-                </span>
-                <span className="text-xs font-bold bg-emerald-400/20 text-emerald-200 border border-emerald-300/30 px-2 py-0.5 rounded-full tabular-nums">
-                  Today In: +{formatNaira(dashboard.today_inflow)}
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => handleSelectTab('counter', false)}
-                className="bg-white text-[#0B1F44] hover:bg-blue-50 px-3.5 py-2 rounded-xl text-xs font-extrabold shadow-sm cursor-pointer transition"
-              >
-                + Record Sale
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectTab('reports', false)}
-                className="bg-white/15 hover:bg-white/25 text-white border border-white/25 px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition"
-              >
-                View Reports
-              </button>
-            </div>
-          </div>
-        </section>
 
         {/* 4 KPI Cards */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
@@ -2119,24 +2054,6 @@ function AppShell({ darkMode, setDarkMode }) {
           </div>
         </div>
 
-        {/* Section Header */}
-        <div className="liquid-glass-subtle px-4 py-3 rounded-2xl flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="text-sm sm:text-base font-extrabold font-luxury text-theme-primary">
-              {currentPageMeta.title}
-            </h2>
-            <p className="text-xs text-theme-secondary mt-0.5">{currentPageMeta.subtitle}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate('/settings')}
-            className="text-xs font-extrabold text-theme-brand hover:underline cursor-pointer flex items-center gap-1"
-          >
-            <Settings className="w-3.5 h-3.5" />
-            <span>Currency: {currencyCode} ({currencySymbol})</span>
-          </button>
-        </div>
-
         {/* Onboarding Launch Journey Card */}
         <OnboardingJourneyCard
           currentUser={currentUser}
@@ -2242,13 +2159,11 @@ function AppShell({ darkMode, setDarkMode }) {
                                 stock <= 0 ? 'danger' : isLow ? 'warning' : 'success'
                               }
                             >
-                              {stock <= 0
-                                ? 'Out of Stock (0)'
-                                : `Available: ${stock} ${p.unit}`}
+                              {stock <= 0 ? 'Out of stock' : `${stock} ${p.unit}`}
                             </Badge>
                             {inBasket > 0 && (
                               <Badge variant="info">
-                                In Cart: {inBasket} ({stock - inBasket} left)
+                                {inBasket} in cart
                               </Badge>
                             )}
                           </div>
@@ -2560,7 +2475,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   title="Import goods in bulk via CSV or Excel paste"
                 >
                   <Upload className="w-3.5 h-3.5" />
-                  <span>Bulk Import</span>
+                  <span>Import</span>
                 </button>
                 <button
                   type="button"
@@ -2569,7 +2484,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   title="Physical shelf stock count audit comparing expected vs physical count"
                 >
                   <ClipboardCheck className="w-3.5 h-3.5" />
-                  <span>Stock Audit</span>
+                  <span>Audit</span>
                 </button>
                 <button
                   type="button"
@@ -2578,7 +2493,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   title="Fast multi-product stock adjust (restock, damage, expired, missing)"
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5" />
-                  <span>Batch Adjust</span>
+                  <span>Batch</span>
                 </button>
                 <button
                   type="button"
@@ -2586,7 +2501,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   className="liquid-btn-primary flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  Market Order ({lowStockRestockPlan.length})
+                  Restock ({lowStockRestockPlan.length})
                 </button>
                 <button
                   onClick={() => setLowStockOnly(!lowStockOnly)}
@@ -2595,7 +2510,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   }`}
                 >
                   <Filter className="w-3.5 h-3.5" />
-                  {lowStockOnly ? 'Showing Low Stock Only' : 'Filter Low Stock'}
+                  {lowStockOnly ? 'Low Stock' : 'Low Stock'}
                 </button>
                 <button
                   onClick={() =>
