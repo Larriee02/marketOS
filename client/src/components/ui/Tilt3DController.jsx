@@ -1,14 +1,12 @@
 import { useEffect } from 'react';
 
 /**
- * Global 3D Tilt Controller
- * Gives every compact `.liquid-glass` card (stat tiles, product cards, panels) a subtle
- * cursor-driven 3D tilt with a moving specular glare — without editing each component.
- * Large panels, modals, tables, and form-heavy cards are skipped so they stay stable.
+ * Global 3D Specular Light Controller
+ * Projects a subtle cursor-tracking specular rim highlight (--mx, --my) onto
+ * interactive `.liquid-glass` cards without tilting or distorting text/layout.
  */
-const MAX_TILT_DEG = 5;
-const MAX_WIDTH = 560;
-const MAX_HEIGHT = 440;
+const MAX_WIDTH = 640;
+const MAX_HEIGHT = 480;
 
 export function Tilt3DController() {
   useEffect(() => {
@@ -23,14 +21,12 @@ export function Tilt3DController() {
     const reset = (el) => {
       if (!el) return;
       el.classList.remove('tilt-active');
-      el.style.removeProperty('transform');
       el.style.removeProperty('--mx');
       el.style.removeProperty('--my');
     };
 
     const findCard = (target) => {
       if (!(target instanceof Element)) return null;
-      // Never tilt while interacting with form controls, inside dialogs, or tables
       if (target.closest('input, select, textarea, [role="dialog"], table')) return null;
       const card = target.closest('.liquid-glass, .tilt-3d');
       if (!card) return null;
@@ -53,17 +49,12 @@ export function Tilt3DController() {
       if (!active) return;
 
       const rect = active.getBoundingClientRect();
-      const x = (lastEvent.clientX - rect.left) / rect.width; // 0..1
-      const y = (lastEvent.clientY - rect.top) / rect.height;
-      const rotY = (x - 0.5) * 2 * MAX_TILT_DEG;
-      const rotX = (0.5 - y) * 2 * MAX_TILT_DEG;
+      const x = ((lastEvent.clientX - rect.left) / rect.width) * 100;
+      const y = ((lastEvent.clientY - rect.top) / rect.height) * 100;
 
       active.classList.add('tilt-active');
-      active.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
-      active.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
-      active.style.transform = `perspective(900px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(
-        2
-      )}deg) translateZ(0)`;
+      active.style.setProperty('--mx', `${x.toFixed(1)}%`);
+      active.style.setProperty('--my', `${y.toFixed(1)}%`);
     };
 
     const onMove = (e) => {

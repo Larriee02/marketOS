@@ -1824,6 +1824,9 @@ function AppShell({ darkMode, setDarkMode }) {
 
   return (
     <div className="min-h-screen pb-36 md:pb-10">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       {/* Top Navigation Header */}
       <header className="liquid-glass-header text-slate-100 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-2.5">
@@ -1926,7 +1929,7 @@ function AppShell({ darkMode, setDarkMode }) {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-5 sm:space-y-6">
+      <main id="main-content" className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-5 sm:space-y-6">
         {/* Toast Alert */}
         {toast && (
           <div className="liquid-btn-primary px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2">
@@ -4768,7 +4771,7 @@ function AppShell({ darkMode, setDarkMode }) {
               key={t.id}
               type="button"
               onClick={() => handleSelectTab(t.id, true)}
-              className={`min-w-0 py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold cursor-pointer select-none ${
+              className={`min-w-0 min-h-[44px] py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold cursor-pointer select-none ${
                 isActive ? 'liquid-btn-primary shadow-sm' : 'text-theme-secondary'
               }`}
             >

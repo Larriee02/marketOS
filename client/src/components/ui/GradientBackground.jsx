@@ -61,9 +61,10 @@ export function GradientBackground({ darkMode }) {
       <div className="sf-atmo sf-atmo--light" />
       <div className="sf-atmo sf-atmo--dark" />
 
-      {/* Depth Layer 1: 3D perspective floor grid */}
+      {/* Depth Layer 1: 3D perspective floor grid + horizon glow */}
       <div className="sf-grid-wrap">
         <div className="sf-grid" />
+        <div className="sf-horizon-beam" />
       </div>
 
       {/* Depth Layer 2: Volumetric light orbs (different parallax depths) */}
@@ -71,7 +72,7 @@ export function GradientBackground({ darkMode }) {
       <div className="sf-orb sf-orb--indigo" />
       <div className="sf-orb sf-orb--cyan" />
 
-      {/* Depth Layer 3: Floating 3D objects */}
+      {/* Depth Layer 3: Floating 3D architectural objects */}
       <div className="sf-object sf-object--cube">
         <div className="sf-cube">
           <span className="sf-face sf-face--front" />
@@ -87,8 +88,16 @@ export function GradientBackground({ darkMode }) {
         <div className="sf-ring" />
       </div>
 
+      <div className="sf-object sf-object--ring-sm">
+        <div className="sf-ring-sm" />
+      </div>
+
       <div className="sf-object sf-object--pill">
         <div className="sf-pill" />
+      </div>
+
+      <div className="sf-object sf-object--prism">
+        <div className="sf-prism" />
       </div>
 
       {/* Fine film grain for a premium, tactile finish */}

@@ -99,6 +99,9 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
 
   return (
     <div className="min-h-screen flex flex-col justify-between p-4 sm:p-6 lg:p-8">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       {/* Header */}
       <header className="max-w-6xl w-full mx-auto flex flex-wrap items-center justify-between gap-3">
         <MarketOSLogo size="md" showTagline />
@@ -134,7 +137,10 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
       </header>
 
       {/* Main Content */}
-      <main className="max-w-6xl w-full mx-auto my-auto py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+      <main
+        id="main-content"
+        className="max-w-6xl w-full mx-auto my-auto py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center"
+      >
         {/* Left Column: MarketOS Brand Overview */}
         <div className="lg:col-span-6 space-y-5">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-subtle text-xs font-extrabold text-theme-brand">
@@ -181,36 +187,63 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
             })}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            {[
-              {
-                title: 'Dedicated Workspace',
-                desc: 'Isolated inventory, cashbook ledger, and credit records per account.',
-              },
-              {
-                title: 'Email OTP Verification',
-                desc: 'Fast, secure one-time email verification code for enhanced account protection.',
-              },
-              {
-                title: 'Multi-Currency Support',
-                desc: 'Switch seamlessly between NGN, USD, GBP, EUR, GHS, KES, ZAR, and CAD.',
-              },
-              {
-                title: 'Real-Time Reconciliation',
-                desc: 'Instant visibility across cash, POS terminals, and bank transfers.',
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="liquid-glass-subtle p-3.5 rounded-2xl space-y-1"
-              >
-                <div className="flex items-center gap-1.5 text-xs font-extrabold text-theme-primary">
-                  <Sparkles className="w-3.5 h-3.5 text-theme-brand shrink-0" />
-                  <span>{item.title}</span>
+          {/* Live 3D Layered MarketOS App-Frame Preview */}
+          <div className="app-frame-3d pt-1">
+            <div className="app-frame-3d-inner liquid-glass-elevated rounded-3xl p-4 space-y-3">
+              <div className="marketos-hero-card rounded-2xl p-3.5 relative overflow-hidden">
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 280 64"
+                  className="absolute right-0 bottom-0 w-44 h-16 opacity-25 pointer-events-none"
+                  fill="none"
+                >
+                  <path
+                    d="M0 54 C 45 48, 80 30, 125 36 C 170 42, 205 18, 260 10"
+                    stroke="#FFFFFF"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="relative flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-blue-100">
+                      Business Overview
+                    </p>
+                    <p className="text-xl font-extrabold font-luxury tabular-nums text-white mt-0.5">
+                      ₦245,000
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-extrabold bg-emerald-400/20 text-emerald-200 border border-emerald-300/30 px-2.5 py-0.5 rounded-full tabular-nums">
+                    +12% this week
+                  </span>
                 </div>
-                <p className="text-[11px] text-theme-secondary leading-snug">{item.desc}</p>
               </div>
-            ))}
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="liquid-glass-subtle rounded-xl p-2.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-theme-secondary">
+                    Stock Left
+                  </div>
+                  <div className="flex items-baseline justify-between mt-0.5">
+                    <span className="text-base font-extrabold font-luxury tabular-nums text-theme-primary">
+                      542
+                    </span>
+                    <span className="text-[10px] font-bold text-theme-inflow">In Stock</span>
+                  </div>
+                </div>
+                <div className="liquid-glass-subtle rounded-xl p-2.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-theme-secondary">
+                    Cash Balance
+                  </div>
+                  <div className="flex items-baseline justify-between mt-0.5">
+                    <span className="text-base font-extrabold font-luxury tabular-nums text-theme-primary">
+                      ₦98,500
+                    </span>
+                    <span className="text-[10px] font-bold text-theme-brand">Synced</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
