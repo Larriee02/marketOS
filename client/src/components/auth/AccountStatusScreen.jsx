@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../../services/api';
 import { Badge } from '../ui/Badge';
+import { MarketOSLogo } from '../ui/MarketOSLogo';
 
 export function AccountStatusScreen({
   user,
@@ -53,14 +54,7 @@ export function AccountStatusScreen({
   return (
     <div className="min-h-screen flex flex-col justify-between p-4 sm:p-6">
       <header className="max-w-4xl w-full mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-2xl liquid-btn-primary">
-            <Package className="w-5 h-5" />
-          </div>
-          <span className="font-extrabold font-luxury text-base sm:text-lg text-theme-primary">
-            MarketOS
-          </span>
-        </div>
+        <MarketOSLogo size="sm" />
 
         <div className="flex items-center gap-2">
           {onNavigate && (

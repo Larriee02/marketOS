@@ -16,146 +16,146 @@
 :root {
   color-scheme: light;
 
-  /* Core Surfaces — Light Mode (Porcelain Pearl & Royal Indigo-Emerald) */
-  --bg: #EEF2F9;
-  --surface: rgba(255, 255, 255, 0.80);
-  --surface-elevated: rgba(255, 255, 255, 0.92);
-  --primary: #0F172A;
-  --accent: #059669;
-  --text: #0F172A;
-  --text-muted: #475569;
-  --border: rgba(148, 163, 184, 0.28);
+  /* Core Surfaces — Light Mode (MarketOS Brand System) */
+  --bg: #F8FAFC;
+  --surface: rgba(255, 255, 255, 0.90);
+  --surface-elevated: rgba(255, 255, 255, 0.97);
+  --primary: #0B1F44;
+  --accent: #2563EB;
+  --text: #1E293B;
+  --text-muted: #64748B;
+  --border: #E2E8F0;
 
-  /* Functional Colours — Light Mode */
-  --color-success: #059669;
-  --color-warning: #D97706;
-  --color-danger: #E11D48;
-  --color-info: #4F46E5;
+  /* Functional Status Colours — Light Mode */
+  --color-success: #16A34A;
+  --color-warning: #F59E0B;
+  --color-danger: #DC2626;
+  --color-info: #3B82F6;
 
   /* Semantic Surface Mappings */
-  --bg-app: #EEF2F9;
+  --bg-app: #F8FAFC;
   --bg-mesh:
-    radial-gradient(at 10% 8%, rgba(16, 185, 129, 0.10) 0px, transparent 48%),
-    radial-gradient(at 90% 12%, rgba(79, 70, 229, 0.08) 0px, transparent 50%),
-    linear-gradient(180deg, #F4F7FC 0%, #E7EEF8 100%);
+    radial-gradient(at 10% 8%, rgba(37, 99, 235, 0.08) 0px, transparent 48%),
+    radial-gradient(at 90% 12%, rgba(59, 130, 246, 0.07) 0px, transparent 50%),
+    linear-gradient(180deg, #F8FAFC 0%, #EFF6FF 100%);
 
-  --bg-card: rgba(255, 255, 255, 0.80);
-  --bg-card-elevated: rgba(255, 255, 255, 0.94);
-  --bg-subtle: rgba(248, 250, 252, 0.75);
-  --bg-input: rgba(255, 255, 255, 0.90);
+  --bg-card: rgba(255, 255, 255, 0.90);
+  --bg-card-elevated: rgba(255, 255, 255, 0.98);
+  --bg-subtle: rgba(241, 245, 249, 0.80);
+  --bg-input: #FFFFFF;
   --bg-option: #FFFFFF;
-  --bg-header: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.93) 100%);
+  --bg-header: linear-gradient(135deg, #0B1F44 0%, #132E63 100%);
 
-  --border-color: rgba(255, 255, 255, 0.90);
-  --border-outer: rgba(148, 163, 184, 0.28);
-  --divider-color: rgba(148, 163, 184, 0.22);
+  --border-color: rgba(255, 255, 255, 0.95);
+  --border-outer: #E2E8F0;
+  --divider-color: #E2E8F0;
 
-  /* 3D Multi-Layered Elevation Shadow (Specular Top Bevel + Soft Key Light + Ambient Depth) */
+  /* 3D Multi-Layered Elevation Shadow */
   --glass-shadow:
-    inset 0 1.5px 0 0 rgba(255, 255, 255, 0.95),
-    inset 0 -1px 0 0 rgba(15, 23, 42, 0.04),
-    0 10px 28px -8px rgba(15, 23, 42, 0.11),
-    0 3px 10px -2px rgba(15, 23, 42, 0.06);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 0 0 rgba(11, 31, 68, 0.03),
+    0 10px 26px -10px rgba(11, 31, 68, 0.10),
+    0 2px 8px -2px rgba(11, 31, 68, 0.05);
 
   --glass-shadow-elevated:
-    inset 0 1.5px 0 0 rgba(255, 255, 255, 0.98),
-    inset 0 -1px 0 0 rgba(15, 23, 42, 0.06),
-    0 20px 44px -12px rgba(15, 23, 42, 0.16),
-    0 6px 16px -4px rgba(15, 23, 42, 0.08);
+    inset 0 1px 0 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 0 rgba(11, 31, 68, 0.05),
+    0 20px 40px -14px rgba(11, 31, 68, 0.15),
+    0 6px 14px -4px rgba(11, 31, 68, 0.07);
 
   /* Typography Roles */
-  --heading-color: #0F172A;
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
+  --heading-color: #0B1F44;
+  --text-primary: #1E293B;
+  --text-secondary: #64748B;
 
-  /* Brand & 3D Action Roles */
-  --brand-blue: #059669;
-  --brand-blue-hover: #047857;
-  --brand-blue-soft: rgba(5, 150, 105, 0.12);
-  --brand-blue-border: rgba(5, 150, 105, 0.30);
-  --brand-gradient: linear-gradient(135deg, #10B981 0%, #059669 55%, #047857 100%);
+  /* Brand & 3D Action Roles (MarketOS Blue #2563EB + Light Blue #DBEAFE) */
+  --brand-blue: #2563EB;
+  --brand-blue-hover: #1D4ED8;
+  --brand-blue-soft: #DBEAFE;
+  --brand-blue-border: rgba(37, 99, 235, 0.28);
+  --brand-gradient: linear-gradient(135deg, #3B82F6 0%, #2563EB 55%, #1D4ED8 100%);
   --btn-primary-text: #FFFFFF;
 
-  --brand-gold: #4F46E5;
-  --brand-gold-soft: rgba(79, 70, 229, 0.10);
-  --brand-gold-border: rgba(79, 70, 229, 0.26);
-  --gold-gradient: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+  --brand-gold: #0B1F44;
+  --brand-gold-soft: rgba(11, 31, 68, 0.08);
+  --brand-gold-border: rgba(11, 31, 68, 0.20);
+  --gold-gradient: linear-gradient(135deg, #1E3A8A 0%, #0B1F44 100%);
 
-  --color-inflow: #059669;
-  --color-outflow: #E11D48;
+  --color-inflow: #16A34A;
+  --color-outflow: #DC2626;
 
   /* Badge Surfaces & Text */
-  --badge-info-bg: rgba(79, 70, 229, 0.10);
-  --badge-info-text: #4338CA;
-  --badge-info-border: rgba(79, 70, 229, 0.25);
+  --badge-info-bg: #DBEAFE;
+  --badge-info-text: #1D4ED8;
+  --badge-info-border: rgba(59, 130, 246, 0.30);
 
-  --badge-success-bg: rgba(5, 150, 105, 0.11);
-  --badge-success-text: #047857;
-  --badge-success-border: rgba(5, 150, 105, 0.28);
+  --badge-success-bg: rgba(22, 163, 74, 0.10);
+  --badge-success-text: #15803D;
+  --badge-success-border: rgba(22, 163, 74, 0.26);
 
-  --badge-warning-bg: rgba(217, 119, 6, 0.11);
+  --badge-warning-bg: rgba(245, 158, 11, 0.12);
   --badge-warning-text: #B45309;
-  --badge-warning-border: rgba(217, 119, 6, 0.28);
+  --badge-warning-border: rgba(245, 158, 11, 0.30);
 
-  --badge-danger-bg: rgba(225, 29, 72, 0.10);
-  --badge-danger-text: #BE123C;
-  --badge-danger-border: rgba(225, 29, 72, 0.26);
+  --badge-danger-bg: rgba(220, 38, 38, 0.10);
+  --badge-danger-text: #B91C1C;
+  --badge-danger-border: rgba(220, 38, 38, 0.25);
 
-  --badge-neutral-bg: rgba(241, 245, 249, 0.9);
-  --badge-neutral-text: #334155;
-  --badge-neutral-border: rgba(203, 213, 225, 0.7);
+  --badge-neutral-bg: #F1F5F9;
+  --badge-neutral-text: #475569;
+  --badge-neutral-border: #CBD5E1;
 }
 
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
 
-  /* Core Surfaces — Dark Mode (Obsidian Void & Bioluminescent Emerald/Cyan) */
-  --bg: #060B16;
-  --surface: rgba(15, 23, 42, 0.72);
-  --surface-elevated: rgba(22, 33, 56, 0.86);
-  --primary: #0F172A;
-  --accent: #34D399;
-  --text: #F1F5F9;
+  /* Core Surfaces — Dark Mode (MarketOS Deep Navy #0B1F44 & Electric Blue) */
+  --bg: #061229;
+  --surface: rgba(11, 31, 68, 0.78);
+  --surface-elevated: rgba(16, 40, 84, 0.90);
+  --primary: #0B1F44;
+  --accent: #3B82F6;
+  --text: #F8FAFC;
   --text-muted: #94A3B8;
-  --border: rgba(148, 163, 184, 0.16);
+  --border: rgba(148, 163, 184, 0.18);
 
-  /* Functional Colours — Dark Mode */
-  --color-success: #34D399;
+  /* Functional Status Colours — Dark Mode */
+  --color-success: #22C55E;
   --color-warning: #FBBF24;
-  --color-danger: #FB7185;
-  --color-info: #818CF8;
+  --color-danger: #F87171;
+  --color-info: #60A5FA;
 
   /* Semantic Surface Mappings */
-  --bg-app: #060B16;
+  --bg-app: #061229;
   --bg-mesh:
-    radial-gradient(at 12% 10%, rgba(16, 185, 129, 0.10) 0px, transparent 52%),
-    radial-gradient(at 88% 14%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
-    linear-gradient(180deg, #060B16 0%, #091122 100%);
+    radial-gradient(at 12% 10%, rgba(37, 99, 235, 0.18) 0px, transparent 52%),
+    radial-gradient(at 88% 14%, rgba(59, 130, 246, 0.14) 0px, transparent 50%),
+    linear-gradient(180deg, #061229 0%, #091836 100%);
 
-  --bg-card: rgba(15, 23, 42, 0.72);
-  --bg-card-elevated: rgba(22, 33, 56, 0.88);
-  --bg-subtle: rgba(30, 41, 59, 0.58);
-  --bg-input: rgba(6, 11, 22, 0.78);
-  --bg-option: #0F172A;
-  --bg-header: linear-gradient(135deg, rgba(10, 17, 32, 0.88) 0%, rgba(17, 28, 48, 0.85) 100%);
+  --bg-card: rgba(11, 31, 68, 0.76);
+  --bg-card-elevated: rgba(16, 40, 84, 0.90);
+  --bg-subtle: rgba(19, 46, 99, 0.56);
+  --bg-input: rgba(6, 18, 41, 0.82);
+  --bg-option: #0B1F44;
+  --bg-header: linear-gradient(135deg, rgba(6, 18, 41, 0.94) 0%, rgba(11, 31, 68, 0.92) 100%);
 
-  --border-color: rgba(255, 255, 255, 0.10);
-  --border-outer: rgba(148, 163, 184, 0.16);
-  --divider-color: rgba(148, 163, 184, 0.14);
+  --border-color: rgba(255, 255, 255, 0.12);
+  --border-outer: rgba(148, 163, 184, 0.18);
+  --divider-color: rgba(148, 163, 184, 0.15);
 
-  /* 3D Multi-Layered Dark Elevation Shadow (Rim Specular + Deep Obsidian Drop) */
+  /* 3D Multi-Layered Dark Elevation Shadow */
   --glass-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.10),
-    inset 0 -1px 0 0 rgba(0, 0, 0, 0.40),
-    0 18px 40px -12px rgba(2, 6, 16, 0.72),
-    0 4px 14px -2px rgba(2, 6, 16, 0.50);
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.42),
+    0 18px 40px -12px rgba(3, 9, 24, 0.72),
+    0 4px 14px -2px rgba(3, 9, 24, 0.52);
 
   --glass-shadow-elevated:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 0 rgba(0, 0, 0, 0.50),
-    0 24px 56px -14px rgba(2, 6, 16, 0.85),
-    0 8px 20px -4px rgba(2, 6, 16, 0.60);
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.52),
+    0 24px 56px -14px rgba(3, 9, 24, 0.85),
+    0 8px 20px -4px rgba(3, 9, 24, 0.62);
 
   /* Typography Roles */
   --heading-color: #F8FAFC;
@@ -163,41 +163,41 @@
   --text-secondary: #94A3B8;
 
   /* Brand & 3D Action Roles */
-  --brand-blue: #34D399;
-  --brand-blue-hover: #6EE7B7;
-  --brand-blue-soft: rgba(52, 211, 153, 0.15);
-  --brand-blue-border: rgba(52, 211, 153, 0.35);
-  --brand-gradient: linear-gradient(135deg, #34D399 0%, #10B981 55%, #059669 100%);
-  --btn-primary-text: #04130E;
+  --brand-blue: #60A5FA;
+  --brand-blue-hover: #93C5FD;
+  --brand-blue-soft: rgba(37, 99, 235, 0.22);
+  --brand-blue-border: rgba(96, 165, 250, 0.36);
+  --brand-gradient: linear-gradient(135deg, #3B82F6 0%, #2563EB 55%, #1D4ED8 100%);
+  --btn-primary-text: #FFFFFF;
 
-  --brand-gold: #818CF8;
-  --brand-gold-soft: rgba(129, 140, 248, 0.14);
-  --brand-gold-border: rgba(129, 140, 248, 0.32);
-  --gold-gradient: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+  --brand-gold: #60A5FA;
+  --brand-gold-soft: rgba(59, 130, 246, 0.16);
+  --brand-gold-border: rgba(96, 165, 250, 0.32);
+  --gold-gradient: linear-gradient(135deg, #1E3A8A 0%, #0B1F44 100%);
 
-  --color-inflow: #34D399;
-  --color-outflow: #FB7185;
+  --color-inflow: #22C55E;
+  --color-outflow: #F87171;
 
   /* Badge Surfaces & Text */
-  --badge-info-bg: rgba(129, 140, 248, 0.15);
-  --badge-info-text: #A5B4FC;
-  --badge-info-border: rgba(129, 140, 248, 0.32);
+  --badge-info-bg: rgba(59, 130, 246, 0.18);
+  --badge-info-text: #93C5FD;
+  --badge-info-border: rgba(96, 165, 250, 0.32);
 
-  --badge-success-bg: rgba(52, 211, 153, 0.14);
-  --badge-success-text: #34D399;
-  --badge-success-border: rgba(52, 211, 153, 0.32);
+  --badge-success-bg: rgba(34, 197, 94, 0.16);
+  --badge-success-text: #4ADE80;
+  --badge-success-border: rgba(34, 197, 94, 0.32);
 
-  --badge-warning-bg: rgba(251, 191, 36, 0.14);
+  --badge-warning-bg: rgba(245, 158, 11, 0.16);
   --badge-warning-text: #FBBF24;
-  --badge-warning-border: rgba(251, 191, 36, 0.32);
+  --badge-warning-border: rgba(245, 158, 11, 0.32);
 
-  --badge-danger-bg: rgba(251, 113, 133, 0.14);
-  --badge-danger-text: #FDA4AF;
-  --badge-danger-border: rgba(251, 113, 133, 0.32);
+  --badge-danger-bg: rgba(248, 113, 113, 0.16);
+  --badge-danger-text: #FCA5A5;
+  --badge-danger-border: rgba(248, 113, 113, 0.32);
 
-  --badge-neutral-bg: rgba(30, 41, 59, 0.85);
+  --badge-neutral-bg: rgba(19, 46, 99, 0.72);
   --badge-neutral-text: #E2E8F0;
-  --badge-neutral-border: rgba(148, 163, 184, 0.22);
+  --badge-neutral-border: rgba(148, 163, 184, 0.24);
 }
 
 * {
@@ -220,7 +220,7 @@ body {
   background-image: var(--bg-mesh);
   background-attachment: fixed;
   color: var(--text-primary);
-  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   letter-spacing: -0.01em;
   overflow-x: hidden;
@@ -271,8 +271,8 @@ h2,
 h3,
 h4,
 .font-luxury {
-  font-family: "Space Grotesk", "Plus Jakarta Sans", -apple-system, sans-serif;
-  letter-spacing: -0.03em;
+  font-family: "Plus Jakarta Sans", "Inter", -apple-system, sans-serif;
+  letter-spacing: -0.025em;
   color: var(--heading-color);
 }
 
@@ -290,7 +290,7 @@ h4,
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
-  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
   letter-spacing: -0.02em;
 }
 
@@ -401,25 +401,25 @@ select.liquid-input option {
     0 3px 10px -2px rgba(2, 6, 16, 0.38);
 }
 
-/* 3D Tactile Push-Button Physics */
+/* 3D Tactile Push-Button Physics (MarketOS Blue #2563EB) */
 .liquid-btn-primary {
   background: var(--brand-gradient);
   color: var(--btn-primary-text) !important;
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
-    inset 0 1.5px 0 0 rgba(255, 255, 255, 0.38),
-    inset 0 -2.5px 0 0 rgba(0, 0, 0, 0.22),
-    0 8px 20px -4px rgba(5, 150, 105, 0.42),
-    0 2px 4px 0 rgba(0, 0, 0, 0.12);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 0 0 rgba(11, 31, 68, 0.24),
+    0 8px 20px -4px rgba(37, 99, 235, 0.42),
+    0 2px 4px 0 rgba(11, 31, 68, 0.12);
 }
 
 .dark .liquid-btn-primary,
 [data-theme="dark"] .liquid-btn-primary {
-  border-color: rgba(110, 231, 183, 0.45);
+  border-color: rgba(96, 165, 250, 0.42);
   box-shadow:
-    inset 0 1.5px 0 0 rgba(255, 255, 255, 0.45),
-    inset 0 -2.5px 0 0 rgba(0, 0, 0, 0.28),
-    0 8px 24px -4px rgba(52, 211, 153, 0.35),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 0 0 rgba(11, 31, 68, 0.35),
+    0 8px 24px -4px rgba(37, 99, 235, 0.50),
     0 2px 6px 0 rgba(0, 0, 0, 0.35);
 }
 
@@ -433,17 +433,27 @@ select.liquid-input option {
   transform: translateY(-2px);
   filter: brightness(1.06);
   box-shadow:
-    inset 0 1.5px 0 0 rgba(255, 255, 255, 0.45),
-    inset 0 -2.5px 0 0 rgba(0, 0, 0, 0.22),
-    0 12px 28px -4px rgba(5, 150, 105, 0.50),
-    0 4px 8px 0 rgba(0, 0, 0, 0.14);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.42),
+    inset 0 -2px 0 0 rgba(11, 31, 68, 0.24),
+    0 12px 28px -4px rgba(37, 99, 235, 0.52),
+    0 4px 8px 0 rgba(11, 31, 68, 0.14);
 }
 
 .liquid-btn-primary:active {
   transform: translateY(1.5px) scale(0.985);
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.25),
-    0 3px 8px -2px rgba(5, 150, 105, 0.35);
+    0 3px 8px -2px rgba(37, 99, 235, 0.35);
+}
+
+/* Signature MarketOS Royal Blue -> Deep Navy Hero Card */
+.marketos-hero-card {
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 48%, #0B1F44 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.25),
+    0 18px 38px -12px rgba(37, 99, 235, 0.42);
 }
 
 .liquid-btn-gold {
@@ -509,13 +519,13 @@ select.liquid-input option {
 .sf-atmo--light {
   background:
     radial-gradient(120% 80% at 50% -10%, #FFFFFF 0%, rgba(255, 255, 255, 0) 60%),
-    linear-gradient(180deg, #F3F6FC 0%, #E6EDF8 55%, #DEE7F5 100%);
+    linear-gradient(180deg, #F8FAFC 0%, #EFF6FF 55%, #E2E8F0 100%);
   opacity: 1;
 }
 .sf-atmo--dark {
   background:
-    radial-gradient(120% 80% at 50% -10%, #111B33 0%, rgba(17, 27, 51, 0) 60%),
-    linear-gradient(180deg, #070C18 0%, #050912 60%, #03060D 100%);
+    radial-gradient(120% 80% at 50% -10%, #132E63 0%, rgba(19, 46, 99, 0) 60%),
+    linear-gradient(180deg, #061229 0%, #091836 60%, #040B1A 100%);
   opacity: 0;
 }
 .sf-scene--dark .sf-atmo--light { opacity: 0; }
@@ -542,15 +552,15 @@ select.liquid-input option {
   inset: 0;
   background-size: 64px 64px;
   background-image:
-    linear-gradient(to right, rgba(79, 70, 229, 0.14) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(16, 185, 129, 0.14) 1px, transparent 1px);
+    linear-gradient(to right, rgba(37, 99, 235, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(11, 31, 68, 0.10) 1px, transparent 1px);
   animation: sfGridFlow 14s linear infinite;
   transition: opacity 0.6s ease;
 }
 .sf-scene--dark .sf-grid {
   background-image:
-    linear-gradient(to right, rgba(129, 140, 248, 0.20) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(52, 211, 153, 0.20) 1px, transparent 1px);
+    linear-gradient(to right, rgba(96, 165, 250, 0.18) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(37, 99, 235, 0.18) 1px, transparent 1px);
 }
 @keyframes sfGridFlow {
   from { background-position: 0 0; }
@@ -570,7 +580,7 @@ select.liquid-input option {
   height: 38rem;
   top: -14rem;
   left: -12rem;
-  background: radial-gradient(circle at 35% 35%, rgba(16, 185, 129, 0.38), rgba(16, 185, 129, 0) 70%);
+  background: radial-gradient(circle at 35% 35%, rgba(37, 99, 235, 0.28), rgba(37, 99, 235, 0) 70%);
   transform: translate3d(calc(var(--px) * -40px), calc(var(--py) * -30px), 0);
   animation: sfBreath 14s ease-in-out infinite;
 }
@@ -579,7 +589,7 @@ select.liquid-input option {
   height: 34rem;
   top: -10rem;
   right: -12rem;
-  background: radial-gradient(circle at 60% 40%, rgba(99, 102, 241, 0.30), rgba(99, 102, 241, 0) 70%);
+  background: radial-gradient(circle at 60% 40%, rgba(59, 130, 246, 0.26), rgba(59, 130, 246, 0) 70%);
   transform: translate3d(calc(var(--px) * 55px), calc(var(--py) * -25px), 0);
   animation: sfBreath 17s ease-in-out infinite reverse;
 }
@@ -588,7 +598,7 @@ select.liquid-input option {
   height: 30rem;
   bottom: -14rem;
   left: 38%;
-  background: radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.22), rgba(6, 182, 212, 0) 70%);
+  background: radial-gradient(circle at 50% 50%, rgba(11, 31, 68, 0.16), rgba(11, 31, 68, 0) 70%);
   transform: translate3d(calc(var(--px) * 30px), calc(var(--py) * 40px), 0);
   animation: sfBreath 20s ease-in-out infinite;
 }
@@ -639,8 +649,8 @@ select.liquid-input option {
   backdrop-filter: blur(2px);
 }
 .sf-scene--dark .sf-face {
-  border-color: rgba(52, 211, 153, 0.55);
-  box-shadow: inset 0 0 28px rgba(52, 211, 153, 0.25), 0 0 18px rgba(52, 211, 153, 0.12);
+  border-color: rgba(96, 165, 250, 0.55);
+  box-shadow: inset 0 0 28px rgba(37, 99, 235, 0.30), 0 0 18px rgba(59, 130, 246, 0.16);
 }
 .sf-face--front  { transform: translateZ(calc(var(--s) / 2)); }
 .sf-face--back   { transform: rotateY(180deg) translateZ(calc(var(--s) / 2)); }
@@ -661,16 +671,16 @@ select.liquid-input option {
   border: 14px solid transparent;
   background:
     linear-gradient(var(--bg-app), var(--bg-app)) padding-box,
-    conic-gradient(from 0deg, #10B981, #6366F1, #06B6D4, #10B981) border-box;
+    conic-gradient(from 0deg, #2563EB, #0B1F44, #3B82F6, #DBEAFE, #2563EB) border-box;
   opacity: 0.55;
-  box-shadow: 0 30px 60px -20px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 30px 60px -20px rgba(37, 99, 235, 0.35);
   animation: sfRingTilt 18s ease-in-out infinite;
   -webkit-mask: radial-gradient(circle, transparent 54%, #000 55%);
   mask: radial-gradient(circle, transparent 54%, #000 55%);
 }
 .sf-scene--dark .sf-ring {
   opacity: 0.7;
-  box-shadow: 0 0 50px -6px rgba(99, 102, 241, 0.45);
+  box-shadow: 0 0 50px -6px rgba(59, 130, 246, 0.45);
 }
 @keyframes sfRingTilt {
   0%, 100% { transform: rotateX(62deg) rotateZ(0deg); }
@@ -681,20 +691,20 @@ select.liquid-input option {
   width: 54px;
   height: 120px;
   border-radius: 9999px;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.85), rgba(16, 185, 129, 0.35) 45%, rgba(79, 70, 229, 0.45));
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(59, 130, 246, 0.35) 45%, rgba(11, 31, 68, 0.45));
   box-shadow:
-    inset -6px -10px 18px rgba(15, 23, 42, 0.18),
+    inset -6px -10px 18px rgba(11, 31, 68, 0.18),
     inset 6px 8px 14px rgba(255, 255, 255, 0.8),
-    0 24px 40px -16px rgba(79, 70, 229, 0.45);
+    0 24px 40px -16px rgba(37, 99, 235, 0.45);
   opacity: 0.6;
   animation: sfBob 9s ease-in-out infinite;
 }
 .sf-scene--dark .sf-pill {
-  background: linear-gradient(160deg, rgba(148, 163, 184, 0.35), rgba(52, 211, 153, 0.35) 45%, rgba(129, 140, 248, 0.5));
+  background: linear-gradient(160deg, rgba(219, 234, 254, 0.35), rgba(59, 130, 246, 0.45) 45%, rgba(11, 31, 68, 0.65));
   box-shadow:
     inset -6px -10px 18px rgba(0, 0, 0, 0.45),
     inset 6px 8px 14px rgba(255, 255, 255, 0.12),
-    0 0 40px -8px rgba(129, 140, 248, 0.45);
+    0 0 40px -8px rgba(59, 130, 246, 0.48);
 }
 @keyframes sfBob {
   0%, 100% { transform: rotateZ(32deg) translateY(0); }
@@ -738,11 +748,11 @@ select.liquid-input option {
 [data-theme="dark"] .tilt-3d.tilt-active {
   background-image: radial-gradient(
     circle at var(--mx, 50%) var(--my, 50%),
-    rgba(52, 211, 153, 0.16) 0%,
-    rgba(129, 140, 248, 0.08) 28%,
+    rgba(59, 130, 246, 0.18) 0%,
+    rgba(147, 197, 253, 0.08) 28%,
     rgba(255, 255, 255, 0) 55%
   );
-  border-color: rgba(52, 211, 153, 0.28);
+  border-color: rgba(96, 165, 250, 0.35);
 }
 
 /* Cards gently rise into place on first render */
@@ -763,14 +773,14 @@ select.liquid-input option {
 
 /* Brand gradient text utility for hero headings & KPIs */
 .text-gradient-brand {
-  background: linear-gradient(120deg, #059669 0%, #0EA5E9 50%, #4F46E5 100%);
+  background: linear-gradient(120deg, #0B1F44 0%, #2563EB 55%, #3B82F6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 .dark .text-gradient-brand,
 [data-theme="dark"] .text-gradient-brand {
-  background: linear-gradient(120deg, #34D399 0%, #22D3EE 50%, #A5B4FC 100%);
+  background: linear-gradient(120deg, #FFFFFF 0%, #60A5FA 55%, #93C5FD 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -778,7 +788,7 @@ select.liquid-input option {
 /* Brand words inside headings (e.g. "Point of Sale") get the 3D gradient treatment */
 h1 .text-theme-brand,
 h2 .text-theme-brand {
-  background: linear-gradient(120deg, #059669 0%, #0EA5E9 50%, #4F46E5 100%);
+  background: linear-gradient(120deg, #0B1F44 0%, #2563EB 55%, #3B82F6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -787,7 +797,7 @@ h2 .text-theme-brand {
 [data-theme="dark"] h1 .text-theme-brand,
 .dark h2 .text-theme-brand,
 [data-theme="dark"] h2 .text-theme-brand {
-  background: linear-gradient(120deg, #34D399 0%, #22D3EE 50%, #A5B4FC 100%);
+  background: linear-gradient(120deg, #FFFFFF 0%, #60A5FA 55%, #93C5FD 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -802,7 +812,7 @@ h2 .text-theme-brand {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.45), rgba(79, 70, 229, 0.45));
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.45), rgba(11, 31, 68, 0.45));
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: padding-box;

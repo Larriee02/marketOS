@@ -17,6 +17,7 @@ import {
 import { apiFetch } from '../services/api';
 import { CURRENCY_OPTIONS } from '../utils/currency';
 import { BUSINESS_TYPES, LAGOS_LOCATIONS } from '../components/auth/OAuthButtons';
+import { MarketOSLogo } from '../components/ui/MarketOSLogo';
 import { Badge } from '../components/ui/Badge';
 
 export function SettingsPage({
@@ -124,9 +125,7 @@ export function SettingsPage({
       <header className="liquid-glass-header text-slate-100 sticky top-0 z-30">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-2xl liquid-btn-primary">
-              <Package className="w-5 h-5" />
-            </div>
+            <MarketOSLogo variant="icon" size="sm" />
             <div>
               <h1 style={{ color: '#f8fafc' }} className="text-base sm:text-lg font-extrabold font-luxury">
                 Account & Currency Settings

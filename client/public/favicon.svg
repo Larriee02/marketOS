@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="45%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#0B1F44"/>
+    </linearGradient>
+    <linearGradient id="mRight" x1="34" y1="14" x2="50" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#DBEAFE"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bgGrad)"/>
+  <!-- Left M pillar -->
+  <path d="M14 48V20L24 28V48H14Z" fill="#FFFFFF" fill-opacity="0.95"/>
+  <!-- Center fold shadow -->
+  <path d="M24 28L32 36L38 30V42L32 47L24 39V28Z" fill="#93C5FD" fill-opacity="0.85"/>
+  <!-- Right M pillar rising into upward growth arrow -->
+  <path d="M32 36L43 22L39 19L50 15L49 27L45.5 24.5V48H37V31L32 36Z" fill="url(#mRight)"/>
+</svg>

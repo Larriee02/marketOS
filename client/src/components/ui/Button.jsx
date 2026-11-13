@@ -59,7 +59,7 @@ export const Button = forwardRef(function Button(
       type={type}
       disabled={isDisabled}
       aria-busy={isLoading ? 'true' : 'false'}
-      className={`inline-flex items-center justify-center transition-all cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15966A] dark:focus-visible:ring-[#34D399] focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none ${sizeClasses} ${variantClasses} ${className}`}
+      className={`inline-flex items-center justify-center transition-all cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] dark:focus-visible:ring-[#60A5FA] focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none ${sizeClasses} ${variantClasses} ${className}`}
       {...props}
     >
       {isLoading ? (

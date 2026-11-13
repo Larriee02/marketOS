@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import {
   Package,
+  ShoppingCart,
+  Wallet,
+  Users,
+  BarChart3,
   Sun,
   Moon,
   Mail,
@@ -16,6 +20,7 @@ import {
 import { apiFetch, setStoredToken } from '../services/api';
 import { OAuthButtons } from '../components/auth/OAuthButtons';
 import { OtpVerificationStep } from '../components/auth/OtpVerificationStep';
+import { MarketOSLogo } from '../components/ui/MarketOSLogo';
 
 export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }) {
   const [loginMethod, setLoginMethod] = useState('EMAIL'); // 'EMAIL' | 'PHONE'
@@ -96,19 +101,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
     <div className="min-h-screen flex flex-col justify-between p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <header className="max-w-6xl w-full mx-auto flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl liquid-btn-primary shadow-lg">
-            <Package className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-extrabold font-luxury text-base sm:text-lg text-theme-primary block leading-tight">
-              MarketOS
-            </span>
-            <span className="hidden sm:block text-[11px] text-theme-secondary">
-              Retail Operations, Inventory & Cashbook Platform
-            </span>
-          </div>
-        </div>
+        <MarketOSLogo size="md" showTagline />
 
         <div className="flex items-center gap-2">
           <button
@@ -142,22 +135,51 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
 
       {/* Main Content */}
       <main className="max-w-6xl w-full mx-auto my-auto py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
-        {/* Left Column: Platform Overview */}
+        {/* Left Column: MarketOS Brand Overview */}
         <div className="lg:col-span-6 space-y-5">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-subtle text-xs font-extrabold text-theme-brand">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Multi-Currency Retail & Inventory Suite</span>
+            <span>BRAND OVERVIEW • TRACK • MANAGE • GROW</span>
           </div>
 
           <h1 className="text-2xl sm:text-4xl lg:text-[2.65rem] font-extrabold font-luxury leading-[1.12] text-theme-primary">
-            Streamlined <span className="text-theme-brand">Point of Sale</span>, Inventory &
-            Cashbook Management.
+            Everything your business needs, <span className="text-theme-brand">in one place.</span>
           </h1>
 
           <p className="text-xs sm:text-sm text-theme-secondary leading-relaxed max-w-xl">
-            Sign in to manage your inventory catalog, process counter sales, reconcile payment
-            channels, and track customer receivables in real time.
+            MarketOS helps you track your stock, record sales, manage cash, monitor debts and see
+            your profit — all in one simple, mobile-friendly platform.
           </p>
+
+          {/* 5 Core Platform Modules matching Brand Iconography */}
+          <div className="grid grid-cols-5 gap-2 pt-1">
+            {[
+              { label: 'Stock', icon: Package },
+              { label: 'Sales', icon: ShoppingCart },
+              { label: 'Cash', icon: Wallet },
+              { label: 'Debts', icon: Users },
+              { label: 'Reports', icon: BarChart3 },
+            ].map((mod) => {
+              const Icon = mod.icon;
+              return (
+                <div
+                  key={mod.label}
+                  className="liquid-glass-subtle p-2.5 rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center"
+                >
+                  <div
+                    style={{
+                      backgroundColor: 'var(--brand-blue-soft)',
+                      color: 'var(--brand-blue)',
+                    }}
+                    className="p-2 rounded-xl"
+                  >
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span className="text-[11px] font-bold text-theme-primary">{mod.label}</span>
+                </div>
+              );
+            })}
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             {[
@@ -373,7 +395,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
       </main>
 
       <footer className="max-w-6xl w-full mx-auto text-center text-[11px] text-theme-muted">
-        MarketOS • Retail Inventory & Cashbook Platform
+        MarketOS • Run your market. Smarter. • Track • Manage • Grow
       </footer>
     </div>
   );

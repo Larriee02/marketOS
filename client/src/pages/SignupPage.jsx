@@ -23,6 +23,7 @@ import {
   LAGOS_LOCATIONS,
 } from '../components/auth/OAuthButtons';
 import { OtpVerificationStep } from '../components/auth/OtpVerificationStep';
+import { MarketOSLogo } from '../components/ui/MarketOSLogo';
 
 export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -111,19 +112,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
     <div className="min-h-screen flex flex-col justify-between p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <header className="max-w-6xl w-full mx-auto flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl liquid-btn-primary shadow-lg">
-            <Package className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-extrabold font-luxury text-base sm:text-lg text-theme-primary block leading-tight">
-              MarketOS
-            </span>
-            <span className="hidden sm:block text-[11px] text-theme-secondary">
-              Account Registration & Store Onboarding
-            </span>
-          </div>
-        </div>
+        <MarketOSLogo size="md" showTagline />
 
         <div className="flex items-center gap-2">
           <button
@@ -509,7 +498,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
       </main>
 
       <footer className="max-w-6xl w-full mx-auto text-center text-[11px] text-theme-muted">
-        MarketOS • Retail Inventory & Cashbook Platform
+        MarketOS • Run your market. Smarter. • Track • Manage • Grow
       </footer>
     </div>
   );

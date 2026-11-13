@@ -28,7 +28,7 @@ const VARIANT_STYLES = {
   },
 };
 
-export function Badge({ variant = 'neutral', children, icon: Icon }) {
+export function Badge({ variant = 'neutral', children, icon: Icon, dot = false }) {
   const style = VARIANT_STYLES[variant] || VARIANT_STYLES.neutral;
   return (
     <span
@@ -36,8 +36,14 @@ export function Badge({ variant = 'neutral', children, icon: Icon }) {
         ...style,
         boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.22)',
       }}
-      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-tight border backdrop-blur-xs"
+      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-tight border backdrop-blur-xs"
     >
+      {dot && (
+        <span
+          className="w-1.5 h-1.5 rounded-full shrink-0"
+          style={{ backgroundColor: 'currentColor' }}
+        />
+      )}
       {Icon && <Icon className="w-3 h-3 shrink-0" />}
       {children}
     </span>

@@ -62,11 +62,11 @@ function buildOtpEmailHtml({ code, recipientName, purpose, expiresInMinutes = 10
     .container {
       max-width: 520px;
       margin: 0 auto;
-      background: #1E293B;
-      border: 1px solid #334155;
+      background: #0B1F44;
+      border: 1px solid #1E3A8A;
       border-radius: 20px;
       padding: 36px 28px;
-      box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 12px 30px -6px rgba(11, 31, 68, 0.55);
     }
     .header {
       display: flex;
@@ -74,10 +74,10 @@ function buildOtpEmailHtml({ code, recipientName, purpose, expiresInMinutes = 10
       gap: 12px;
       margin-bottom: 24px;
       padding-bottom: 18px;
-      border-bottom: 1px solid #334155;
+      border-bottom: 1px solid #1E3A8A;
     }
     .logo-badge {
-      background: #10B981;
+      background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
       color: #ffffff;
       width: 40px;
       height: 40px;
@@ -114,8 +114,8 @@ function buildOtpEmailHtml({ code, recipientName, purpose, expiresInMinutes = 10
       margin: 0 0 18px 0;
     }
     .otp-box {
-      background: #0F172A;
-      border: 2px solid #10B981;
+      background: #061229;
+      border: 2px solid #2563EB;
       border-radius: 16px;
       padding: 24px;
       text-align: center;
@@ -126,7 +126,7 @@ function buildOtpEmailHtml({ code, recipientName, purpose, expiresInMinutes = 10
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1.5px;
-      color: #10B981;
+      color: #60A5FA;
       margin-bottom: 8px;
     }
     .otp-code {
@@ -134,7 +134,7 @@ function buildOtpEmailHtml({ code, recipientName, purpose, expiresInMinutes = 10
       font-size: 36px;
       font-weight: 800;
       letter-spacing: 8px;
-      color: #34D399;
+      color: #93C5FD;
       display: inline-block;
       margin: 4px 0;
     }
@@ -156,10 +156,10 @@ function buildOtpEmailHtml({ code, recipientName, purpose, expiresInMinutes = 10
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo-badge">MO</div>
+      <div class="logo-badge">M</div>
       <div style="margin-left: 12px;">
         <h1 class="brand-title">MarketOS</h1>
-        <p class="brand-subtitle">Retail Inventory & Cashbook Platform</p>
+        <p class="brand-subtitle">Run your market. Smarter.</p>
       </div>
     </div>
 

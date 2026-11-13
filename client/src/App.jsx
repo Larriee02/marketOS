@@ -56,6 +56,7 @@ import { StatCard } from './components/ui/StatCard';
 import { Badge } from './components/ui/Badge';
 import { EmptyState } from './components/ui/EmptyState';
 import { GradientBackground } from './components/ui/GradientBackground';
+import { MarketOSLogo } from './components/ui/MarketOSLogo';
 import { ToastProvider, useToast } from './components/ui/Toast';
 import { ReceiptModal } from './components/receipt/ReceiptModal';
 import { CheckoutConfirmModal } from './components/counter/CheckoutConfirmModal';
@@ -1827,15 +1828,13 @@ function AppShell({ darkMode, setDarkMode }) {
       <header className="liquid-glass-header text-slate-100 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-2.5">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div className="p-2 rounded-2xl liquid-btn-primary shrink-0">
-              <Package className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
+            <MarketOSLogo variant="icon" size="sm" />
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-base sm:text-xl font-extrabold font-luxury tracking-tight truncate text-white">
                   {currentUser.business_name || 'MarketOS'}
                 </h1>
-                <span className="hidden xs:inline-block text-[10px] sm:text-[11px] bg-emerald-500/20 text-emerald-200 border border-emerald-400/35 px-2.5 py-0.5 rounded-full font-extrabold">
+                <span className="hidden xs:inline-block text-[10px] sm:text-[11px] bg-blue-500/25 text-blue-100 border border-blue-400/40 px-2.5 py-0.5 rounded-full font-extrabold">
                   {currentUser.role === 'ADMIN' ? 'Admin' : 'Verified'} • {currencyCode} ({currencySymbol})
                 </span>
               </div>
@@ -1868,12 +1867,12 @@ function AppShell({ darkMode, setDarkMode }) {
             >
               {darkMode ? (
                 <>
-                  <Sun className="w-4 h-4 text-emerald-300" />
+                  <Sun className="w-4 h-4 text-sky-300" />
                   <span className="hidden lg:inline">Light</span>
                 </>
               ) : (
                 <>
-                  <Moon className="w-4 h-4 text-emerald-200" />
+                  <Moon className="w-4 h-4 text-blue-200" />
                   <span className="hidden lg:inline">Dark</span>
                 </>
               )}
@@ -1910,7 +1909,7 @@ function AppShell({ darkMode, setDarkMode }) {
               title="Account & Currency Settings"
               className="flex items-center gap-1 bg-white/10 hover:bg-white/18 text-slate-100 border border-white/20 px-2.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
             >
-              <Settings className="w-4 h-4 text-emerald-300" />
+              <Settings className="w-4 h-4 text-blue-200" />
               <span className="hidden md:inline">Settings</span>
             </button>
 
@@ -1947,6 +1946,66 @@ function AppShell({ darkMode, setDarkMode }) {
             </button>
           </div>
         )}
+
+        {/* MarketOS Business Overview Hero Card */}
+        <section className="marketos-hero-card rounded-3xl p-4 sm:p-5 relative overflow-hidden">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 360 90"
+            className="absolute right-0 bottom-0 w-64 sm:w-80 h-24 opacity-20 pointer-events-none"
+            fill="none"
+          >
+            <path
+              d="M0 78 C 55 72, 95 45, 145 52 C 195 58, 240 28, 305 20 L 340 8"
+              stroke="#FFFFFF"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+            />
+            <path
+              d="M326 6 L342 7 L339 23"
+              stroke="#FFFFFF"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest bg-white/15 text-blue-100 px-2.5 py-0.5 rounded-full">
+                  Business Overview
+                </span>
+                <span className="text-[11px] font-semibold text-blue-100/90">
+                  Run your market. Smarter.
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2.5 flex-wrap">
+                <span className="text-2xl sm:text-3xl font-extrabold font-luxury tabular-nums text-white">
+                  {formatNaira(dashboard.net_cash_balance)}
+                </span>
+                <span className="text-xs font-bold bg-emerald-400/20 text-emerald-200 border border-emerald-300/30 px-2 py-0.5 rounded-full tabular-nums">
+                  Today In: +{formatNaira(dashboard.today_inflow)}
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleSelectTab('counter', false)}
+                className="bg-white text-[#0B1F44] hover:bg-blue-50 px-3.5 py-2 rounded-xl text-xs font-extrabold shadow-sm cursor-pointer transition"
+              >
+                + Record Sale
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectTab('reports', false)}
+                className="bg-white/15 hover:bg-white/25 text-white border border-white/25 px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition"
+              >
+                View Reports
+              </button>
+            </div>
+          </div>
+        </section>
 
         {/* 4 KPI Cards */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
