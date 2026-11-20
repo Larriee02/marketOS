@@ -1,9 +1,8 @@
+import { ThemeToggle } from '../components/ui/ThemeToggle';
 import React from 'react';
 import {
   ShieldCheck,
   Store,
-  Sun,
-  Moon,
   LogOut,
   CheckCircle2,
   ArrowUpRight,
@@ -70,23 +69,8 @@ export function AdminPage({
               <span className="hidden sm:inline">Settings</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setDarkMode(!darkMode)}
-              className="flex items-center gap-1.5 bg-white/12 hover:bg-white/20 text-slate-100 border border-white/25 px-3 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
-            >
-              {darkMode ? (
-                <>
-                  <Sun className="w-4 h-4 text-sky-300" />
-                  <span className="hidden sm:inline">Light</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="w-4 h-4 text-sky-200" />
-                  <span className="hidden sm:inline">Dark</span>
-                </>
-              )}
-            </button>
+            <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((current) => !current)}
+              className="flex items-center gap-1.5 bg-white/12 hover:bg-white/20 text-slate-100 border border-white/25 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer" labelClassName="hidden sm:inline" />
 
             <button
               type="button"

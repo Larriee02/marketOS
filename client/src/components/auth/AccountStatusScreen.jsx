@@ -1,3 +1,4 @@
+import { ThemeToggle } from '../ui/ThemeToggle';
 import React, { useState, useEffect } from 'react';
 import {
   Clock,
@@ -5,8 +6,6 @@ import {
   XCircle,
   RefreshCw,
   LogOut,
-  Sun,
-  Moon,
   Package,
   Store,
   Mail,
@@ -68,23 +67,8 @@ export function AccountStatusScreen({
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={() => setDarkMode(!darkMode)}
-            className="liquid-glass-subtle px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-theme-primary cursor-pointer"
-          >
-            {darkMode ? (
-              <>
-                <Sun className="w-4 h-4 text-sky-400" />
-                <span>Light</span>
-              </>
-            ) : (
-              <>
-                <Moon className="w-4 h-4 text-theme-brand" />
-                <span>Dark</span>
-              </>
-            )}
-          </button>
+          <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((current) => !current)}
+            className="liquid-glass-subtle px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-theme-primary cursor-pointer" labelClassName="" />
 
           <button
             type="button"

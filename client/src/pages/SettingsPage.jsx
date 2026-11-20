@@ -1,8 +1,7 @@
+import { ThemeToggle } from '../components/ui/ThemeToggle';
 import React, { useState } from 'react';
 import {
   Package,
-  Sun,
-  Moon,
   User,
   Store,
   Phone,
@@ -157,17 +156,8 @@ export function SettingsPage({
               <span>Store Workspace</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setDarkMode(!darkMode)}
-              className="flex items-center gap-1.5 bg-white/12 hover:bg-white/20 text-white border border-white/20 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer"
-            >
-              {darkMode ? (
-                <Sun className="w-4 h-4 text-amber-300" />
-              ) : (
-                <Moon className="w-4 h-4 text-sky-300" />
-              )}
-            </button>
+            <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((current) => !current)}
+              className="flex items-center gap-1.5 bg-white/12 hover:bg-white/20 text-white border border-white/20 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer" />
           </div>
         </div>
       </header>

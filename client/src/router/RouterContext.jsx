@@ -30,7 +30,7 @@ export function RouterProvider({ children }) {
       }
     }
     setPath(cleanPath);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
   return (

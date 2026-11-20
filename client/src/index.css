@@ -208,17 +208,19 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  scroll-behavior: smooth;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
 body {
   background-color: var(--bg-app);
   background-image: var(--bg-mesh);
-  background-attachment: fixed;
   color: var(--text-primary);
   font-family: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
@@ -226,44 +228,6 @@ body {
   overflow-x: hidden;
   min-height: 100vh;
   min-height: 100dvh;
-}
-
-@media (max-width: 767px), (hover: none) {
-  body {
-    background-attachment: scroll;
-  }
-}
-
-/* Silky-smooth Light <-> Dark Mode Theme Transitions */
-body,
-header,
-nav,
-main,
-section,
-aside,
-article,
-div,
-table,
-thead,
-tbody,
-tr,
-th,
-td,
-input,
-select,
-textarea,
-button,
-span,
-p,
-h1,
-h2,
-h3,
-h4 {
-  transition:
-    background-color 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-    color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 h1,
@@ -357,8 +321,6 @@ select.liquid-input option {
 /* 3D Spatial Frosted Glass Cards */
 .liquid-glass {
   background-color: var(--bg-card);
-  backdrop-filter: blur(20px) saturate(165%);
-  -webkit-backdrop-filter: blur(20px) saturate(165%);
   border: 1px solid var(--border-outer);
   box-shadow: var(--glass-shadow);
   color: var(--text-primary);
@@ -366,8 +328,6 @@ select.liquid-input option {
 
 .liquid-glass-elevated {
   background-color: var(--bg-card-elevated);
-  backdrop-filter: blur(26px) saturate(175%);
-  -webkit-backdrop-filter: blur(26px) saturate(175%);
   border: 1px solid var(--border-outer);
   box-shadow: var(--glass-shadow-elevated);
   color: var(--text-primary);
@@ -375,8 +335,6 @@ select.liquid-input option {
 
 .liquid-glass-header {
   background: var(--bg-header);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
@@ -385,8 +343,6 @@ select.liquid-input option {
 
 .liquid-glass-subtle {
   background-color: var(--bg-subtle);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
   border: 1px solid var(--border-outer);
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.50),
@@ -475,342 +431,6 @@ select.liquid-input option {
   transform: translateY(1.5px) scale(0.985);
 }
 
-/* Gentle 3D Volumetric Orb Animations */
-@keyframes floatSlow {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(24px, 18px, 0) scale(1.05);
-  }
-}
-
-@keyframes floatReverse {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(-22px, 20px, 0) scale(1.06);
-  }
-}
-
-.animate-float-slow {
-  animation: floatSlow 16s ease-in-out infinite;
-}
-
-.animate-float-reverse {
-  animation: floatReverse 19s ease-in-out infinite;
-}
-
-/* ==========================================================================
-   IMMERSIVE 3D SCENE (GradientBackground)
-   ========================================================================== */
-.sf-scene {
-  --px: 0;
-  --py: 0;
-  perspective: 1200px;
-}
-
-.sf-atmo {
-  position: absolute;
-  inset: 0;
-  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.sf-atmo--light {
-  background:
-    radial-gradient(120% 80% at 50% -10%, #FFFFFF 0%, rgba(255, 255, 255, 0) 60%),
-    linear-gradient(180deg, #F8FAFC 0%, #EFF6FF 55%, #E2E8F0 100%);
-  opacity: 1;
-}
-.sf-atmo--dark {
-  background:
-    radial-gradient(120% 80% at 50% -10%, #132E63 0%, rgba(19, 46, 99, 0) 60%),
-    linear-gradient(180deg, #061229 0%, #091836 60%, #040B1A 100%);
-  opacity: 0;
-}
-.sf-scene--dark .sf-atmo--light { opacity: 0; }
-.sf-scene--dark .sf-atmo--dark { opacity: 1; }
-
-/* 3D perspective floor grid that tilts with the cursor */
-.sf-grid-wrap {
-  position: absolute;
-  left: -25%;
-  right: -25%;
-  bottom: -18%;
-  height: 72%;
-  transform-style: preserve-3d;
-  transform:
-    rotateX(calc(64deg + var(--py) * 3deg))
-    rotateZ(calc(var(--px) * 2.5deg))
-    translateY(calc(var(--py) * -12px));
-  transform-origin: 50% 100%;
-  mask-image: linear-gradient(to top, #000 0%, rgba(0, 0, 0, 0.6) 45%, transparent 90%);
-  -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0, 0, 0, 0.6) 45%, transparent 90%);
-}
-.sf-grid {
-  position: absolute;
-  inset: 0;
-  opacity: 0.5;
-  background-size: 64px 64px;
-  background-image:
-    linear-gradient(to right, rgba(37, 99, 235, 0.1) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(11, 31, 68, 0.08) 1px, transparent 1px);
-  animation: sfGridFlow 14s linear infinite;
-  transition: opacity 0.6s ease;
-}
-.sf-scene--dark .sf-grid {
-  opacity: 0.55;
-  background-image:
-    linear-gradient(to right, rgba(96, 165, 250, 0.14) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(37, 99, 235, 0.14) 1px, transparent 1px);
-}
-@keyframes sfGridFlow {
-  from { background-position: 0 0; }
-  to { background-position: 0 64px; }
-}
-
-/* Volumetric light orbs on separate parallax depths */
-.sf-orb {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(70px);
-  transition: opacity 0.7s ease, background 0.7s ease;
-  will-change: transform;
-}
-.sf-orb--emerald {
-  width: 38rem;
-  height: 38rem;
-  top: -14rem;
-  left: -12rem;
-  background: radial-gradient(circle at 35% 35%, rgba(37, 99, 235, 0.28), rgba(37, 99, 235, 0) 70%);
-  transform: translate3d(calc(var(--px) * -40px), calc(var(--py) * -30px), 0);
-  animation: sfBreath 14s ease-in-out infinite;
-}
-.sf-orb--indigo {
-  width: 34rem;
-  height: 34rem;
-  top: -10rem;
-  right: -12rem;
-  background: radial-gradient(circle at 60% 40%, rgba(59, 130, 246, 0.26), rgba(59, 130, 246, 0) 70%);
-  transform: translate3d(calc(var(--px) * 55px), calc(var(--py) * -25px), 0);
-  animation: sfBreath 17s ease-in-out infinite reverse;
-}
-.sf-orb--cyan {
-  width: 30rem;
-  height: 30rem;
-  bottom: -14rem;
-  left: 38%;
-  background: radial-gradient(circle at 50% 50%, rgba(11, 31, 68, 0.16), rgba(11, 31, 68, 0) 70%);
-  transform: translate3d(calc(var(--px) * 30px), calc(var(--py) * 40px), 0);
-  animation: sfBreath 20s ease-in-out infinite;
-}
-.sf-scene--light .sf-orb { opacity: 0.55; }
-.sf-scene--dark .sf-orb { opacity: 0.75; }
-@keyframes sfBreath {
-  0%, 100% { scale: 1; }
-  50% { scale: 1.12; }
-}
-
-/* Floating 3D objects */
-.sf-object {
-  position: absolute;
-  transform-style: preserve-3d;
-  opacity: 0.45;
-  transition: opacity 0.7s ease;
-}
-.sf-object--cube {
-  top: 18%;
-  right: 9%;
-  transform: translate3d(calc(var(--px) * 70px), calc(var(--py) * 50px), 0);
-}
-.sf-object--ring {
-  bottom: 14%;
-  left: 6%;
-  transform: translate3d(calc(var(--px) * -60px), calc(var(--py) * -45px), 0);
-}
-.sf-object--pill {
-  top: 58%;
-  right: 22%;
-  transform: translate3d(calc(var(--px) * 35px), calc(var(--py) * -55px), 0);
-}
-
-.sf-object--ring-sm {
-  top: 28%;
-  left: 11%;
-  transform: translate3d(calc(var(--px) * -35px), calc(var(--py) * 32px), 0);
-}
-.sf-object--prism {
-  bottom: 20%;
-  right: 8%;
-  transform: translate3d(calc(var(--px) * 48px), calc(var(--py) * -36px), 0);
-}
-
-.sf-horizon-beam {
-  position: absolute;
-  left: 10%;
-  right: 10%;
-  top: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.45), rgba(59, 130, 246, 0.65), rgba(37, 99, 235, 0.45), transparent);
-  filter: blur(2px);
-}
-.sf-scene--dark .sf-horizon-beam {
-  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.65), rgba(147, 197, 253, 0.85), rgba(59, 130, 246, 0.65), transparent);
-}
-
-.sf-cube {
-  --s: 92px;
-  width: var(--s);
-  height: var(--s);
-  position: relative;
-  transform-style: preserve-3d;
-  animation: sfSpin 26s linear infinite;
-}
-.sf-face {
-  position: absolute;
-  inset: 0;
-  border: 1.5px solid rgba(37, 99, 235, 0.38);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(37, 99, 235, 0.14));
-  box-shadow: inset 0 0 24px rgba(37, 99, 235, 0.16), 0 8px 24px -8px rgba(11, 31, 68, 0.16);
-  border-radius: 16px;
-  backdrop-filter: blur(4px);
-}
-.sf-scene--dark .sf-face {
-  border-color: rgba(96, 165, 250, 0.55);
-  box-shadow: inset 0 0 28px rgba(37, 99, 235, 0.30), 0 0 18px rgba(59, 130, 246, 0.16);
-}
-.sf-face--front  { transform: translateZ(calc(var(--s) / 2)); }
-.sf-face--back   { transform: rotateY(180deg) translateZ(calc(var(--s) / 2)); }
-.sf-face--right  { transform: rotateY(90deg) translateZ(calc(var(--s) / 2)); }
-.sf-face--left   { transform: rotateY(-90deg) translateZ(calc(var(--s) / 2)); }
-.sf-face--top    { transform: rotateX(90deg) translateZ(calc(var(--s) / 2)); }
-.sf-face--bottom { transform: rotateX(-90deg) translateZ(calc(var(--s) / 2)); }
-
-@keyframes sfSpin {
-  from { transform: rotateX(-24deg) rotateY(0deg); }
-  to { transform: rotateX(-24deg) rotateY(360deg); }
-}
-
-.sf-ring {
-  width: 150px;
-  height: 150px;
-  border-radius: 9999px;
-  border: 14px solid transparent;
-  background:
-    linear-gradient(var(--bg-app), var(--bg-app)) padding-box,
-    conic-gradient(from 0deg, #2563EB, #0B1F44, #3B82F6, #DBEAFE, #2563EB) border-box;
-  opacity: 0.55;
-  box-shadow: 0 30px 60px -20px rgba(37, 99, 235, 0.35);
-  animation: sfRingTilt 18s ease-in-out infinite;
-  -webkit-mask: radial-gradient(circle, transparent 54%, #000 55%);
-  mask: radial-gradient(circle, transparent 54%, #000 55%);
-}
-.sf-scene--dark .sf-ring {
-  opacity: 0.7;
-  box-shadow: 0 0 50px -6px rgba(59, 130, 246, 0.45);
-}
-@keyframes sfRingTilt {
-  0%, 100% { transform: rotateX(62deg) rotateZ(0deg); }
-  50% { transform: rotateX(48deg) rotateZ(180deg); }
-}
-
-.sf-pill {
-  width: 54px;
-  height: 120px;
-  border-radius: 9999px;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(59, 130, 246, 0.35) 45%, rgba(11, 31, 68, 0.45));
-  box-shadow:
-    inset -6px -10px 18px rgba(11, 31, 68, 0.18),
-    inset 6px 8px 14px rgba(255, 255, 255, 0.8),
-    0 24px 40px -16px rgba(37, 99, 235, 0.45);
-  opacity: 0.6;
-  animation: sfBob 9s ease-in-out infinite;
-}
-.sf-scene--dark .sf-pill {
-  background: linear-gradient(160deg, rgba(219, 234, 254, 0.35), rgba(59, 130, 246, 0.45) 45%, rgba(11, 31, 68, 0.65));
-  box-shadow:
-    inset -6px -10px 18px rgba(0, 0, 0, 0.45),
-    inset 6px 8px 14px rgba(255, 255, 255, 0.12),
-    0 0 40px -8px rgba(59, 130, 246, 0.48);
-}
-@keyframes sfBob {
-  0%, 100% { transform: rotateZ(32deg) translateY(0); }
-  50% { transform: rotateZ(22deg) translateY(-22px); }
-}
-
-.sf-ring-sm {
-  width: 84px;
-  height: 84px;
-  border-radius: 9999px;
-  border: 8px solid transparent;
-  background:
-    linear-gradient(var(--bg-app), var(--bg-app)) padding-box,
-    conic-gradient(from 90deg, #3B82F6, #DBEAFE, #2563EB, #0B1F44, #3B82F6) border-box;
-  opacity: 0.5;
-  animation: sfRingTilt 14s ease-in-out infinite reverse;
-  -webkit-mask: radial-gradient(circle, transparent 56%, #000 57%);
-  mask: radial-gradient(circle, transparent 56%, #000 57%);
-}
-
-.sf-prism {
-  width: 72px;
-  height: 72px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(37, 99, 235, 0.25) 50%, rgba(11, 31, 68, 0.35));
-  border: 1.5px solid rgba(255, 255, 255, 0.65);
-  box-shadow:
-    inset 0 2px 6px rgba(255, 255, 255, 0.9),
-    0 24px 48px -14px rgba(37, 99, 235, 0.35);
-  opacity: 0.65;
-  animation: sfPrismFloat 12s ease-in-out infinite;
-}
-.sf-scene--dark .sf-prism {
-  background: linear-gradient(135deg, rgba(96, 165, 250, 0.30), rgba(37, 99, 235, 0.22) 50%, rgba(11, 31, 68, 0.65));
-  border-color: rgba(96, 165, 250, 0.40);
-  box-shadow:
-    inset 0 1px 4px rgba(147, 197, 253, 0.35),
-    0 0 36px -8px rgba(59, 130, 246, 0.45);
-}
-@keyframes sfPrismFloat {
-  0%, 100% { transform: rotateX(28deg) rotateY(-24deg) rotateZ(12deg) translateY(0); }
-  50% { transform: rotateX(18deg) rotateY(18deg) rotateZ(24deg) translateY(-18px); }
-}
-
-.sf-grain {
-  position: absolute;
-  inset: 0;
-  opacity: 0.04;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-}
-
-/* Hide decorative 3D objects on small screens to keep things clean and fast */
-@media (max-width: 768px) {
-  .sf-object { display: none; }
-  .sf-orb { filter: blur(56px); }
-}
-
-/* ==========================================================================
-   3D SPECULAR LIGHT + ELEVATION LIFT (No card tilting per tasteskill 2.5.1)
-   ========================================================================== */
-.liquid-glass.tilt-active,
-.tilt-3d.tilt-active {
-  transform: translateY(-2px);
-  transition:
-    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.25s ease,
-    background-color 0.42s cubic-bezier(0.22, 1, 0.36, 1);
-  background-image: radial-gradient(
-    circle at var(--mx, 50%) var(--my, 50%),
-    rgba(255, 255, 255, 0.65) 0%,
-    rgba(219, 234, 254, 0.18) 28%,
-    rgba(255, 255, 255, 0) 55%
-  );
-  border-color: rgba(37, 99, 235, 0.28);
-  box-shadow: var(--glass-shadow-elevated);
-}
-
 /* Accessible Skip Link & Crisp Focus Ring */
 .skip-link {
   position: fixed;
@@ -849,35 +469,6 @@ select.liquid-input option {
     0 36px 72px -18px rgba(0, 0, 0, 0.72),
     0 12px 32px -10px rgba(37, 99, 235, 0.35);
 }
-.dark .liquid-glass.tilt-active,
-[data-theme="dark"] .liquid-glass.tilt-active,
-.dark .tilt-3d.tilt-active,
-[data-theme="dark"] .tilt-3d.tilt-active {
-  background-image: radial-gradient(
-    circle at var(--mx, 50%) var(--my, 50%),
-    rgba(59, 130, 246, 0.18) 0%,
-    rgba(147, 197, 253, 0.08) 28%,
-    rgba(255, 255, 255, 0) 55%
-  );
-  border-color: rgba(96, 165, 250, 0.35);
-}
-
-/* Cards gently rise into place on first render */
-@keyframes sfRise {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-.liquid-glass,
-.liquid-glass-elevated {
-  animation: sfRise 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-}
-
 /* Brand gradient text utility for hero headings & KPIs */
 .text-gradient-brand {
   background: linear-gradient(120deg, #0B1F44 0%, #2563EB 55%, #3B82F6 100%);
@@ -928,46 +519,73 @@ h2 .text-theme-brand {
   background: transparent;
 }
 
-/* ==========================================================================
-   CINEMATIC LIGHT <-> DARK THEME SWITCH (View Transitions API)
-   A circular reveal ripples out from where the user clicked the toggle.
-   ========================================================================== */
-.theme-instant,
-.theme-instant *,
-.theme-instant *::before,
-.theme-instant *::after {
-  transition: none !important;
+/* Theme snapshots move as a single surface. The icon also works without snapshots. */
+.theme-toggle-icon {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  perspective: 100px;
 }
 
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
+.theme-toggle-rotor {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform 360ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.theme-toggle-back,
+[aria-checked="true"] .theme-toggle-rotor {
+  transform: rotateY(180deg);
+}
+
+.theme-toggle-face {
+  grid-area: 1 / 1;
+  display: grid;
+  place-items: center;
+  backface-visibility: hidden;
+}
+
+.theme-turn { --theme-angle: 9deg; }
+.theme-turn.dark { --theme-angle: -9deg; }
+
+.theme-turn::view-transition-group(root) {
+  animation-duration: 330ms;
+  pointer-events: none;
+}
+
+.theme-turn::view-transition {
+  pointer-events: none;
+}
+
+.theme-turn::view-transition-old(root),
+.theme-turn::view-transition-new(root) {
+  animation-duration: 330ms;
+  animation-timing-function: cubic-bezier(.22, 1, .36, 1);
+  animation-fill-mode: both;
   mix-blend-mode: normal;
-}
-::view-transition-new(root) {
-  animation: sfThemeReveal 0.75s cubic-bezier(0.65, 0, 0.35, 1) both;
-}
-@keyframes sfThemeReveal {
-  from {
-    clip-path: circle(0px at var(--vt-x, 50%) var(--vt-y, 0%));
-  }
-  to {
-    clip-path: circle(150vmax at var(--vt-x, 50%) var(--vt-y, 0%));
-  }
+  transform-origin: 50% 42%;
+  backface-visibility: hidden;
 }
 
-/* Accessibility: calm everything down for users who prefer reduced motion */
+.theme-turn::view-transition-old(root) { animation-name: theme-turn-out; }
+.theme-turn::view-transition-new(root) { animation-name: theme-turn-in; }
+
+@keyframes theme-turn-out {
+  to { transform: perspective(1100px) rotateY(var(--theme-angle)) scale(.975); opacity: 0; }
+}
+
+@keyframes theme-turn-in {
+  from { transform: perspective(1100px) rotateY(calc(-1 * var(--theme-angle))) scale(.975); opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
-  .sf-object,
-  .sf-grain {
-    display: none;
-  }
+
+  .theme-toggle-rotor { transition: none; }
 }
 
 .theme-divider > :not([hidden]) ~ :not([hidden]) {

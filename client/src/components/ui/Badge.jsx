@@ -36,7 +36,7 @@ export function Badge({ variant = 'neutral', children, icon: Icon, dot = false }
         ...style,
         boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.22)',
       }}
-      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-tight border backdrop-blur-xs"
+      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-tight border"
     >
       {dot && (
         <span

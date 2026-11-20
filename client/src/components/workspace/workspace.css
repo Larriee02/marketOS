@@ -42,8 +42,7 @@
   position: sticky;
   top: 0;
   z-index: 30;
-  background: color-mix(in srgb, var(--workspace-bg) 92%, transparent);
-  backdrop-filter: blur(14px);
+  background: var(--workspace-bg);
   box-shadow: 0 1px 6px rgb(11 31 68 / 5%);
 }
 
@@ -184,3 +183,29 @@
 .workspace-home-feed { display: flex; flex-direction: column; gap: 16px; }
 .workspace-stock-cards { margin: 0 12px 12px; }
 .workspace-stock-cards > div { margin-top: 10px; border: 1px solid var(--workspace-border); border-radius: 12px; }
+
+.workspace-theme-toggle { min-width: 42px; min-height: 40px; }
+
+.workspace-enter { animation: workspace-enter 160ms ease-out both; }
+
+@keyframes workspace-enter {
+  from { opacity: .72; }
+}
+
+.list-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 14px;
+  color: var(--workspace-muted);
+  font-size: 12px;
+}
+
+.list-pagination button:disabled { opacity: .45; }
+
+#counter-results, #inventory-results, #cash-results, #history-results,
+#ledgerPage-results, #creditPage-results {
+  scroll-margin-top: calc(var(--workspace-header) + 12px);
+}

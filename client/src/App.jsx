@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { flushSync } from 'react-dom';
-import { Tilt3DController } from './components/ui/Tilt3DController';
 import {
   Package,
   ArrowUpRight,
@@ -52,10 +51,10 @@ import { TraderHome, WorkspaceLedger, WorkspaceMetric } from './components/works
 import './components/workspace/workspace.css';
 import { useDebounce } from './hooks/useDebounce';
 import { Modal } from './components/ui/Modal';
+import { ListPagination, useListPage } from './components/ui/ListPagination';
 import { StatCard } from './components/ui/StatCard';
 import { Badge } from './components/ui/Badge';
 import { EmptyState } from './components/ui/EmptyState';
-import { GradientBackground } from './components/ui/GradientBackground';
 import { ToastProvider, useToast } from './components/ui/Toast';
 import { ReceiptModal } from './components/receipt/ReceiptModal';
 import { CheckoutConfirmModal } from './components/counter/CheckoutConfirmModal';
@@ -176,57 +175,42 @@ export default function App() {
     }
   }, [darkMode]);
 
-  // Remember where the user last clicked so the theme switch can ripple out from that point
-  useEffect(() => {
-    const recordOrigin = (e) => {
-      const root = document.documentElement;
-      root.style.setProperty('--vt-x', `${e.clientX}px`);
-      root.style.setProperty('--vt-y', `${e.clientY}px`);
+  const themeTransition = useRef(null);
+  const requestedTheme = useRef(darkMode);
+  const setDarkModeSmooth = useCallback((value) => {
+    const next = typeof value === 'function' ? value(requestedTheme.current) : value;
+    if (next === requestedTheme.current) return;
+    requestedTheme.current = next;
+
+    const root = document.documentElement;
+    const applyTheme = () => {
+      if (next !== requestedTheme.current) return;
+      root.classList.toggle('dark', next);
+      root.dataset.theme = next ? 'dark' : 'light';
+      setDarkMode(next);
     };
-    window.addEventListener('pointerdown', recordOrigin, { passive: true });
-    return () => window.removeEventListener('pointerdown', recordOrigin);
+
+    themeTransition.current?.skipTransition();
+    if (typeof document.startViewTransition !== 'function' ||
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      applyTheme();
+      return;
+    }
+
+    root.classList.add('theme-turn');
+    const transition = document.startViewTransition(() => flushSync(applyTheme));
+    themeTransition.current = transition;
+    const finish = () => {
+      if (themeTransition.current !== transition) return;
+      themeTransition.current = null;
+      root.classList.remove('theme-turn');
+    };
+    transition.finished.then(finish, finish);
   }, []);
-
-  // Cinematic circular-reveal theme switch (View Transitions API) with graceful fallback
-  const setDarkModeSmooth = useCallback(
-    (value) => {
-      const next = typeof value === 'function' ? value(darkMode) : value;
-      if (next === darkMode) return;
-
-      const applyRootTheme = () => {
-        const root = document.documentElement;
-        root.classList.toggle('dark', next);
-        root.setAttribute('data-theme', next ? 'dark' : 'light');
-      };
-
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (typeof document.startViewTransition !== 'function' || reduceMotion) {
-        document.documentElement.classList.add('theme-transitioning');
-        applyRootTheme();
-        setDarkMode(next);
-        window.setTimeout(
-          () => document.documentElement.classList.remove('theme-transitioning'),
-          600
-        );
-        return;
-      }
-
-      const root = document.documentElement;
-      root.classList.add('theme-instant');
-      const transition = document.startViewTransition(() => {
-        applyRootTheme();
-        flushSync(() => setDarkMode(next));
-      });
-      transition.finished.finally(() => root.classList.remove('theme-instant'));
-    },
-    [darkMode]
-  );
 
   return (
     <RouterProvider>
       <ToastProvider>
-        <GradientBackground darkMode={darkMode} />
-        <Tilt3DController />
         <div className="relative z-10 min-h-screen">
           <AppShell darkMode={darkMode} setDarkMode={setDarkModeSmooth} />
         </div>
@@ -968,6 +952,12 @@ function AppShell({ darkMode, setDarkMode }) {
     });
   }, [credits, debouncedDebtorSearch, debtorFilter]);
 
+  const productPage = useListPage(filteredProducts, JSON.stringify([activeTab, debouncedSearch, categoryFilter, stockStatus]));
+  const transactionPage = useListPage(filteredTransactions, filteredTransactions);
+  const movementPage = useListPage(filteredMovements, filteredMovements);
+  const ledgerPage = useListPage(filteredLedgers, filteredLedgers);
+  const creditPage = useListPage(filteredCredits, filteredCredits);
+
   // Analytics & Profit & Loss Period Calculations
   const [financialReport, setFinancialReport] = useState(null);
   const [homePeriod, setHomePeriod] = useState('TODAY');
@@ -1016,6 +1006,18 @@ function AppShell({ darkMode, setDarkMode }) {
   }, [selectedReportPeriod, analyticsStartDate, analyticsEndDate]);
 
   const { startMs, endMs, label: analyticsLabel } = analyticsPeriodBounds;
+  const activeTransactions = useMemo(
+    () => transactions.filter((entry) => !entry.status || entry.status === 'ACTIVE'),
+    [transactions],
+  );
+  const recentSales = useMemo(
+    () => activeTransactions.filter((entry) => entry.type === 'INFLOW' && entry.category === 'Counter Sales'),
+    [activeTransactions],
+  );
+  const periodEntries = useMemo(() => activeTransactions.filter((entry) => {
+    const time = Date.parse(entry.transaction_date || entry.created_at);
+    return time >= startMs && time < endMs;
+  }), [activeTransactions, startMs, endMs]);
   const validReportPeriod = Number.isFinite(startMs) && Number.isFinite(endMs) && startMs < endMs;
   const reportKey = `${currentUser?.id}:${startMs}:${endMs}`;
 
@@ -1754,11 +1756,6 @@ function AppShell({ darkMode, setDarkMode }) {
     onLogout: handleLogout,
     onClosing: openClosing,
   };
-  const activeTransactions = transactions.filter((entry) => !entry.status || entry.status === 'ACTIVE');
-  const periodEntries = activeTransactions.filter((entry) => {
-    const time = Date.parse(entry.transaction_date || entry.created_at);
-    return time >= startMs && time < endMs;
-  });
   const stockCounts = products.reduce((counts, product) => {
     const amount = Number(product.stock_quantity);
     const status = amount <= 0 ? 'OUT' : amount <= Number(product.reorder_level) ? 'LOW' : 'HEALTHY';
@@ -1769,8 +1766,8 @@ function AppShell({ darkMode, setDarkMode }) {
   return (
     <div className="market-workspace">
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <WorkspaceNavigation {...navigation} active={activeTab} darkMode={darkMode} onTheme={() => setDarkMode(!darkMode)} />
-      <main id="main-content" className="workspace-main space-y-5">
+      <WorkspaceNavigation {...navigation} active={activeTab} darkMode={darkMode} onTheme={() => setDarkMode((current) => !current)} />
+      <main key={activeTab} id="main-content" className="workspace-main workspace-enter space-y-5">
         {/* Toast Alert */}
         {toast && (
           <div className="liquid-btn-primary px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2">
@@ -1930,7 +1927,7 @@ function AppShell({ darkMode, setDarkMode }) {
             <div className="workspace-columns workspace-sale">
             <div className="space-y-4 min-w-0">
             {/* Left 2 Columns: Tap Products to Sell */}
-            <div className="workspace-panel space-y-4">
+            <div id="counter-results" className="workspace-panel space-y-4">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
@@ -1939,13 +1936,13 @@ function AppShell({ darkMode, setDarkMode }) {
                     aria-label="Search products to sell" placeholder="Search products by name or SKU…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="liquid-input w-full pl-10 pr-4 py-2.5 text-sm rounded-2xl backdrop-blur-md"
+                    className="liquid-input w-full pl-10 pr-4 py-2.5 text-sm rounded-2xl"
                   />
                 </div>
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="liquid-input text-xs rounded-2xl px-3.5 py-2.5 font-bold backdrop-blur-md"
+                  className="liquid-input text-xs rounded-2xl px-3.5 py-2.5 font-bold"
                 >
                   {categories.map((c) => (
                     <option key={c} value={c}>
@@ -1965,7 +1962,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {filteredProducts.map((p) => {
+                  {productPage.rows.map((p) => {
                     const inBasket = cart[p.id] || 0;
                     const stock = Number(p.stock_quantity);
                     const isLow = stock <= Number(p.reorder_level);
@@ -2048,6 +2045,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   })}
                 </div>
               )}
+              <ListPagination list={productPage} label="Products to sell" targetId="counter-results" />
             </div>
 
             {/* Right Column: Liquid Glass Customer Basket */}
@@ -2289,7 +2287,7 @@ function AppShell({ darkMode, setDarkMode }) {
             </div>
             </div>
             <aside className="space-y-4 min-w-0">
-              <WorkspaceLedger title="Recent Sales Activity" entries={activeTransactions.filter((entry) => entry.type === 'INFLOW' && entry.category === 'Counter Sales')} formatMoney={formatNaira} onViewAll={() => handleSelectTab('history')} />
+              <WorkspaceLedger title="Recent Sales Activity" entries={recentSales} formatMoney={formatNaira} onViewAll={() => handleSelectTab('history')} />
               <section className="workspace-panel space-y-2">
                 <h2 className="font-bold">Drawer Reconciliation</h2>
                 <p className="workspace-muted text-sm">Review and reconcile the day’s cash drawer.</p>
@@ -2317,7 +2315,7 @@ function AppShell({ darkMode, setDarkMode }) {
               <WorkspaceMetric label="Stock health" value={stockCounts.HEALTHY} detail={`${stockCounts.LOW} low · ${stockCounts.OUT} out of stock`} icon={ClipboardCheck} />
             </div>
             <div className="workspace-columns workspace-stock">
-            <div className="workspace-panel workspace-catalog overflow-hidden !p-0">
+            <div id="inventory-results" className="workspace-panel workspace-catalog overflow-hidden !p-0">
             <div
               style={{ borderColor: 'var(--border-outer)' }}
               className="p-3.5 sm:p-4 border-b flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
@@ -2401,7 +2399,7 @@ function AppShell({ darkMode, setDarkMode }) {
               </p>
             )}
             <div className="workspace-stock-cards md:hidden">
-              {filteredProducts.map((p) => {
+              {productPage.rows.map((p) => {
                 const isLow = Number(p.stock_quantity) <= Number(p.reorder_level);
                 const gain = Number(p.selling_price) - Number(p.cost_price);
                 return (
@@ -2544,7 +2542,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y theme-divider">
-                  {filteredProducts.map((p) => {
+                  {productPage.rows.map((p) => {
                     const isLow = Number(p.stock_quantity) <= Number(p.reorder_level);
                     const gain = Number(p.selling_price) - Number(p.cost_price);
                     return (
@@ -2668,6 +2666,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 </tbody>
               </table>
             </div>
+              <ListPagination list={productPage} label="Stock catalog" targetId="inventory-results" />
             </div>
             <aside className="space-y-4 min-w-0">
               <section className="workspace-panel space-y-3">
@@ -3078,6 +3077,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 </div>
               </div>
 
+              <div id="cash-results" />
               {filteredTransactions.length === 0 ? (
                 <EmptyState
                   icon={Wallet}
@@ -3099,7 +3099,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 <>
                   {/* Mobile Card View (< 768px) */}
                   <div className="md:hidden divide-y theme-divider">
-                    {filteredTransactions.map((tx) => {
+                    {transactionPage.rows.map((tx) => {
                       const txStatus = tx.status || 'ACTIVE';
                       const isInactive = txStatus !== 'ACTIVE';
                       const chMeta = getChannelBadgeMeta(tx.payment_method);
@@ -3230,7 +3230,7 @@ function AppShell({ darkMode, setDarkMode }) {
                         </tr>
                       </thead>
                       <tbody className="divide-y theme-divider">
-                        {filteredTransactions.map((tx) => {
+                        {transactionPage.rows.map((tx) => {
                           const txStatus = tx.status || 'ACTIVE';
                           const isInactive = txStatus !== 'ACTIVE';
                           const chMeta = getChannelBadgeMeta(tx.payment_method);
@@ -3345,6 +3345,7 @@ function AppShell({ darkMode, setDarkMode }) {
                       </tbody>
                     </table>
                   </div>
+                  <ListPagination list={transactionPage} label="Cash entries" targetId="cash-results" />
                 </>
               )}
             </div>
@@ -3540,6 +3541,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 </div>
               </div>
 
+              <div id="history-results" />
               {filteredMovements.length === 0 ? (
                 <EmptyState
                   icon={History}
@@ -3560,7 +3562,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 <>
                   {/* Mobile History Cards (< 768px) */}
                   <div className="md:hidden divide-y theme-divider">
-                    {filteredMovements.map((m) => {
+                    {movementPage.rows.map((m) => {
                       const badgeInfo = getMovementBadgeInfo(m.movement_type);
                       return (
                         <div key={m.id} className="p-4 space-y-2">
@@ -3639,7 +3641,7 @@ function AppShell({ darkMode, setDarkMode }) {
                         </tr>
                       </thead>
                       <tbody className="divide-y theme-divider">
-                        {filteredMovements.map((m) => {
+                        {movementPage.rows.map((m) => {
                           const badgeInfo = getMovementBadgeInfo(m.movement_type);
                           return (
                             <tr
@@ -3712,6 +3714,7 @@ function AppShell({ darkMode, setDarkMode }) {
                       </tbody>
                     </table>
                   </div>
+                  <ListPagination list={movementPage} label="Activity" targetId="history-results" />
                 </>
               )}
             </div>
@@ -3869,6 +3872,7 @@ function AppShell({ darkMode, setDarkMode }) {
               {/* VIEW 1: AGGREGATE CUSTOMER ACCOUNTS */}
               {debtorViewMode === 'ACCOUNTS' && (
                 <>
+                  <div id="ledgerPage-results" />
                   {filteredLedgers.length === 0 ? (
                     <EmptyState
                       icon={Users}
@@ -3887,7 +3891,7 @@ function AppShell({ darkMode, setDarkMode }) {
                     <>
                       {/* Mobile Cards for Customer Accounts (< 768px) */}
                       <div className="md:hidden divide-y theme-divider">
-                        {filteredLedgers.map((l) => {
+                        {ledgerPage.rows.map((l) => {
                           const isOwing = Number(l.total_balance_due) > 0;
                           return (
                             <div key={l.customer_name} className="p-4 space-y-3">
@@ -4012,7 +4016,7 @@ function AppShell({ darkMode, setDarkMode }) {
                             </tr>
                           </thead>
                           <tbody className="divide-y theme-divider">
-                            {filteredLedgers.map((l) => {
+                            {ledgerPage.rows.map((l) => {
                               const isOwing = Number(l.total_balance_due) > 0;
                               return (
                                 <tr
@@ -4109,6 +4113,7 @@ function AppShell({ darkMode, setDarkMode }) {
                           </tbody>
                         </table>
                       </div>
+                      <ListPagination list={ledgerPage} label="Customer accounts" targetId="ledgerPage-results" />
                     </>
                   )}
                 </>
@@ -4117,6 +4122,7 @@ function AppShell({ darkMode, setDarkMode }) {
               {/* VIEW 2: INDIVIDUAL CREDIT SLIPS */}
               {debtorViewMode === 'SLIPS' && (
                 <>
+                  <div id="creditPage-results" />
                   {filteredCredits.length === 0 ? (
                     <EmptyState
                       icon={FileText}
@@ -4135,7 +4141,7 @@ function AppShell({ darkMode, setDarkMode }) {
                     <>
                       {/* Mobile Cards for Slips (< 768px) */}
                       <div className="md:hidden divide-y theme-divider">
-                        {filteredCredits.map((c) => {
+                        {creditPage.rows.map((c) => {
                           const isOwing = c.status === 'OWING' && Number(c.balance_due) > 0;
                           return (
                             <div key={c.id} className="p-4 space-y-2.5">
@@ -4229,7 +4235,7 @@ function AppShell({ darkMode, setDarkMode }) {
                             </tr>
                           </thead>
                           <tbody className="divide-y theme-divider">
-                            {filteredCredits.map((c) => {
+                            {creditPage.rows.map((c) => {
                               const isOwing = c.status === 'OWING' && Number(c.balance_due) > 0;
                               return (
                                 <tr
@@ -4319,6 +4325,7 @@ function AppShell({ darkMode, setDarkMode }) {
                           </tbody>
                         </table>
                       </div>
+                      <ListPagination list={creditPage} label="Credit slips" targetId="creditPage-results" />
                     </>
                   )}
                 </>

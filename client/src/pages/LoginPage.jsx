@@ -1,3 +1,4 @@
+import { ThemeToggle } from '../components/ui/ThemeToggle';
 import React, { useState } from 'react';
 import {
   Package,
@@ -5,8 +6,6 @@ import {
   Wallet,
   Users,
   BarChart3,
-  Sun,
-  Moon,
   Mail,
   Phone,
   Lock,
@@ -116,23 +115,8 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
             <span>Create Account</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setDarkMode(!darkMode)}
-            className="liquid-glass-subtle px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-theme-primary cursor-pointer"
-          >
-            {darkMode ? (
-              <>
-                <Sun className="w-4 h-4 text-sky-400" />
-                <span className="hidden xs:inline">Light</span>
-              </>
-            ) : (
-              <>
-                <Moon className="w-4 h-4 text-theme-brand" />
-                <span className="hidden xs:inline">Dark</span>
-              </>
-            )}
-          </button>
+          <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((current) => !current)}
+            className="liquid-glass-subtle px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 text-theme-primary cursor-pointer" labelClassName="hidden xs:inline" />
         </div>
       </header>
 

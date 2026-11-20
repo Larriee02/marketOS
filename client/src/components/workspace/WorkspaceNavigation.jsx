@@ -1,4 +1,5 @@
-import { BarChart3, CalendarCheck, Grid2X2, History, House, LogOut, Moon, Package, Plus, Settings, ShieldCheck, Sun, UserRound, Users, Wallet } from 'lucide-react';
+import { ThemeToggle } from '../ui/ThemeToggle';
+import { BarChart3, CalendarCheck, Grid2X2, History, House, LogOut, Package, Plus, Settings, ShieldCheck, UserRound, Users, Wallet } from 'lucide-react';
 
 const links = [
   { id: 'home', label: 'Home', icon: House },
@@ -14,7 +15,6 @@ const mobileLinks = [...links.slice(0, 2), { id: 'counter', label: 'Sale', icon:
 export function WorkspaceNavigation({ active, user, darkMode, onTheme, onSelect, onSettings, onAdmin, onLogout, onClosing }) {
   const name = user.full_name || user.business_name || 'MarketOS';
   const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
-  const ThemeIcon = darkMode ? Sun : Moon;
   return (
     <>
       <aside className="workspace-sidebar" aria-label="Workspace">
@@ -46,7 +46,7 @@ export function WorkspaceNavigation({ active, user, darkMode, onTheme, onSelect,
           <span>{user.business_name || 'Your shop'}</span>
         </div>
         <div className="flex min-w-0 items-center gap-2">
-          <button className="workspace-icon-button" aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'} onClick={onTheme}><ThemeIcon size={17} /></button>
+          <ThemeToggle className="workspace-icon-button workspace-theme-toggle" darkMode={darkMode} onToggle={onTheme} />
           <button className="workspace-profile" onClick={onSettings} aria-label="Account settings">
             <span className="workspace-avatar">{initials || <UserRound size={16} />}</span>
             <span className="workspace-profile-name">{name}</span>
