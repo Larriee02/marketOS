@@ -1,5 +1,6 @@
 // Automated test for bulk import, batch adjustment, physical stock-taking, and damaged/expired/missing classification
-process.env.VERCEL = '1';
+process.env.NODE_ENV = 'test';
+process.env.ALLOW_TEMPORARY_STORE = 'true';
 process.env.ALLOW_OTP_PREVIEW = 'true';
 const os = require('os');
 const fs = require('fs');

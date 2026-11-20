@@ -11,6 +11,7 @@ services:
     plan: free
     buildCommand: npm run build
     startCommand: npm start
+    healthCheckPath: /api/v1/health
     envVars:
       - key: NODE_ENV
         value: production
@@ -18,3 +19,9 @@ services:
         fromDatabase:
           name: marketos-db
           property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OWNER_EMAIL
+        sync: false
+      - key: OWNER_PASSWORD
+        sync: false

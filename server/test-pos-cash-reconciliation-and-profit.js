@@ -216,6 +216,33 @@ async function runTests() {
   assert.strictEqual(Number(closeResult.actual_closing_cash), 26500);
   console.log('✅ Daily reconciliation signed off & closed with zero variance!');
 
+  // An edited product cost cannot change the cost of a previously recorded sale.
+  await inventoryService.updateProduct(userId, prodA.id, { ...prodA, cost_price: 850 });
+  const periodStart = new Date(Date.now() - 86_400_000).toISOString();
+  const periodEnd = new Date(Date.now() + 86_400_000).toISOString();
+  const period = { start: periodStart, end: periodEnd };
+  const report = await cashbookService.getFinancialReport(userId, period);
+  assert.strictEqual(report.metrics.cogs, 19500);
+  assert.strictEqual(report.metrics.grossProfit, 8500);
+  assert.strictEqual(report.metrics.netOperatingProfit, 3000);
+
+  // Make the recent-activity endpoints overflow with newer rows outside the selected period.
+  await db.query(
+    `INSERT INTO stock_movements (
+       user_id, product_id, movement_type, quantity_change, previous_stock,
+       new_stock, unit_price, total_value, unit_cost, created_at
+     ) SELECT $1, $2, 'SALE', -1, 10, 9, 1200, 1200, 850, $3
+       FROM generate_series(1, 1001)`,
+    [userId, prodA.id, periodEnd]
+  );
+  await db.query(
+    `INSERT INTO cash_transactions (user_id, type, category, amount, description, transaction_date)
+     SELECT $1, 'OUTFLOW', 'Fixture', 10, 'Outside requested period', $2
+     FROM generate_series(1, 501)`,
+    [userId, periodEnd]
+  );
+  assert.deepStrictEqual(await cashbookService.getFinancialReport(userId, period), report);
+
   // Summary Comparison Table to demonstrate clear distinction
   console.log('\n======================================================');
   console.log('📊 FINANCIAL MEASUREMENTS DISAMBIGUATION SUMMARY');

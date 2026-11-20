@@ -60,6 +60,13 @@ app.use(express.urlencoded({ extended: true, limit: '200kb' }));
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
+if (env.IS_PROD) {
+  app.use('/api/v1', asyncHandler(async (req, res, next) => {
+    await db.ready();
+    next();
+  }));
+}
+
 const clientIp = (req) =>
   (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || null;
 
@@ -141,7 +148,7 @@ const requireAdmin = [
 app.get(
   '/api/v1/health',
   asyncHandler(async (req, res) => {
-    await db.ready();
+    await db.checkHealth();
     res.json({
       status: 'ok',
       dbMode: db.mode,
@@ -559,7 +566,9 @@ app.post(
   '/api/v1/sales/checkout',
   requireApprovedUser,
   asyncHandler(async (req, res) => {
-    const result = await inventoryService.checkoutCart(req.user.id, req.body);
+    const result = await inventoryService.checkoutCart(
+      req.user.id, req.body, req.get('Idempotency-Key')
+    );
     res.status(201).json(result);
   })
 );
@@ -654,6 +663,15 @@ app.delete(
       req.body?.reason
     );
     res.json(result);
+  })
+);
+
+app.get(
+  '/api/v1/cashbook/report',
+  requireApprovedUser,
+  asyncHandler(async (req, res) => {
+    const report = await cashbookService.getFinancialReport(req.user.id, req.query);
+    res.json(report);
   })
 );
 

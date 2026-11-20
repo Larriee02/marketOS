@@ -12,22 +12,17 @@ const bool = (value, fallback = false) => {
   return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
 };
 
-const defaultSecret = `mos-prod-${crypto
-  .createHash('sha256')
-  .update(process.env.VERCEL_PROJECT_PRODUCTION_URL || 'marketos-secret-key-2026')
-  .digest('hex')}`;
-
-const jwtSecret =
-  process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 16
-    ? process.env.JWT_SECRET
-    : defaultSecret;
+const configuredSecret = process.env.JWT_SECRET?.trim();
+const jwtSecret = configuredSecret && Buffer.byteLength(configuredSecret) >= 32
+  ? configuredSecret
+  : IS_PROD ? null : configuredSecret || crypto.randomBytes(32).toString('hex');
 
 const env = {
   IS_PROD,
   PORT: Number(process.env.PORT) || 5000,
   DATABASE_URL: process.env.DATABASE_URL || '',
   JWT_SECRET: jwtSecret,
-  JWT_SECRET_MISSING: false,
+  ALLOW_TEMPORARY_STORE: !IS_PROD && bool(process.env.ALLOW_TEMPORARY_STORE),
   SESSION_DAYS: Number(process.env.SESSION_DAYS) || 7,
 
   ADMIN_EMAIL: (process.env.ADMIN_EMAIL || '').trim().toLowerCase(),
@@ -64,7 +59,7 @@ const env = {
 
   // Allow preview of OTP in response for development / sandbox testing only.
   // Defaults to FALSE in production so codes are never exposed over the wire.
-  ALLOW_OTP_PREVIEW: bool(process.env.ALLOW_OTP_PREVIEW, !IS_PROD),
+  ALLOW_OTP_PREVIEW: !IS_PROD && bool(process.env.ALLOW_OTP_PREVIEW, true),
 
   SUPPORT_WHATSAPP: (process.env.SUPPORT_WHATSAPP || '2348000000000').replace(/[^\d]/g, ''),
   ALLOWED_ORIGIN: process.env.ALLOWED_ORIGIN || '',

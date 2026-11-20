@@ -1,6 +1,8 @@
 // Automated test verifying that failed checkout does NOT leave cart, stock, or cashbook in an inconsistent state
-process.env.VERCEL = '1';
+process.env.NODE_ENV = 'test';
+process.env.ALLOW_TEMPORARY_STORE = 'true';
 process.env.ALLOW_OTP_PREVIEW = 'true';
+const assert = require('node:assert/strict');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
@@ -56,6 +58,7 @@ async function runTest() {
   // 3. Attempt invalid checkout:
   // Item 1: Qty 4 (Available: 10 - Valid)
   // Item 2: Qty 5 (Available: 2 - Insufficient Stock!)
+  const saleKey = 'checkout-atomicity-test';
   let checkoutError = null;
   try {
     await inventoryService.checkoutCart(userId, {
@@ -66,7 +69,7 @@ async function runTest() {
       payment_method: 'CASH',
       amount_paid: 8300,
       customer_name: 'Walk-in Customer',
-    });
+    }, saleKey);
   } catch (err) {
     checkoutError = err;
   }
@@ -108,7 +111,7 @@ async function runTest() {
 
   // 5. Verify Successful Checkout After Error:
   console.log('\n--- Verifying Subsequent Valid Checkout Succeeded ---');
-  const validSale = await inventoryService.checkoutCart(userId, {
+  const basket = {
     items: [
       { product_id: prod1.id, quantity: 3 }, // 10 - 3 = 7
       { product_id: prod2.id, quantity: 1 }, // 2 - 1 = 1
@@ -116,7 +119,16 @@ async function runTest() {
     payment_method: 'POS',
     amount_paid: 4300, // 3 * 1200 + 1 * 700 = 3600 + 700 = 4300
     customer_name: 'Adeola Lagos',
-  });
+  };
+  const [receipt, replay] = await Promise.all([
+    inventoryService.checkoutCart(userId, basket, saleKey),
+    inventoryService.checkoutCart(userId, basket, saleKey),
+  ]);
+  assert.deepEqual(replay, receipt, 'Concurrent retries must return the committed receipt');
+  await assert.rejects(
+    inventoryService.checkoutCart(userId, { ...basket, payment_method: 'CASH' }, saleKey),
+    { code: 'CHECKOUT_KEY_CONFLICT' }
+  );
 
   const finalProd1 = (await db.query('SELECT * FROM products WHERE id = $1', [prod1.id])).rows[0];
   const finalProd2 = (await db.query('SELECT * FROM products WHERE id = $1', [prod2.id])).rows[0];

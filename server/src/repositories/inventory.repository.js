@@ -95,7 +95,7 @@ class InventoryRepository {
 
   async findRecentMovements(userId, limit = 500) {
     const { rows } = await db.query(
-      `SELECT sm.*, p.name AS product_name, p.sku, p.unit, p.category, p.cost_price, p.selling_price AS product_selling_price
+      `SELECT sm.*, p.name AS product_name, p.sku, p.unit, p.category, COALESCE(sm.unit_cost, p.cost_price) AS cost_price, p.selling_price AS product_selling_price
        FROM stock_movements sm
        JOIN products p ON p.id = sm.product_id
        WHERE sm.user_id = $1

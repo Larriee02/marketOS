@@ -1,3 +1,4 @@
+const { createHash } = require('crypto');
 const db = require('../config/db');
 const AppError = require('../utils/AppError');
 const { multiplyCurrency } = require('../utils/money');
@@ -58,7 +59,7 @@ class InventoryService {
   }
 
   // Fast Multi-Item Shop Counter Checkout (Cash, POS, Transfer, or Part-Payment/Credit)
-  async checkoutCart(userId, payload) {
+  async checkoutCart(userId, payload, idempotencyKey) {
     const {
       items,
       payment_method = 'CASH',
@@ -74,14 +75,46 @@ class InventoryService {
       throw new AppError('Basket is empty. Tap at least one product to sell.');
     }
 
+    for (const item of items) {
+      const quantity = Number(item?.quantity);
+      if (!item?.product_id || !Number.isFinite(quantity) || quantity <= 0) {
+        throw new AppError('Every basket item must have a product and a positive quantity.');
+      }
+    }
+    if (idempotencyKey !== undefined && !/^[A-Za-z0-9._:-]{1,64}$/.test(idempotencyKey)) {
+      throw new AppError('Invalid checkout idempotency key.');
+    }
+
+    const requestHash = idempotencyKey && createHash('sha256').update(JSON.stringify({
+      items: items.map(({ product_id, quantity }) => ({ product_id, quantity })),
+      payment_method, amount_paid, customer_name, customer_phone, customer_address, due_date, note,
+    })).digest('hex');
+
     const result = await db.withTransaction(async (client) => {
+      if (idempotencyKey) {
+        const claim = await client.query(
+          `INSERT INTO checkout_requests (user_id, idempotency_key, request_hash)
+           VALUES ($1, $2, $3) ON CONFLICT (user_id, idempotency_key) DO NOTHING`,
+          [userId, idempotencyKey, requestHash]
+        );
+        if (!claim.rowCount) {
+          const { rows: [previous] } = await client.query(
+            'SELECT request_hash, response FROM checkout_requests WHERE user_id = $1 AND idempotency_key = $2',
+            [userId, idempotencyKey]
+          );
+          if (previous?.request_hash !== requestHash) {
+            throw new AppError('This checkout key belongs to a different basket.', 409, 'CHECKOUT_KEY_CONFLICT');
+          }
+          return previous.response;
+        }
+      }
+
       let basketTotal = 0;
       const summaryParts = [];
       const movementsCreated = [];
 
       for (const item of items) {
         const qty = Number(item.quantity);
-        if (qty <= 0 || Number.isNaN(qty)) continue;
 
         const prodRes = await client.query(
           'SELECT * FROM products WHERE id = $1 AND user_id = $2 FOR UPDATE',
@@ -115,8 +148,8 @@ class InventoryService {
         const movRes = await client.query(
           `INSERT INTO stock_movements (
             user_id, product_id, movement_type, quantity_change, previous_stock, new_stock,
-            unit_price, total_value, counterparty_name, note
-          ) VALUES ($1, $2, 'SALE', $3, $4, $5, $6, $7, $8, $9)
+            unit_price, total_value, counterparty_name, note, unit_cost
+          ) VALUES ($1, $2, 'SALE', $3, $4, $5, $6, $7, $8, $9, $10)
           RETURNING *`,
           [
             userId,
@@ -128,6 +161,7 @@ class InventoryService {
             lineTotal,
             customer_name.trim() || 'Walk-in Customer',
             note.trim() || 'Counter Sale',
+            product.cost_price,
           ]
         );
         movementsCreated.push({
@@ -142,7 +176,7 @@ class InventoryService {
       const actualPaid =
         amount_paid !== undefined && amount_paid !== '' ? Number(amount_paid) : basketTotal;
 
-      if (actualPaid < 0 || actualPaid > basketTotal) {
+      if (!Number.isFinite(actualPaid) || actualPaid < 0 || actualPaid > basketTotal) {
         throw new AppError('Amount paid cannot be negative or greater than total bill.');
       }
 
@@ -217,7 +251,7 @@ class InventoryService {
         }
       }
 
-      return {
+      const receipt = {
         basketTotal,
         actualPaid,
         balanceDue,
@@ -226,6 +260,13 @@ class InventoryService {
         cashTransaction: cashTx,
         creditRecord,
       };
+      if (idempotencyKey) {
+        await client.query(
+          'UPDATE checkout_requests SET response = $3 WHERE user_id = $1 AND idempotency_key = $2',
+          [userId, idempotencyKey, JSON.stringify(receipt)]
+        );
+      }
+      return receipt;
     });
 
     cacheService.invalidatePrefix(`dashboard:${userId}`);
@@ -358,8 +399,8 @@ class InventoryService {
       const movementRes = await client.query(
         `INSERT INTO stock_movements (
           user_id, idempotency_key, product_id, movement_type, quantity_change,
-          previous_stock, new_stock, unit_price, total_value, counterparty_name, note
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          previous_stock, new_stock, unit_price, total_value, counterparty_name, note, unit_cost
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *`,
         [
           userId,
@@ -373,6 +414,7 @@ class InventoryService {
           totalValue,
           counterparty_name.trim() || null,
           note.trim() || null,
+          normalizedType === 'SALE' ? product.cost_price : null,
         ]
       );
 

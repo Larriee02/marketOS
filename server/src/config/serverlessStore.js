@@ -8,6 +8,7 @@ const { STARTER_CATALOG } = require('../db/starterCatalog');
 const STORE_FILE = path.join(os.tmpdir(), 'marketos-live-production-v5.json');
 
 let memoryState = null;
+let transactionState = null;
 
 function buildInitialState() {
   return {
@@ -19,6 +20,7 @@ function buildInitialState() {
     cashbook_sessions: [],
     credit_records: [],
     credit_repayments: [],
+    checkout_requests: [],
   };
 }
 
@@ -27,7 +29,7 @@ function buildInitialState() {
  * Returns true if the state was modified.
  */
 function ensureOwner(state) {
-  const { OWNER_EMAIL, OWNER_NAME, getOwnerPasswordHash } = require('./owner');
+  const { OWNER_EMAIL, OWNER_NAME, getOwnerPasswordHash, isLegacyOwnerHash } = require('./owner');
   let changed = false;
   const now = new Date().toISOString();
 
@@ -63,10 +65,10 @@ function ensureOwner(state) {
     };
     state.users.push(owner);
     changed = true;
-  } else if (owner.role !== 'ADMIN' || !owner.password_hash || owner.status !== 'APPROVED') {
+  } else if (owner.role !== 'ADMIN' || !owner.password_hash || owner.status !== 'APPROVED' || isLegacyOwnerHash(owner.password_hash)) {
     owner.role = 'ADMIN';
     owner.status = 'APPROVED';
-    if (!owner.password_hash || owner.auth_provider !== 'EMAIL') {
+    if (!owner.password_hash || owner.auth_provider !== 'EMAIL' || isLegacyOwnerHash(owner.password_hash)) {
       owner.password_hash = getOwnerPasswordHash();
       owner.auth_provider = 'EMAIL';
       owner.token_version = (owner.token_version || 0) + 1;
@@ -87,6 +89,7 @@ function ensureOwner(state) {
 }
 
 function loadState() {
+  if (transactionState) return transactionState;
   if (memoryState) return memoryState;
   try {
     if (fs.existsSync(STORE_FILE)) {
@@ -96,6 +99,16 @@ function loadState() {
       }
       if (!Array.isArray(memoryState.credit_repayments)) {
         memoryState.credit_repayments = [];
+      }
+      if (!Array.isArray(memoryState.checkout_requests)) {
+        memoryState.checkout_requests = [];
+        const products = new Map(memoryState.products.map((p) => [p.id, p]));
+        for (const movement of memoryState.stock_movements) {
+          if (movement.movement_type === 'SALE' && movement.unit_cost == null) {
+            movement.unit_cost = products.get(movement.product_id)?.cost_price ?? null;
+          }
+        }
+        saveState(memoryState);
       }
       if (ensureOwner(memoryState)) saveState(memoryState);
       return memoryState;
@@ -110,6 +123,7 @@ function loadState() {
 }
 
 function saveState(state) {
+  if (transactionState) return;
   memoryState = state;
   try {
     fs.writeFileSync(STORE_FILE, JSON.stringify(state), 'utf8');
@@ -163,6 +177,56 @@ async function executeQuery(text, params = []) {
 
   if (upper === 'BEGIN' || upper === 'COMMIT' || upper === 'ROLLBACK') {
     return { rows: [], rowCount: 0 };
+  }
+
+  if (upper.startsWith("SELECT 'SALE' AS TYPE")) {
+    const [uid, start, end] = params;
+    const startTime = Date.parse(start);
+    const endTime = Date.parse(end);
+    const inPeriod = (date) => Date.parse(date) >= startTime && Date.parse(date) < endTime;
+    const sales = { type: 'SALE', entry_count: 0, amount: 0, cost: 0 };
+    for (const movement of state.stock_movements) {
+      if (Number(movement.user_id) !== Number(uid) || movement.movement_type !== 'SALE' ||
+          !inPeriod(movement.created_at)) continue;
+      sales.entry_count++;
+      sales.amount += Number(movement.total_value);
+      sales.cost += Math.abs(Number(movement.quantity_change)) * Number(movement.unit_cost || 0);
+    }
+    const cash = new Map();
+    for (const tx of state.cash_transactions) {
+      if (Number(tx.user_id) !== Number(uid) || (tx.status || 'ACTIVE') !== 'ACTIVE' ||
+          !inPeriod(tx.transaction_date)) continue;
+      const { type, payment_method, category } = tx;
+      const key = JSON.stringify([type, payment_method, category]);
+      const row = cash.get(key) || { type, payment_method, category, entry_count: 0, amount: 0 };
+      row.entry_count++;
+      row.amount += Number(tx.amount);
+      cash.set(key, row);
+    }
+    const rows = [sales, ...cash.values()];
+    return { rows, rowCount: rows.length };
+  }
+
+  if (upper.startsWith('INSERT INTO CHECKOUT_REQUESTS')) {
+    const [uid, key, request_hash] = params;
+    if (state.checkout_requests.some((r) => r.user_id === Number(uid) && r.idempotency_key === key)) {
+      return { rows: [], rowCount: 0 };
+    }
+    state.checkout_requests.push({
+      user_id: Number(uid), idempotency_key: key, request_hash, response: null,
+    });
+    saveState(state);
+    return { rows: [], rowCount: 1 };
+  }
+
+  if (upper.includes('FROM CHECKOUT_REQUESTS WHERE') || upper.startsWith('UPDATE CHECKOUT_REQUESTS')) {
+    const [uid, key, response] = params;
+    const request = state.checkout_requests.find((r) => r.user_id === Number(uid) && r.idempotency_key === key);
+    if (response !== undefined && request) {
+      request.response = JSON.parse(response);
+      saveState(state);
+    }
+    return { rows: request ? [request] : [], rowCount: request ? 1 : 0 };
   }
 
   // ----------------------- USERS & AUTH QUERIES -----------------------
@@ -561,6 +625,7 @@ async function executeQuery(text, params = []) {
   if (upper.startsWith('DELETE FROM USERS WHERE ID = $1')) {
     const id = Number(params[0]);
     state.users = state.users.filter((u) => Number(u.id) !== id);
+    state.checkout_requests = state.checkout_requests.filter((r) => r.user_id !== id);
     saveState(state);
     return { rows: [], rowCount: 1 };
   }
@@ -928,7 +993,7 @@ async function executeQuery(text, params = []) {
           sku: p.sku || 'PRV',
           unit: p.unit || 'Pack',
           category: p.category || 'Provisions',
-          cost_price: Number(p.cost_price || 0),
+          cost_price: Number(sm.unit_cost ?? p.cost_price ?? 0),
           selling_price: Number(p.selling_price || 0),
         };
       });
@@ -948,6 +1013,7 @@ async function executeQuery(text, params = []) {
         total_value,
         counterparty_name,
         note,
+        unit_cost,
       ] = params;
       record = {
         id: nextId(state.stock_movements),
@@ -955,6 +1021,7 @@ async function executeQuery(text, params = []) {
         idempotency_key: null,
         product_id: Number(product_id),
         movement_type: 'SALE',
+        unit_cost: Number(unit_cost),
         quantity_change: Number(quantity_change),
         previous_stock: Number(previous_stock),
         new_stock: Number(new_stock),
@@ -1005,6 +1072,7 @@ async function executeQuery(text, params = []) {
         total_value,
         counterparty_name,
         note,
+        unit_cost,
       ] = params;
       record = {
         id: nextId(state.stock_movements),
@@ -1012,6 +1080,7 @@ async function executeQuery(text, params = []) {
         idempotency_key,
         product_id: Number(product_id),
         movement_type,
+        unit_cost: unit_cost == null ? null : Number(unit_cost),
         quantity_change: Number(quantity_change),
         previous_stock: Number(previous_stock),
         new_stock: Number(new_stock),
@@ -1551,20 +1620,25 @@ async function executeQuery(text, params = []) {
   return { rows: [], rowCount: 0 };
 }
 
+let pendingOperation = Promise.resolve();
+function serialize(operation) {
+  const result = pendingOperation.then(operation);
+  pendingOperation = result.catch(() => {});
+  return result;
+}
+
 module.exports = {
-  query: executeQuery,
-  withTransaction: async (fn) => {
-    const currentState = loadState();
-    // Deep clone state snapshot before running transaction to guarantee atomicity & rollbacks
-    const snapshot = JSON.parse(JSON.stringify(currentState));
+  query: (text, params) => serialize(() => executeQuery(text, params)),
+  withTransaction: (fn) => serialize(async () => {
+    const snapshot = structuredClone(loadState());
+    transactionState = snapshot;
+    let result;
     try {
-      const result = await fn({ query: executeQuery });
-      return result;
-    } catch (err) {
-      // Revert completely to snapshot on error (clean rollback)
-      memoryState = snapshot;
-      saveState(snapshot);
-      throw err;
+      result = await fn({ query: executeQuery });
+    } finally {
+      transactionState = null;
     }
-  },
+    saveState(snapshot);
+    return result;
+  }),
 };
