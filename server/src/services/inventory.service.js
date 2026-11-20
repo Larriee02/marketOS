@@ -97,15 +97,17 @@ class InventoryService {
            VALUES ($1, $2, $3) ON CONFLICT (user_id, idempotency_key) DO NOTHING`,
           [userId, idempotencyKey, requestHash]
         );
-        if (!claim.rowCount) {
+        const claimedRows = claim.rowCount ?? claim.affectedRows;
+        if (!claimedRows) {
           const { rows: [previous] } = await client.query(
-            'SELECT request_hash, response FROM checkout_requests WHERE user_id = $1 AND idempotency_key = $2',
+            'SELECT request_hash, response FROM checkout_requests WHERE user_id = $1 AND idempotency_key = $2 FOR UPDATE',
             [userId, idempotencyKey]
           );
           if (previous?.request_hash !== requestHash) {
             throw new AppError('This checkout key belongs to a different basket.', 409, 'CHECKOUT_KEY_CONFLICT');
           }
-          return previous.response;
+          // Older embedded builds could commit an idempotency claim without creating a sale.
+          if (previous.response != null) return previous.response;
         }
       }
 

@@ -91,7 +91,7 @@ export function CustomerCreditModal({
 
       await apiFetch('/api/v1/credits', {
         method: 'POST',
-        body: {
+        body: JSON.stringify({
           customer_name: customerName.trim(),
           phone: phone.trim() || undefined,
           customer_address: customerAddress.trim() || undefined,
@@ -100,7 +100,7 @@ export function CustomerCreditModal({
           amount_paid: numPaid,
           due_date: computedDueDate,
           notes: notes.trim() || undefined,
-        },
+        }),
       });
 
       onSuccess();

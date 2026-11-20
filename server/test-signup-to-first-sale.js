@@ -158,7 +158,15 @@ async function runTests() {
     customer_phone: '08091122334',
   };
 
-  const checkoutResult = await inventoryService.checkoutCart(userId, cartPayload);
+  const checkoutKey = 'signup-first-sale';
+  const checkoutResult = await inventoryService.checkoutCart(userId, cartPayload, checkoutKey);
+  const replayedCheckout = await inventoryService.checkoutCart(userId, cartPayload, checkoutKey);
+  assert.equal(Number(replayedCheckout.basketTotal), Number(checkoutResult.basketTotal));
+  assert.deepEqual(
+    replayedCheckout.movementsCreated.map(({ id }) => id),
+    checkoutResult.movementsCreated.map(({ id }) => id),
+    'A checkout retry must return the original movements'
+  );
 
   // 1. Verify checkout financial calculation
   assert.strictEqual(Number(checkoutResult.basketTotal), 7350, 'Total sale amount must be ₦7,350');

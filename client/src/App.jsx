@@ -21,8 +21,6 @@ import {
   CheckCircle2,
   MessageCircle,
   History,
-  Sun,
-  Moon,
   Calendar,
   X,
   XCircle,
@@ -33,7 +31,6 @@ import {
   Copy,
   FileText,
   Sparkles,
-  Settings,
   Upload,
   SlidersHorizontal,
   Layers,
@@ -50,13 +47,15 @@ import {
   MapPin,
   Scale,
 } from 'lucide-react';
+import { WorkspaceMore, WorkspaceNavigation } from './components/workspace/WorkspaceNavigation';
+import { TraderHome, WorkspaceLedger, WorkspaceMetric } from './components/workspace/TraderHome';
+import './components/workspace/workspace.css';
 import { useDebounce } from './hooks/useDebounce';
 import { Modal } from './components/ui/Modal';
 import { StatCard } from './components/ui/StatCard';
 import { Badge } from './components/ui/Badge';
 import { EmptyState } from './components/ui/EmptyState';
 import { GradientBackground } from './components/ui/GradientBackground';
-import { MarketOSLogo } from './components/ui/MarketOSLogo';
 import { ToastProvider, useToast } from './components/ui/Toast';
 import { ReceiptModal } from './components/receipt/ReceiptModal';
 import { CheckoutConfirmModal } from './components/counter/CheckoutConfirmModal';
@@ -131,6 +130,8 @@ const INITIAL_CASH_FORM = {
 
 const ROUTE_TO_TAB = {
   '/store': 'counter',
+  '/store/home': 'home',
+  '/store/more': 'more',
   '/store/sell': 'counter',
   '/store/stock': 'inventory',
   '/store/cash': 'cashbook',
@@ -140,6 +141,8 @@ const ROUTE_TO_TAB = {
 };
 
 const TAB_TO_ROUTE = {
+  home: '/store/home',
+  more: '/store/more',
   counter: '/store/sell',
   inventory: '/store/stock',
   cashbook: '/store/cash',
@@ -238,7 +241,6 @@ function AppShell({ darkMode, setDarkMode }) {
   const basketRef = useRef(null);
   const checkoutAttempt = useRef(null);
   const checkoutInProgress = useRef(false);
-  const tabSectionRef = useRef(null);
 
   // Authenticated SaaS User State
   const [currentUser, setCurrentUser] = useState(null);
@@ -298,7 +300,7 @@ function AppShell({ darkMode, setDarkMode }) {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 150);
   const [categoryFilter, setCategoryFilter] = useState('ALL');
-  const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [stockStatus, setStockStatus] = useState('ALL');
   const [cashFilter, setCashFilter] = useState('ALL');
   const [channelFilter, setChannelFilter] = useState('ALL');
   const [cashDateRange, setCashDateRange] = useState('ALL'); // 'ALL' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'CUSTOM'
@@ -386,15 +388,9 @@ function AppShell({ darkMode, setDarkMode }) {
     setTimeout(() => setToast(''), 4200);
   }, [toastSuccess]);
 
-  const handleSelectTab = (tabId, scrollOnMobile = false) => {
+  const handleSelectTab = (tabId) => {
     setActiveTab(tabId);
-    const targetRoute = TAB_TO_ROUTE[tabId] || '/store/sell';
-    navigate(targetRoute);
-    if (scrollOnMobile && typeof window !== 'undefined' && window.innerWidth < 768) {
-      setTimeout(() => {
-        tabSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 40);
-    }
+    navigate(TAB_TO_ROUTE[tabId] || '/store/sell');
   };
 
   // Check active session on mount (and capture ?oauth_token=... from full-page OAuth redirects)
@@ -526,7 +522,11 @@ function AppShell({ darkMode, setDarkMode }) {
     const q = debouncedSearch.toLowerCase().trim();
     return products.filter((p) => {
       if (categoryFilter !== 'ALL' && p.category !== categoryFilter) return false;
-      if (lowStockOnly && Number(p.stock_quantity) > Number(p.reorder_level)) return false;
+      if (activeTab === 'inventory') {
+        const count = Number(p.stock_quantity);
+        const status = count <= 0 ? 'OUT' : count <= Number(p.reorder_level) ? 'LOW' : 'HEALTHY';
+        if (stockStatus !== 'ALL' && status !== stockStatus) return false;
+      }
       if (!q) return true;
       return (
         p.name.toLowerCase().includes(q) ||
@@ -535,7 +535,7 @@ function AppShell({ darkMode, setDarkMode }) {
         (p.supplier_name && p.supplier_name.toLowerCase().includes(q))
       );
     });
-  }, [products, debouncedSearch, categoryFilter, lowStockOnly]);
+  }, [products, debouncedSearch, categoryFilter, stockStatus, activeTab]);
 
   // Low-Stock Restock Generator Items (Discretionary MVP Feature)
   const lowStockRestockPlan = useMemo(() => {
@@ -970,33 +970,35 @@ function AppShell({ darkMode, setDarkMode }) {
 
   // Analytics & Profit & Loss Period Calculations
   const [financialReport, setFinancialReport] = useState(null);
+  const [homePeriod, setHomePeriod] = useState('TODAY');
+  const selectedReportPeriod = activeTab === 'home' ? homePeriod : analyticsDateRange;
   const analyticsPeriodBounds = useMemo(() => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const endOfTradingDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
 
-    if (analyticsDateRange === 'TODAY') {
+    if (selectedReportPeriod === 'TODAY') {
       return {
         startMs: startOfToday,
         endMs: endOfTradingDay,
         label: "Today's Trading",
       };
     }
-    if (analyticsDateRange === 'WEEK') {
+    if (selectedReportPeriod === 'WEEK') {
       return {
         startMs: now.getTime() - 7 * 86400000,
         endMs: endOfTradingDay,
         label: 'Last 7 Days (This Week)',
       };
     }
-    if (analyticsDateRange === 'MONTH') {
+    if (selectedReportPeriod === 'MONTH') {
       return {
         startMs: now.getTime() - 30 * 86400000,
         endMs: endOfTradingDay,
         label: 'Last 30 Days (This Month)',
       };
     }
-    if (analyticsDateRange === 'CUSTOM') {
+    if (selectedReportPeriod === 'CUSTOM') {
       const s = analyticsStartDate ? new Date(`${analyticsStartDate}T00:00:00.000`).getTime() : 0;
       const endDate = analyticsEndDate ? new Date(`${analyticsEndDate}T00:00:00`) : null;
       const e = endDate ? endDate.setDate(endDate.getDate() + 1) : endOfTradingDay;
@@ -1011,14 +1013,14 @@ function AppShell({ darkMode, setDarkMode }) {
       endMs: endOfTradingDay,
       label: "Today's Trading",
     };
-  }, [analyticsDateRange, analyticsStartDate, analyticsEndDate]);
+  }, [selectedReportPeriod, analyticsStartDate, analyticsEndDate]);
 
   const { startMs, endMs, label: analyticsLabel } = analyticsPeriodBounds;
   const validReportPeriod = Number.isFinite(startMs) && Number.isFinite(endMs) && startMs < endMs;
   const reportKey = `${currentUser?.id}:${startMs}:${endMs}`;
 
   useEffect(() => {
-    if (!isApprovedStoreAccess || activeTab !== 'analytics' || !validReportPeriod) return;
+    if (!isApprovedStoreAccess || !['analytics', 'home'].includes(activeTab) || !validReportPeriod) return;
     const controller = new AbortController();
     const params = new URLSearchParams({
       start: new Date(startMs).toISOString(),
@@ -1585,71 +1587,6 @@ function AppShell({ darkMode, setDarkMode }) {
     URL.revokeObjectURL(url);
   };
 
-  const navItems = useMemo(
-    () => [
-      {
-        id: 'counter',
-        route: '/store/sell',
-        label: 'Point of Sale',
-        shortLabel: 'POS',
-        title: 'Point of Sale & Checkout',
-        subtitle: 'Select products to build a customer order, process payment, and issue a receipt.',
-        icon: ShoppingCart,
-      },
-      {
-        id: 'inventory',
-        route: '/store/stock',
-        label: 'Inventory',
-        shortLabel: 'Stock',
-        title: 'Inventory & Stock Management',
-        subtitle: 'Manage product quantities, cost and selling prices, unit margins, and restock alerts.',
-        icon: ClipboardCheck,
-      },
-      {
-        id: 'cashbook',
-        route: '/store/cash',
-        label: 'Cashbook',
-        shortLabel: 'Cash',
-        title: 'Cashbook & Expense Ledger',
-        subtitle: 'Track inflows and operating expenses across Cash, POS terminals, and Bank Transfers.',
-        icon: Wallet,
-      },
-      {
-        id: 'history',
-        route: '/store/history',
-        label: 'Activity',
-        shortLabel: 'Activity',
-        title: 'Activity & Movement Ledger',
-        subtitle: 'Review past sales, restocks, stock adjustments, and damaged inventory records.',
-        icon: History,
-      },
-      {
-        id: 'debtors',
-        route: '/store/debtors',
-        label: `Credit Book (${dashboard.active_debtors_count || 0})`,
-        shortLabel: 'Credit',
-        title: 'Customer Credit & Receivables',
-        subtitle: 'Track outstanding customer balances, send reminders, and record repayments.',
-        icon: Users,
-      },
-      {
-        id: 'analytics',
-        route: '/store/summary',
-        label: 'Analytics',
-        shortLabel: 'Summary',
-        title: 'Channel Reconciliation & Category Valuation',
-        subtitle: 'Compare physical cash against POS and transfer balances and review capital by category.',
-        icon: BarChart3,
-      },
-    ],
-    [dashboard.active_debtors_count]
-  );
-
-  const currentPageMeta = useMemo(
-    () => navItems.find((item) => item.id === activeTab) || navItems[0],
-    [navItems, activeTab]
-  );
-
   const handleAuthenticatedUser = useCallback(
     (user) => {
       setCurrentUser(user);
@@ -1666,7 +1603,7 @@ function AppShell({ darkMode, setDarkMode }) {
         navigate('/pending');
       } else {
         showSuccessToast(`Signed in to ${user.business_name || 'Workspace'}`);
-        navigate('/store/sell');
+        navigate('/store/home');
       }
     },
     [navigate, showSuccessToast]
@@ -1784,109 +1721,56 @@ function AppShell({ darkMode, setDarkMode }) {
     );
   }
 
+  const openAddProduct = () => {
+    setEditingProduct(null);
+    setProductForm(INITIAL_PRODUCT_FORM);
+    setShowProductModal(true);
+  };
+  const openCashEntry = () => {
+    setCashForm(INITIAL_CASH_FORM);
+    setShowCashModal(true);
+  };
+  const openClosing = () => {
+    handleSelectTab('cashbook');
+    setSessionModalMode('CLOSE');
+    setShowSessionModal(true);
+  };
+  const openRestock = (product) => {
+    if (!product) {
+      setShowRestockModal(true);
+      return;
+    }
+    setSelectedProduct(product);
+    setMovementForm({
+      movement_type: 'RESTOCK', quantity: '', record_cash: true, amount_paid: '',
+      payment_method: 'CASH', counterparty_name: product.supplier_name || '', note: '',
+    });
+  };
+  const navigation = {
+    user: currentUser,
+    onSelect: handleSelectTab,
+    onSettings: () => navigate('/settings'),
+    onAdmin: isPlatformOwner ? () => navigate('/admin') : undefined,
+    onLogout: handleLogout,
+    onClosing: openClosing,
+  };
+  const activeTransactions = transactions.filter((entry) => !entry.status || entry.status === 'ACTIVE');
+  const periodEntries = activeTransactions.filter((entry) => {
+    const time = Date.parse(entry.transaction_date || entry.created_at);
+    return time >= startMs && time < endMs;
+  });
+  const stockCounts = products.reduce((counts, product) => {
+    const amount = Number(product.stock_quantity);
+    const status = amount <= 0 ? 'OUT' : amount <= Number(product.reorder_level) ? 'LOW' : 'HEALTHY';
+    counts[status] += 1;
+    return counts;
+  }, { HEALTHY: 0, LOW: 0, OUT: 0 });
+
   return (
-    <div className="min-h-screen pb-36 md:pb-10">
-      <a href="#main-content" className="skip-link">
-        Skip to main content
-      </a>
-      {/* Top Navigation Header */}
-      <header className="liquid-glass-header text-slate-100 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-2.5">
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <MarketOSLogo variant="icon" size="sm" />
-            <div className="flex items-center gap-2 min-w-0">
-              <h1 className="text-base sm:text-lg font-extrabold font-luxury tracking-tight truncate text-white">
-                {currentUser.business_name || 'MarketOS'}
-              </h1>
-              <span className="hidden xs:inline-block text-[10px] sm:text-[11px] bg-blue-500/25 text-blue-100 border border-blue-400/40 px-2 py-0.5 rounded-full font-bold shrink-0">
-                {currencyCode}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-            {/* Navigate to Admin Console (For Admin Users) */}
-            {currentUser.role === 'ADMIN' && (
-              <button
-                type="button"
-                onClick={() => navigate('/admin')}
-                className="liquid-btn-primary flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold cursor-pointer"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Admin Console</span>
-              </button>
-            )}
-
-            {/* Theme Toggle */}
-            <button
-              type="button"
-              onClick={() => setDarkMode(!darkMode)}
-              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              aria-label="Toggle color theme"
-              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/18 text-slate-100 border border-white/20 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
-            >
-              {darkMode ? (
-                <>
-                  <Sun className="w-4 h-4 text-sky-300" />
-                  <span className="hidden lg:inline">Light</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="w-4 h-4 text-blue-200" />
-                  <span className="hidden lg:inline">Dark</span>
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={() => {
-                setEditingProduct(null);
-                setProductForm(INITIAL_PRODUCT_FORM);
-                setShowProductModal(true);
-              }}
-              className="flex items-center gap-1 bg-white/10 hover:bg-white/18 text-slate-100 border border-white/20 px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden xs:inline">New</span>
-              <span>Product</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setCashForm(INITIAL_CASH_FORM);
-                setShowCashModal(true);
-              }}
-              className="liquid-btn-primary flex items-center gap-1 px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer"
-            >
-              <Wallet className="w-4 h-4" />
-              <span className="hidden xs:inline">Record</span>
-              <span>Entry</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigate('/settings')}
-              title="Account & Currency Settings"
-              className="flex items-center gap-1 bg-white/10 hover:bg-white/18 text-slate-100 border border-white/20 px-2.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
-            >
-              <Settings className="w-4 h-4 text-blue-200" />
-              <span className="hidden md:inline">Settings</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              title="Sign Out"
-              className="flex items-center gap-1 bg-red-500/20 hover:bg-red-500/35 text-slate-100 border border-red-400/35 px-2.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
-            >
-              <LogOut className="w-4 h-4 text-red-200" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main id="main-content" className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-5 sm:space-y-6">
+    <div className="market-workspace">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+      <WorkspaceNavigation {...navigation} active={activeTab} darkMode={darkMode} onTheme={() => setDarkMode(!darkMode)} />
+      <main id="main-content" className="workspace-main space-y-5">
         {/* Toast Alert */}
         {toast && (
           <div className="liquid-btn-primary px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2">
@@ -1907,6 +1791,22 @@ function AppShell({ darkMode, setDarkMode }) {
           </div>
         )}
 
+        {activeTab === 'home' && (
+          <TraderHome
+            user={currentUser} dashboard={dashboard} products={products} session={cashbookSession}
+            report={periodReport} loading={loading} period={homePeriod} entries={periodEntries}
+            onPeriod={setHomePeriod} formatMoney={formatNaira} onSelect={handleSelectTab}
+            onRestock={openRestock} onAddProduct={openAddProduct} onMoney={openCashEntry}
+            onCredit={() => setShowAddCreditModal(true)} onClosing={openClosing}
+            onExport={() => exportToCSV(periodEntries, 'marketos-cash-ledger.csv')}
+          />
+        )}
+
+        {activeTab === 'more' && <WorkspaceMore {...navigation} />}
+
+        {activeTab === 'cashbook' && (
+          <>
+            <div className="workspace-page-heading"><h1 className="workspace-title">Cashbook</h1><button className="workspace-primary" onClick={openCashEntry}><Plus size={16} />Record Entry</button></div>
         {/* 4 KPI Cards */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           <StatCard
@@ -1986,35 +1886,8 @@ function AppShell({ darkMode, setDarkMode }) {
           />
         </section>
 
-        {/* Workspace Navigation Bar */}
-        <div
-          ref={tabSectionRef}
-          style={{ scrollMarginTop: '4.5rem' }}
-          className="liquid-glass p-1.5 rounded-2xl"
-        >
-          <div className="grid grid-cols-3 md:flex gap-1.5 w-full">
-            {navItems.map((t) => {
-              const Icon = t.icon;
-              const isActive = activeTab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => handleSelectTab(t.id, false)}
-                  className={`md:flex-1 py-2.5 px-2 sm:px-3 text-[11px] sm:text-xs md:text-sm font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                    isActive
-                      ? 'liquid-btn-primary shadow-sm'
-                      : 'text-theme-secondary hover:text-theme-primary hover:bg-white/30 dark:hover:bg-white/10'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                  <span className="md:hidden truncate">{t.shortLabel}</span>
-                  <span className="hidden md:inline">{t.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Onboarding Launch Journey Card */}
         <OnboardingJourneyCard
@@ -2049,15 +1922,21 @@ function AppShell({ darkMode, setDarkMode }) {
 
         {/* TAB 1: QUICK SELL (SHOP COUNTER) */}
         {activeTab === 'counter' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6 items-start">
+          <section className="space-y-4">
+            <div className="workspace-page-heading">
+              <div><h1 className="workspace-title">Record Sale</h1><p className="workspace-muted">Fast Counter Mode</p></div>
+              <div className="workspace-inset"><span className="workspace-caption">Drawer cash</span><b className="ml-2">{cashbookSession ? formatNaira(cashbookSession.expectedClosingCash) : '—'}</b></div>
+            </div>
+            <div className="workspace-columns workspace-sale">
+            <div className="space-y-4 min-w-0">
             {/* Left 2 Columns: Tap Products to Sell */}
-            <div className="lg:col-span-2 liquid-glass rounded-3xl p-3.5 sm:p-5 space-y-4">
+            <div className="workspace-panel space-y-4">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
                   <input
                     type="text"
-                    placeholder="Search provision (Peak, Indomie, Sugar, Bread)..."
+                    aria-label="Search products to sell" placeholder="Search products by name or SKU…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="liquid-input w-full pl-10 pr-4 py-2.5 text-sm rounded-2xl backdrop-blur-md"
@@ -2174,7 +2053,7 @@ function AppShell({ darkMode, setDarkMode }) {
             {/* Right Column: Liquid Glass Customer Basket */}
             <div
               ref={basketRef}
-              className="liquid-glass-elevated rounded-3xl p-4 sm:p-5 space-y-4 lg:sticky lg:top-20"
+              className="workspace-panel space-y-4"
             >
               <div
                 style={{ borderColor: 'var(--border-outer)' }}
@@ -2183,7 +2062,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="w-5 h-5 text-theme-brand" />
                   <h2 className="font-extrabold font-luxury text-base">
-                    Customer Basket
+                    Current Sale Basket
                   </h2>
                 </div>
                 <div className="flex items-center gap-2">
@@ -2408,12 +2287,37 @@ function AppShell({ darkMode, setDarkMode }) {
                 </form>
               )}
             </div>
-          </div>
+            </div>
+            <aside className="space-y-4 min-w-0">
+              <WorkspaceLedger title="Recent Sales Activity" entries={activeTransactions.filter((entry) => entry.type === 'INFLOW' && entry.category === 'Counter Sales')} formatMoney={formatNaira} onViewAll={() => handleSelectTab('history')} />
+              <section className="workspace-panel space-y-2">
+                <h2 className="font-bold">Drawer Reconciliation</h2>
+                <p className="workspace-muted text-sm">Review and reconcile the day’s cash drawer.</p>
+                <button className="workspace-chip" onClick={openClosing}>Preview daily closing</button>
+              </section>
+            </aside>
+            </div>
+          </section>
         )}
 
         {/* TAB 2: MY SHELF STOCK & STOCK-TAKING */}
         {activeTab === 'inventory' && (
-          <div className="liquid-glass rounded-3xl overflow-hidden">
+          <section className="space-y-4">
+            <div className="workspace-page-heading">
+              <div><h1 className="workspace-title">Stock Management</h1><p className="workspace-muted">Manage your product catalog, stock levels and reorder alerts.</p></div>
+              <div className="flex flex-wrap gap-2">
+                <button className="workspace-chip" onClick={() => setShowAuditModal(true)}><ClipboardCheck size={16} />Audit / Count</button>
+                <button className="workspace-primary" onClick={openAddProduct}><Plus size={16} />Add Product</button>
+              </div>
+            </div>
+            <div className="workspace-metrics">
+              <WorkspaceMetric label="Total products" value={products.length} detail="Active catalog" icon={Package} />
+              <WorkspaceMetric label="Total cost value" value={formatNaira(dashboard.inventory_cost_value)} detail="Acquisition cost" icon={Wallet} />
+              <WorkspaceMetric label="Total retail value" value={formatNaira(dashboard.inventory_retail_value)} detail="At current selling prices" icon={BarChart3} />
+              <WorkspaceMetric label="Stock health" value={stockCounts.HEALTHY} detail={`${stockCounts.LOW} low · ${stockCounts.OUT} out of stock`} icon={ClipboardCheck} />
+            </div>
+            <div className="workspace-columns workspace-stock">
+            <div className="workspace-panel workspace-catalog overflow-hidden !p-0">
             <div
               style={{ borderColor: 'var(--border-outer)' }}
               className="p-3.5 sm:p-4 border-b flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
@@ -2422,7 +2326,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
                 <input
                   type="text"
-                  placeholder="Search goods by name, category, or supplier..."
+                  aria-label="Search catalog" placeholder="Search products, suppliers, or SKU…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="liquid-input w-full pl-10 pr-4 py-2 text-sm rounded-2xl"
@@ -2466,15 +2370,6 @@ function AppShell({ darkMode, setDarkMode }) {
                   Restock ({lowStockRestockPlan.length})
                 </button>
                 <button
-                  onClick={() => setLowStockOnly(!lowStockOnly)}
-                  className={`flex-1 sm:flex-initial justify-center flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold cursor-pointer ${
-                    lowStockOnly ? 'liquid-btn-primary' : 'liquid-glass-subtle'
-                  }`}
-                >
-                  <Filter className="w-3.5 h-3.5" />
-                  {lowStockOnly ? 'Low Stock' : 'Low Stock'}
-                </button>
-                <button
                   onClick={() =>
                     exportToCSV(
                       filteredProducts,
@@ -2488,8 +2383,24 @@ function AppShell({ darkMode, setDarkMode }) {
               </div>
             </div>
 
+            <div className="workspace-stock-filters">
+              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label="Product category" className="workspace-chip">
+                {categories.map((category) => <option key={category} value={category}>{category === 'ALL' ? 'All categories' : category}</option>)}
+              </select>
+              {[['ALL', 'All'], ['HEALTHY', 'In stock'], ['LOW', 'Low stock'], ['OUT', 'Out of stock']].map(([id, label]) => (
+                <button key={id} className="workspace-chip" aria-pressed={stockStatus === id} onClick={() => setStockStatus(id)}>
+                  {label} ({id === 'ALL' ? products.length : stockCounts[id]})
+                </button>
+              ))}
+            </div>
+
             {/* Mobile Card View (< 768px) */}
-            <div className="md:hidden divide-y theme-divider">
+            {filteredProducts.length === 0 && (
+              <p className="workspace-muted p-4 text-sm">
+                {products.length ? 'No products match your filters.' : 'Add your first product to start tracking stock.'}
+              </p>
+            )}
+            <div className="workspace-stock-cards md:hidden">
               {filteredProducts.map((p) => {
                 const isLow = Number(p.stock_quantity) <= Number(p.reorder_level);
                 const gain = Number(p.selling_price) - Number(p.cost_price);
@@ -2505,14 +2416,15 @@ function AppShell({ darkMode, setDarkMode }) {
                         </div>
                       </div>
                       <Badge
-                        variant={isLow ? 'warning' : 'success'}
+                        variant={Number(p.stock_quantity) <= 0 ? 'danger' : isLow ? 'warning' : 'success'}
                         icon={isLow ? AlertTriangle : undefined}
                       >
-                        {Number(p.stock_quantity)} {p.unit}
+                        {Number(p.stock_quantity) <= 0 ? 'Out of stock' : isLow ? 'Low stock' : 'In stock'}
                       </Badge>
                     </div>
 
-                    <div className="liquid-glass-subtle grid grid-cols-3 gap-2 text-xs p-2.5 rounded-2xl tabular-nums">
+                    <div className="liquid-glass-subtle grid grid-cols-2 gap-2 text-xs p-2.5 rounded-xl tabular-nums">
+                      <div><span className="block text-theme-secondary">Remaining count</span><strong>{Number(p.stock_quantity)} {p.unit}</strong></div>
                       <div>
                         <span className="block text-theme-secondary">Cost</span>
                         <strong className="text-theme-primary">
@@ -2533,13 +2445,13 @@ function AppShell({ darkMode, setDarkMode }) {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
                       <button
                         onClick={() => {
                           setHistorySearch(p.name);
                           setHistoryTypeFilter('ALL');
                           setHistoryDateRange('ALL');
-                          setActiveTab('history');
+                          handleSelectTab('history');
                         }}
                         className="liquid-glass-subtle px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
                       >
@@ -2680,7 +2592,7 @@ function AppShell({ darkMode, setDarkMode }) {
                                 setHistorySearch(p.name);
                                 setHistoryTypeFilter('ALL');
                                 setHistoryDateRange('ALL');
-                                setActiveTab('history');
+                                handleSelectTab('history');
                               }}
                               className="liquid-glass-subtle p-1.5 hover:opacity-80 rounded-xl cursor-pointer text-theme-secondary"
                               title={`Check history for ${p.name}`}
@@ -2756,8 +2668,27 @@ function AppShell({ darkMode, setDarkMode }) {
                 </tbody>
               </table>
             </div>
-          </div>
+            </div>
+            <aside className="space-y-4 min-w-0">
+              <section className="workspace-panel space-y-3">
+                <h2 className="font-bold">Stock Audit Trail</h2>
+                <p className="workspace-muted text-sm">Review stock movements or compare shelf counts against the catalog.</p>
+                <button className="workspace-chip" onClick={() => handleSelectTab('history')}>View movement log</button>
+                <button className="workspace-chip" onClick={() => setShowAuditModal(true)}>Begin physical count</button>
+              </section>
+              <section className="workspace-panel space-y-3">
+                <h2 className="font-bold">Emergency Reorders</h2>
+                {lowStockRestockPlan.length === 0 && <p className="workspace-muted text-sm">No products need reordering.</p>}
+                {lowStockRestockPlan.slice(0, 3).map((product) => (
+                  <div key={product.id} className="workspace-warning-row"><div className="min-w-0 flex-1"><b>{product.name}</b><p className="workspace-muted">{product.stock_quantity} {product.unit} left</p></div><button className="workspace-chip" onClick={() => openRestock(product)}>Restock</button></div>
+                ))}
+                <button className="workspace-chip" onClick={() => openRestock()}>View restock plan</button>
+              </section>
+            </aside>
+            </div>
+          </section>
         )}
+
 
         {/* TAB 3: MONEY IN & MONEY OUT (CASHBOOK) */}
         {activeTab === 'cashbook' && (
@@ -4614,7 +4545,7 @@ function AppShell({ darkMode, setDarkMode }) {
 
       {/* FLOATING MOBILE BASKET REVIEW & CHECKOUT BAR */}
       {activeTab === 'counter' && cartItems.length > 0 && (
-        <div className="lg:hidden fixed bottom-[calc(4.35rem+env(safe-area-inset-bottom))] md:bottom-4 left-3 right-3 z-30">
+        <div className="workspace-cart-shortcut lg:hidden fixed left-3 right-3 z-30">
           <button
             type="button"
             onClick={() => setIsMobileCartOpen(true)}
@@ -4642,32 +4573,6 @@ function AppShell({ darkMode, setDarkMode }) {
           </button>
         </div>
       )}
-
-      {/* LIQUID GLASS MOBILE BOTTOM NAVIGATION BAR (< 768px) */}
-      <nav
-        aria-label="Mobile Navigation"
-        className={`md:hidden liquid-glass-elevated fixed bottom-0 left-0 right-0 z-50 border-t grid ${
-          navItems.length > 6 ? 'grid-cols-7' : 'grid-cols-6'
-        } pb-safe px-1 pt-1`}
-      >
-        {navItems.map((t) => {
-          const Icon = t.icon;
-          const isActive = activeTab === t.id;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => handleSelectTab(t.id, true)}
-              className={`min-w-0 min-h-[44px] py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold cursor-pointer select-none ${
-                isActive ? 'liquid-btn-primary shadow-sm' : 'text-theme-secondary'
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span className="truncate max-w-full">{t.shortLabel}</span>
-            </button>
-          );
-        })}
-      </nav>
 
       {/* MODAL 1: SELL / RESTOCK / PHYSICAL SHELF COUNT / DAMAGED */}
       <Modal

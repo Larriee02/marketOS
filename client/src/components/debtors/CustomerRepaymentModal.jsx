@@ -75,27 +75,17 @@ export function CustomerRepaymentModal({
       setSubmitting(true);
       setError(null);
 
-      if (isSingleSlip) {
-        // Settle specific credit slip
-        await apiFetch(`/api/v1/credits/${target.id}/repay`, {
-          method: 'POST',
-          body: {
-            amount: numAmount,
-            payment_method: paymentMethod,
-            note: note.trim() || undefined,
-          },
-        });
-      } else {
-        // Settle customer aggregate account (FIFO across open invoices)
-        await apiFetch(`/api/v1/credits/customers/${encodeURIComponent(customerName)}/repay`, {
-          method: 'POST',
-          body: {
-            amount: numAmount,
-            payment_method: paymentMethod,
-            note: note.trim() || undefined,
-          },
-        });
-      }
+      const endpoint = isSingleSlip
+        ? `/api/v1/credits/${target.id}/repay`
+        : `/api/v1/credits/customers/${encodeURIComponent(customerName)}/repay`;
+      await apiFetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          amount: numAmount,
+          payment_method: paymentMethod,
+          note: note.trim() || undefined,
+        }),
+      });
 
       onSuccess();
       onClose();
