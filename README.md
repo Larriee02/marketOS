@@ -39,3 +39,16 @@ cd client
 npm install
 npm run dev
 ```
+
+## Production Configuration
+
+Set these server environment variables before deploying to Render or Vercel:
+
+- `DATABASE_URL` points to the production PostgreSQL database. Use a separate database for preview deployments.
+- `JWT_SECRET` is a randomly generated secret of at least 32 bytes. Changing it signs out existing sessions.
+- `OWNER_EMAIL` is the platform owner's email. For an existing deployment, use the existing owner's email.
+- `OWNER_PASSWORD_HASH` is a bcrypt hash for the initial owner password. Alternatively, set `OWNER_PASSWORD` to a strong password of at least 12 characters. The configured credential is also used to replace the retired bundled credential on existing owner accounts. Owners who have already changed their password can continue to use it.
+
+The API returns HTTP 503 while required configuration is missing or database initialization fails. The health endpoint at `/api/v1/health` also checks the database connection. Local development uses persistent embedded PostgreSQL by default. Set `ALLOW_TEMPORARY_STORE=true` to use the temporary store for local development or tests.
+
+Profit reports use the unit cost recorded at the time of sale. For older sales, migration 007 takes a one-time estimate from the product cost available at migration time because original unit costs were never recorded.

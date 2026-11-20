@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const AppError = require('../utils/AppError');
+const { toCents, fromCents } = require('../utils/money');
 const cacheService = require('./cache.service');
 const cashbookRepo = require('../repositories/cashbook.repository');
 
@@ -12,6 +13,80 @@ class CashbookService {
     const metrics = await cashbookRepo.getDashboardMetrics(userId);
     cacheService.set(cacheKey, metrics, 20000);
     return { ...metrics, cached: false };
+  }
+
+  async getFinancialReport(userId, { start, end }) {
+    const startTime = typeof start === 'string' ? Date.parse(start) : NaN;
+    const endTime = typeof end === 'string' ? Date.parse(end) : NaN;
+    if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || startTime >= endTime) {
+      throw new AppError('Provide a valid report start and end date.', 400, 'INVALID_REPORT_PERIOD');
+    }
+
+    const rows = await cashbookRepo.getPeriodTotals(
+      userId, new Date(startTime).toISOString(), new Date(endTime).toISOString()
+    );
+    const channels = new Map();
+    const expenses = new Map();
+    let salesInflow = 0;
+    let salesInflowCount = 0;
+    let expenseTotal = 0;
+    let expenseCount = 0;
+    let salesTotal = 0;
+    let salesCount = 0;
+    let cost = 0;
+
+    for (const row of rows) {
+      const amount = toCents(row.amount);
+      const count = Number(row.entry_count);
+      if (row.type === 'SALE') {
+        salesTotal = amount;
+        salesCount = count;
+        cost = toCents(row.cost);
+        continue;
+      }
+
+      const method = row.payment_method || 'CASH';
+      const channel = channels.get(method) || {
+        payment_method: method, inflow: 0, outflow: 0, salesCount: 0,
+      };
+      if (row.type === 'INFLOW') {
+        channel.inflow += amount;
+        channel.salesCount += count;
+        salesInflow += amount;
+        salesInflowCount += count;
+      } else {
+        const category = row.category || 'General Expense';
+        channel.outflow += amount;
+        expenseTotal += amount;
+        expenseCount += count;
+        expenses.set(category, (expenses.get(category) || 0) + amount);
+      }
+      channels.set(method, channel);
+    }
+
+    const revenue = salesTotal > 0 ? salesTotal : salesInflow;
+    const grossProfit = revenue - cost;
+    const netProfit = grossProfit - expenseTotal;
+    const asAmount = (cents) => Number(fromCents(cents));
+    return {
+      metrics: {
+        salesRevenue: asAmount(revenue),
+        cogs: asAmount(cost),
+        grossProfit: asAmount(grossProfit),
+        grossMarginPercent: revenue > 0 ? (grossProfit / revenue) * 100 : 0,
+        operatingExpenses: asAmount(expenseTotal),
+        netOperatingProfit: asAmount(netProfit),
+        netMarginPercent: revenue > 0 ? (netProfit / revenue) * 100 : 0,
+        salesCount: salesCount || salesInflowCount,
+        expenseCount,
+      },
+      expenseBreakdown: [...expenses]
+        .map(([category, amount]) => ({ category, amount: asAmount(amount) }))
+        .sort((a, b) => b.amount - a.amount || a.category.localeCompare(b.category)),
+      channelBreakdown: [...channels.values()]
+        .sort((a, b) => a.payment_method.localeCompare(b.payment_method))
+        .map((ch) => ({ ...ch, inflow: asAmount(ch.inflow), outflow: asAmount(ch.outflow) })),
+    };
   }
 
   async getTransactions(userId, filters) {

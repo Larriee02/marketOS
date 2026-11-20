@@ -4,6 +4,8 @@ const env = require('./env');
 const migrations = require('../db/migrations');
 const { seedStarterCatalog } = require('../db/starterCatalog');
 const serverlessStore = require('./serverlessStore');
+const AppError = require('../utils/AppError');
+const { OWNER_EMAIL, OWNER_NAME, getOwnerPasswordHash, isLegacyOwnerHash } = require('./owner');
 
 function sanitizeDatabaseUrl(raw) {
   if (!raw || typeof raw !== 'string') return null;
@@ -30,7 +32,7 @@ function sanitizeDatabaseUrl(raw) {
     // uses the explicit `ssl: { rejectUnauthorized: false }` config cleanly on Neon poolers.
     parsed.searchParams.delete('sslmode');
     parsed.searchParams.delete('channel_binding');
-    return parsed.toString();
+    return ['postgres:', 'postgresql:'].includes(parsed.protocol) ? parsed.toString() : null;
   } catch {
     return null;
   }
@@ -40,15 +42,14 @@ const isTestEnv = process.env.NODE_ENV === 'test';
 const connectionString = isTestEnv ? null : sanitizeDatabaseUrl(env.DATABASE_URL);
 const hasValidPgUrl = Boolean(connectionString) && !connectionString.includes('YOUR-PASSWORD');
 
-let mode = 'embedded';
-if (hasValidPgUrl) mode = 'postgres';
-else if (process.env.VERCEL) mode = 'serverless';
+const mode = hasValidPgUrl || env.IS_PROD ? 'postgres'
+  : env.ALLOW_TEMPORARY_STORE ? 'serverless' : 'embedded';
 
 let pool = null;
 let pglite = null;
 let pglitePromise = null;
 
-if (mode === 'postgres') {
+if (mode === 'postgres' && hasValidPgUrl) {
   const isLocal = /localhost|127\.0\.0\.1/.test(connectionString);
   pool = new Pool({
     connectionString,
@@ -160,18 +161,15 @@ async function runMigrations() {
   );
 }
 
-async function bootstrapAdmin() {
-  if (mode === 'serverless') return;
-
-  const { OWNER_EMAIL, OWNER_NAME, getOwnerPasswordHash } = require('./owner');
+async function bootstrapAdmin({ query }) {
   let bootstrappedAdminId = null;
   {
-    const existing = await rawQuery(
+    const existing = await query(
       'SELECT id, role, password_hash FROM users WHERE LOWER(email) = $1',
       [OWNER_EMAIL]
     );
     if (existing.rows.length === 0) {
-      const inserted = await rawQuery(
+      const inserted = await query(
         `INSERT INTO users (email, password_hash, full_name, business_name, phone, business_type, city, role, status, approved_at)
          VALUES ($1, $2, $3, 'MarketOS HQ', NULL, 'Provision Store', 'Lagos', 'ADMIN', 'APPROVED', NOW())
          RETURNING id`,
@@ -181,10 +179,10 @@ async function bootstrapAdmin() {
       console.log('[DB] Provisioned platform owner account');
     } else {
       const row = existing.rows[0];
-      if (row.role !== 'ADMIN' || !row.password_hash) {
+      if (row.role !== 'ADMIN' || !row.password_hash || isLegacyOwnerHash(row.password_hash)) {
         // Account with the owner email existed without owner privileges: take it over with the
         // configured owner password and revoke any existing sessions.
-        await rawQuery(
+        await query(
           `UPDATE users SET role = 'ADMIN', status = 'APPROVED', password_hash = $2,
              token_version = token_version + 1, updated_at = NOW() WHERE id = $1`,
           [row.id, getOwnerPasswordHash()]
@@ -193,46 +191,56 @@ async function bootstrapAdmin() {
       bootstrappedAdminId = row.id;
     }
     // Enforce single-admin policy: demote every other administrator account.
-    await rawQuery(
+    await query(
       `UPDATE users SET role = 'USER', token_version = token_version + 1, updated_at = NOW()
        WHERE role = 'ADMIN' AND LOWER(email) <> $1`,
       [OWNER_EMAIL]
     );
   }
 
-  const admin = await rawQuery(
+  const admin = await query(
     `SELECT id FROM users WHERE role = 'ADMIN' ORDER BY id ASC LIMIT 1`
   );
   if (admin.rows.length) {
     const adminId = admin.rows[0].id;
-    await rawQuery(
+    await query(
       `DELETE FROM products
        WHERE user_id IS NULL
          AND sku IN (SELECT sku FROM products WHERE user_id = $1)`,
       [adminId]
     );
     for (const table of ['products', 'stock_movements', 'cash_transactions', 'credit_records']) {
-      await rawQuery(`UPDATE ${table} SET user_id = $1 WHERE user_id IS NULL`, [adminId]);
+      await query(`UPDATE ${table} SET user_id = $1 WHERE user_id IS NULL`, [adminId]);
     }
     if (bootstrappedAdminId) {
-      await seedStarterCatalog({ query: rawQuery }, adminId);
+      await seedStarterCatalog({ query }, adminId);
     }
   }
 }
 
 let readyPromise = null;
 function ready() {
-  if (mode === 'serverless') return Promise.resolve();
   if (!readyPromise) {
     readyPromise = (async () => {
-      try {
-        await runMigrations();
-        await bootstrapAdmin();
-      } catch (err) {
-        console.warn('[DB] Primary DB initialization failed, falling back to serverlessStore:', err.message);
-        mode = 'serverless';
+      if (env.IS_PROD && !env.JWT_SECRET) {
+        throw new Error('Set a random JWT_SECRET of at least 32 bytes in production.');
       }
-    })();
+      if (env.IS_PROD && !pool) {
+        throw new Error('Set a valid PostgreSQL DATABASE_URL in production.');
+      }
+      if (env.IS_PROD) getOwnerPasswordHash();
+      if (mode === 'serverless') return;
+
+      await runMigrations();
+      await rawTransaction(async (client) => {
+        if (mode === 'postgres') await client.query('SELECT pg_advisory_xact_lock(727274002)');
+        await bootstrapAdmin(client);
+      });
+    })().catch((err) => {
+      readyPromise = null;
+      console.error('[DB] Initialization failed:', err.message);
+      throw new AppError('The service is temporarily unavailable.', 503, 'SERVICE_UNAVAILABLE');
+    });
   }
   return readyPromise;
 }
@@ -242,6 +250,15 @@ const db = {
     return mode;
   },
   ready,
+  async checkHealth() {
+    await ready();
+    if (mode === 'serverless') return;
+    try {
+      await rawQuery('SELECT 1');
+    } catch {
+      throw new AppError('The database is temporarily unavailable.', 503, 'SERVICE_UNAVAILABLE');
+    }
+  },
   async query(text, params = []) {
     await ready();
     return rawQuery(text, params);

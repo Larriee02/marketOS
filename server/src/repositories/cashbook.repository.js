@@ -1,6 +1,23 @@
 const db = require('../config/db');
 
 class CashbookRepository {
+  async getPeriodTotals(userId, start, end) {
+    const { rows } = await db.query(
+      `SELECT 'SALE' AS type, NULL AS payment_method, NULL AS category, COUNT(*) AS entry_count,
+              COALESCE(SUM(total_value), 0) AS amount,
+              COALESCE(SUM(ABS(quantity_change) * unit_cost), 0) AS cost
+       FROM stock_movements
+       WHERE user_id = $1 AND movement_type = 'SALE' AND created_at >= $2 AND created_at < $3
+       UNION ALL
+       SELECT type, payment_method, category, COUNT(*), SUM(amount), 0
+       FROM cash_transactions
+       WHERE user_id = $1 AND status = 'ACTIVE' AND transaction_date >= $2 AND transaction_date < $3
+       GROUP BY type, payment_method, category`,
+      [userId, start, end]
+    );
+    return rows;
+  }
+
   async getDashboardMetrics(userId) {
     const { rows } = await db.query(
       `

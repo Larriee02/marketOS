@@ -4,7 +4,7 @@ const AppError = require('./AppError');
 
 const COOKIE_NAME = 'mos_session';
 const secretKey = () => {
-  if (env.JWT_SECRET_MISSING) {
+  if (!env.JWT_SECRET) {
     throw new AppError(
       'Server authentication is not configured (JWT_SECRET missing). Contact the administrator.',
       503,
@@ -25,7 +25,7 @@ async function signSession(user) {
 }
 
 async function verifySession(token) {
-  const { payload } = await jwtVerify(token, secretKey(), { issuer: 'marketos' });
+  const { payload } = await jwtVerify(token, secretKey(), { issuer: 'marketos', algorithms: ['HS256'] });
   return { userId: Number(payload.sub), tokenVersion: Number(payload.tv || 0) };
 }
 

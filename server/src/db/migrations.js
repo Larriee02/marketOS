@@ -239,4 +239,29 @@ module.exports = [
       CREATE INDEX IF NOT EXISTS idx_credit_records_due ON credit_records (user_id, due_date);
     `,
   },
+  {
+    id: '007_checkout_requests_and_sale_cost',
+    sql: `
+      CREATE TABLE IF NOT EXISTS checkout_requests (
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        idempotency_key VARCHAR(64) NOT NULL,
+        request_hash CHAR(64) NOT NULL,
+        response JSONB,
+        PRIMARY KEY (user_id, idempotency_key)
+      );
+
+      ALTER TABLE stock_movements
+        ADD COLUMN IF NOT EXISTS unit_cost NUMERIC(14, 2) CHECK (unit_cost >= 0);
+
+      -- Legacy sales did not record the cost. Freeze the best available estimate once.
+      UPDATE stock_movements sm
+      SET unit_cost = p.cost_price
+      FROM products p
+      WHERE sm.product_id = p.id AND sm.user_id = p.user_id
+        AND sm.movement_type = 'SALE' AND sm.unit_cost IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_sale_movements_user_date
+        ON stock_movements (user_id, created_at) WHERE movement_type = 'SALE';
+    `,
+  },
 ];
