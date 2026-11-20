@@ -29,7 +29,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Rate limiters for authentication & OTP security
+// Rate limiters for authentication, OTP security, and general API protection
 const authLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 30,
@@ -40,6 +40,12 @@ const otpLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 10,
   message: 'Too many OTP requests from this connection.',
+});
+
+const apiLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: 'Too many requests from this connection.',
 });
 
 // Configurable CORS
@@ -56,6 +62,7 @@ app.use(
 
 app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: true, limit: '200kb' }));
+app.use('/api/v1', apiLimiter);
 
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
