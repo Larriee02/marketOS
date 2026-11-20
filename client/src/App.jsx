@@ -128,7 +128,7 @@ const INITIAL_CASH_FORM = {
 };
 
 const ROUTE_TO_TAB = {
-  '/store': 'counter',
+  '/store': 'home',
   '/store/home': 'home',
   '/store/more': 'more',
   '/store/sell': 'counter',
@@ -1803,8 +1803,8 @@ function AppShell({ darkMode, setDarkMode }) {
 
         {activeTab === 'cashbook' && (
           <>
-            <div className="workspace-page-heading"><h1 className="workspace-title">Cashbook</h1><button className="workspace-primary" onClick={openCashEntry}><Plus size={16} />Record Entry</button></div>
-        {/* 4 KPI Cards */}
+            <div className="workspace-page-heading"><h1 className="workspace-title">Shop money</h1><button className="workspace-primary" onClick={openCashEntry}><Plus size={16} />Record money in or out</button></div>
+        <details className="workspace-panel shop-details"><summary>See shop balances</summary>
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           <StatCard
             title="Net Balance"
@@ -1882,12 +1882,13 @@ function AppShell({ darkMode, setDarkMode }) {
             }
           />
         </section>
+        </details>
 
           </>
         )}
 
         {/* Onboarding Launch Journey Card */}
-        <OnboardingJourneyCard
+        {activeTab === 'home' && <OnboardingJourneyCard
           currentUser={currentUser}
           products={products}
           transactions={transactions}
@@ -1915,13 +1916,13 @@ function AppShell({ darkMode, setDarkMode }) {
             });
           }}
           formatCurrency={formatNaira}
-        />
+        />}
 
         {/* TAB 1: QUICK SELL (SHOP COUNTER) */}
         {activeTab === 'counter' && (
           <section className="space-y-4">
             <div className="workspace-page-heading">
-              <div><h1 className="workspace-title">Record Sale</h1><p className="workspace-muted">Fast Counter Mode</p></div>
+              <div><h1 className="workspace-title">Make a sale</h1><p className="workspace-muted">Tap an item to add it to the basket.</p></div>
               <div className="workspace-inset"><span className="workspace-caption">Drawer cash</span><b className="ml-2">{cashbookSession ? formatNaira(cashbookSession.expectedClosingCash) : '—'}</b></div>
             </div>
             <div className="workspace-columns workspace-sale">
@@ -1933,7 +1934,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
                   <input
                     type="text"
-                    aria-label="Search products to sell" placeholder="Search products by name or SKU…"
+                    aria-label="Search products to sell" placeholder="Find an item by name or code…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="liquid-input w-full pl-10 pr-4 py-2.5 text-sm rounded-2xl"
@@ -1946,7 +1947,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 >
                   {categories.map((c) => (
                     <option key={c} value={c}>
-                      {c === 'ALL' ? 'All Shop Categories' : c}
+                      {c === 'ALL' ? 'All categories' : c}
                     </option>
                   ))}
                 </select>
@@ -1956,9 +1957,9 @@ function AppShell({ darkMode, setDarkMode }) {
                 <EmptyState
                   icon={Package}
                   title="Your store shelf is empty"
-                  description="Add your first provision item or load the 12-item Lagos Starter Catalog (with 0 stock) to begin."
-                  actionLabel="Load Lagos Starter Catalog"
-                  onAction={handleSeedStarterCatalog}
+                  description="Add an item and how many you have. Then you can sell it here."
+                  actionLabel="Add your first product"
+                  onAction={openAddProduct}
                 />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2060,7 +2061,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="w-5 h-5 text-theme-brand" />
                   <h2 className="font-extrabold font-luxury text-base">
-                    Current Sale Basket
+                    Your basket
                   </h2>
                 </div>
                 <div className="flex items-center gap-2">
@@ -2089,7 +2090,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 <div className="py-10 text-center space-y-2 text-theme-secondary">
                   <ShoppingCart className="w-8 h-8 mx-auto stroke-1 opacity-60" />
                   <p className="text-xs font-medium">
-                    Tap any provision item with stock to add it to the customer&apos;s basket.
+                    Choose an item above to start this sale.
                   </p>
                 </div>
               ) : (
@@ -2280,7 +2281,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   >
                     {submitting
                       ? 'Processing Sale...'
-                      : `Review & Complete Sale (${formatNaira(cartTotal)})`}
+                      : `Review sale (${formatNaira(cartTotal)})`}
                   </button>
                 </form>
               )}
@@ -2302,18 +2303,20 @@ function AppShell({ darkMode, setDarkMode }) {
         {activeTab === 'inventory' && (
           <section className="space-y-4">
             <div className="workspace-page-heading">
-              <div><h1 className="workspace-title">Stock Management</h1><p className="workspace-muted">Manage your product catalog, stock levels and reorder alerts.</p></div>
+              <div><h1 className="workspace-title">Your stock</h1></div>
               <div className="flex flex-wrap gap-2">
-                <button className="workspace-chip" onClick={() => setShowAuditModal(true)}><ClipboardCheck size={16} />Audit / Count</button>
+                <button className="workspace-chip" onClick={() => setShowAuditModal(true)}><ClipboardCheck size={16} />Count stock</button>
                 <button className="workspace-primary" onClick={openAddProduct}><Plus size={16} />Add Product</button>
               </div>
             </div>
+            <details className="workspace-panel shop-details"><summary>See stock totals</summary>
             <div className="workspace-metrics">
               <WorkspaceMetric label="Total products" value={products.length} detail="Active catalog" icon={Package} />
               <WorkspaceMetric label="Total cost value" value={formatNaira(dashboard.inventory_cost_value)} detail="Acquisition cost" icon={Wallet} />
               <WorkspaceMetric label="Total retail value" value={formatNaira(dashboard.inventory_retail_value)} detail="At current selling prices" icon={BarChart3} />
               <WorkspaceMetric label="Stock health" value={stockCounts.HEALTHY} detail={`${stockCounts.LOW} low · ${stockCounts.OUT} out of stock`} icon={ClipboardCheck} />
             </div>
+            </details>
             <div className="workspace-columns workspace-stock">
             <div id="inventory-results" className="workspace-panel workspace-catalog overflow-hidden !p-0">
             <div
@@ -4976,8 +4979,7 @@ function AppShell({ darkMode, setDarkMode }) {
       <Modal
         isOpen={showCashModal}
         onClose={() => setShowCashModal(false)}
-        title="Record Shop Expense or Money In"
-        subtitle="Log every shop expense with a clear category, reason, and payment channel (Cash, POS, or Transfer)"
+        title="Record money in or out"
       >
         <form onSubmit={handleCreateCashTx} className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
@@ -4996,7 +4998,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   : 'liquid-glass-subtle'
               }`}
             >
-              - MONEY OUT (EXPENSE)
+              − Money out
             </button>
             <button
               type="button"
@@ -5013,62 +5015,24 @@ function AppShell({ darkMode, setDarkMode }) {
                   : 'liquid-glass-subtle'
               }`}
             >
-              + MONEY IN (INFLOW)
+              + Money in
             </button>
           </div>
 
-          {cashForm.type === 'OUTFLOW' ? (
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-theme-primary">
-                1. Select Expense Category:
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {LAGOS_EXPENSE_PRESETS.map((preset) => (
-                  <button
-                    type="button"
-                    key={preset}
-                    onClick={() => setCashForm({ ...cashForm, category: preset })}
-                    className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer ${
-                      cashForm.category === preset
-                        ? 'liquid-btn-primary'
-                        : 'liquid-glass-subtle'
-                    }`}
-                  >
-                    {preset}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-theme-primary">
-                1. Select Money In Category:
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {['Counter Sales', 'Credit Repayment', 'Wholesale Order', 'Capital / Float In', 'Other Income'].map(
-                  (preset) => (
-                    <button
-                      type="button"
-                      key={preset}
-                      onClick={() => setCashForm({ ...cashForm, category: preset })}
-                      className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer ${
-                        cashForm.category === preset
-                          ? 'liquid-btn-primary'
-                          : 'liquid-glass-subtle'
-                      }`}
-                    >
-                      {preset}
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
-          )}
+          <label className="block space-y-1.5 text-sm font-bold">
+            <span>{cashForm.type === 'OUTFLOW' ? 'What did you spend it on?' : 'Where did the money come from?'}</span>
+            <select className="liquid-input w-full rounded-xl p-3" value={cashForm.category}
+              onChange={(event) => setCashForm({ ...cashForm, category: event.target.value })}>
+              {(cashForm.type === 'OUTFLOW' ? LAGOS_EXPENSE_PRESETS : ['Counter Sales', 'Credit Repayment', 'Wholesale Order', 'Capital / Float In', 'Other Income']).map((category) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </label>
 
           {/* Visual Payment Channel Selector */}
           <div>
             <label className="block text-xs font-bold mb-1.5 text-theme-primary">
-              2. Payment Channel (Cash, POS, or Bank Transfer):
+              How was it paid?
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {['CASH', 'POS', 'BANK_TRANSFER', 'MOBILE_MONEY'].map((chId) => {
@@ -5096,10 +5060,10 @@ function AppShell({ darkMode, setDarkMode }) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold mb-1 text-theme-primary">
-                3. Amount ({currencySymbol})
+              <label htmlFor="cash-amount" className="block text-xs font-bold mb-1 text-theme-primary">
+                Amount ({currencySymbol})
               </label>
-              <input
+              <input id="cash-amount"
                 type="number"
                 step="any"
                 required
@@ -5110,12 +5074,12 @@ function AppShell({ darkMode, setDarkMode }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1 text-theme-primary">
+              <label htmlFor="cash-person" className="block text-xs font-bold mb-1 text-theme-primary">
                 {cashForm.type === 'OUTFLOW'
-                  ? 'Payee / Vendor Name (Optional)'
-                  : 'Payer / Customer Name (Optional)'}
+                  ? 'Who did you pay? (optional)'
+                  : 'Who paid you? (optional)'}
               </label>
-              <input
+              <input id="cash-person"
                 type="text"
                 value={cashForm.counterparty_name}
                 onChange={(e) => setCashForm({ ...cashForm, counterparty_name: e.target.value })}
@@ -5130,12 +5094,12 @@ function AppShell({ darkMode, setDarkMode }) {
           </div>
 
           <div>
-            <label className="block text-xs font-bold mb-1 text-theme-primary">
+            <label htmlFor="cash-note" className="block text-xs font-bold mb-1 text-theme-primary">
               {cashForm.type === 'OUTFLOW'
-                ? '4. Specific Expense Reason / Purpose (Required)'
-                : '4. Description / Reference Note'}
+                ? 'What was the payment for?'
+                : 'Note (optional)'}
             </label>
-            <input
+            <input id="cash-note"
               required={cashForm.type === 'OUTFLOW'}
               value={cashForm.expense_reason || cashForm.description}
               onChange={(e) =>
@@ -5167,7 +5131,7 @@ function AppShell({ darkMode, setDarkMode }) {
               disabled={submitting}
               className="liquid-btn-primary px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
             >
-              {submitting ? 'Saving...' : 'Save to Cashbook'}
+              {submitting ? 'Saving...' : 'Save entry'}
             </button>
           </div>
         </form>

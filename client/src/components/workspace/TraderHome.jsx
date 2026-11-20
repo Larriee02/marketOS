@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, BarChart3, CalendarCheck, Download, Package, Plus, ShoppingCart, TriangleAlert, Users, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, BarChart3, CalendarCheck, Download, Package, ShoppingCart, TriangleAlert, Users, Wallet } from 'lucide-react';
 
 const paymentLabels = { CASH: 'Cash', BANK_TRANSFER: 'Transfer', POS: 'POS', MOBILE_MONEY: 'Mobile wallet' };
 
@@ -50,14 +50,6 @@ export function WorkspaceLedger({ entries, formatMoney, onViewAll, title = 'Toda
 
 export function TraderHome({ user, dashboard, products, session, report, loading, period, onPeriod, entries, formatMoney, onSelect, onRestock, onAddProduct, onMoney, onCredit, onClosing, onExport }) {
   const stockWarnings = products.filter((product) => Number(product.stock_quantity) <= Number(product.reorder_level));
-  const actions = [
-    ['Record Sale', 'Record New Sale', ShoppingCart, () => onSelect('counter')],
-    ['Add Product', 'Add Stock', Plus, onAddProduct],
-    ['Restock Goods', 'Restock', Package, () => onRestock()],
-    ['Money In / Out', 'Cash Entry', Wallet, onMoney],
-    ['Record Credit', 'Credit', Users, onCredit],
-    ['Daily Closing', 'Closing', CalendarCheck, onClosing],
-  ];
   const metrics = report?.data?.metrics;
   const firstName = user.full_name?.trim().split(/\s+/)[0];
   const hour = new Date().getHours();
@@ -70,6 +62,14 @@ export function TraderHome({ user, dashboard, products, session, report, loading
           <h1 className="workspace-title">{greeting}{firstName ? `, ${firstName}` : ''}</h1>
           <p className="workspace-muted">{user.business_name || 'Your shop'} · {new Date().toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
         </div>
+      </div>
+      <section aria-label="Shop tasks" className="shop-tasks">
+        <button className="workspace-primary" onClick={() => onSelect('counter')}><ShoppingCart />Make a sale</button>
+        <button className="workspace-action" onClick={products.length || loading ? () => onSelect('inventory') : onAddProduct}><Package />{products.length || loading ? 'Check stock' : 'Add your first product'}</button>
+        <button className="workspace-action" onClick={onMoney}><Wallet />Record money in or out</button>
+      </section>
+      <details className="workspace-panel shop-details">
+        <summary>Shop figures and activity</summary>
         <div className="flex flex-wrap gap-2 items-center">
           <div className="workspace-period" aria-label="Reporting period">
             {[['TODAY', 'Today'], ['WEEK', 'This Week'], ['MONTH', 'This Month']].map(([id, text]) => (
@@ -78,30 +78,21 @@ export function TraderHome({ user, dashboard, products, session, report, loading
           </div>
           <button className="workspace-icon-button" onClick={onExport} aria-label="Export cash ledger"><Download size={17} /></button>
         </div>
-      </div>
       {report?.error && <p className="workspace-negative text-sm" role="status">{report.error}</p>}
       <div className="workspace-metrics">
-        <WorkspaceMetric label={`${label} revenue`} value={metrics ? formatMoney(metrics.salesRevenue) : '—'} detail={metrics ? `${metrics.salesCount} sales recorded` : 'Sales report'} icon={ArrowUpRight} />
+        <WorkspaceMetric label={`${label} sales`} value={metrics ? formatMoney(metrics.salesRevenue) : '—'} detail={metrics ? `${metrics.salesCount} sales recorded` : 'Sales report'} icon={ArrowUpRight} />
         <WorkspaceMetric label="Cash in drawer" value={session ? formatMoney(session.expectedClosingCash) : '—'} detail={session ? 'Expected cash balance' : 'Daily register'} icon={Wallet} />
         <WorkspaceMetric label="Total stock value" value={loading ? '—' : formatMoney(dashboard.inventory_retail_value)} detail={`${products.length} ${products.length === 1 ? 'product' : 'products'} in the catalog`} icon={Package} />
         <WorkspaceMetric label="Estimated profit" value={metrics ? formatMoney(metrics.netOperatingProfit) : '—'} detail={metrics ? `Net margin: ${metrics.netMarginPercent.toFixed(1)}%` : 'Sales less cost and expenses'} icon={BarChart3} />
       </div>
-      <section className="workspace-quick-actions">
-        <h2 className="workspace-caption">Immediate Desk Actions</h2>
-        <div>
-          {actions.map(([text, mobileLabel, Icon, handler], index) => (
-            <button className={index === 0 ? 'workspace-primary' : 'workspace-action'} key={text} onClick={handler}><Icon size={18} /><span className="hidden sm:inline">{text}</span><span className="sm:hidden">{mobileLabel}</span></button>
-          ))}
-        </div>
-      </section>
       <div className="workspace-columns">
         <div className="workspace-home-feed min-w-0">
           <section className="workspace-panel space-y-3">
             <div className="workspace-panel-header">
-              <h2><TriangleAlert size={17} className="inline-block workspace-negative mr-1" />Stock Warnings</h2>
-              <button className="workspace-chip" onClick={() => onSelect('inventory')}>Manage inventory</button>
+              <h2><TriangleAlert size={17} className="inline-block workspace-negative mr-1" />Running low</h2>
+              <button className="workspace-chip" onClick={() => onSelect('inventory')}>View stock</button>
             </div>
-            {stockWarnings.length === 0 && <p className="workspace-muted text-sm">No products at the reorder threshold.</p>}
+            {stockWarnings.length === 0 && <p className="workspace-muted text-sm">No items are running low.</p>}
             <ul className="space-y-2">
               {stockWarnings.slice(0, 4).map((product) => (
                 <li className="workspace-warning-row" key={product.id}>
@@ -112,21 +103,23 @@ export function TraderHome({ user, dashboard, products, session, report, loading
               ))}
             </ul>
           </section>
-          <WorkspaceLedger entries={entries} formatMoney={formatMoney} onViewAll={() => onSelect('cashbook')} title={`${label} live ledger`} />
+          <WorkspaceLedger entries={entries} formatMoney={formatMoney} onViewAll={() => onSelect('cashbook')} title={`${label} money in and out`} />
         </div>
         <div className="space-y-4 min-w-0">
           <section className="workspace-panel space-y-3">
-            <div className="workspace-panel-header"><h2>Credit &amp; Debtors</h2><Users size={18} /></div>
+            <div className="workspace-panel-header"><h2>Customers who owe you</h2><Users size={18} /></div>
             <div className="workspace-inset"><p>Outstanding customer debt</p><strong>{loading ? '—' : formatMoney(dashboard.total_credit_owed)}</strong><p>{dashboard.active_debtors_count || 0} active accounts</p></div>
-            <button className="workspace-chip" onClick={() => onSelect('debtors')}>View debtors</button>
+            <button className="workspace-chip" onClick={() => onSelect('debtors')}>See customer debts</button>
+            <button className="workspace-chip" onClick={onCredit}>Record a debt</button>
           </section>
           <section className="workspace-panel space-y-3">
-            <div className="workspace-panel-header"><h2>Closing Prep</h2><CalendarCheck size={18} /></div>
-            <div className="workspace-inset">{session?.todaySession?.status === 'CLOSED' ? 'Today’s register is closed.' : 'Compare the physical drawer against the recorded cash balance.'}</div>
-            <button className="workspace-chip" onClick={onClosing}>Preview daily closing</button>
+            <div className="workspace-panel-header"><h2>End of day</h2><CalendarCheck size={18} /></div>
+            <div className="workspace-inset">{session?.todaySession?.status === 'CLOSED' ? 'Today’s register is closed.' : 'Count your cash and check it against your sales.'}</div>
+            <button className="workspace-chip" onClick={onClosing}>Check today’s cash</button>
           </section>
         </div>
       </div>
+      </details>
     </div>
   );
 }

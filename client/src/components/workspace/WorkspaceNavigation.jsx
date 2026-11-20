@@ -5,12 +5,12 @@ const links = [
   { id: 'home', label: 'Home', icon: House },
   { id: 'inventory', label: 'Stock', icon: Package },
   { id: 'history', label: 'Sales', icon: History },
-  { id: 'cashbook', label: 'Cashbook', icon: Wallet },
+  { id: 'cashbook', label: 'Money', icon: Wallet },
   { id: 'debtors', label: 'Debts', icon: Users },
   { id: 'analytics', label: 'Reports', icon: BarChart3 },
 ];
 
-const mobileLinks = [...links.slice(0, 2), { id: 'counter', label: 'Sale', icon: Plus }, links[4], { id: 'more', label: 'More', icon: Grid2X2 }];
+const mobileLinks = [...links.slice(0, 2), { id: 'counter', label: 'Sell', icon: Plus }, links[3], { id: 'more', label: 'More', icon: Grid2X2 }];
 
 export function WorkspaceNavigation({ active, user, darkMode, onTheme, onSelect, onSettings, onAdmin, onLogout, onClosing }) {
   const name = user.full_name || user.business_name || 'MarketOS';
@@ -22,15 +22,15 @@ export function WorkspaceNavigation({ active, user, darkMode, onTheme, onSelect,
           <button className="workspace-wordmark" onClick={() => onSelect('home')}>MarketOS</button>
           <div className="workspace-owner"><Package size={16} /><span>{user.business_name || 'Your shop'}</span></div>
           <button className="workspace-primary w-full" onClick={() => onSelect('counter')} aria-current={active === 'counter' ? 'page' : undefined}>
-            <Plus size={17} /> Record Sale
+            <Plus size={17} /> Make a sale
           </button>
           <nav className="space-y-1" aria-label="Desktop navigation">
-            {links.map(({ id, label, icon: Icon }) => (
+            {[links[0], links[1], links[3], { id: 'more', label: 'More', icon: Grid2X2 }].map(({ id, label, icon: Icon }) => (
               <button key={id} className="workspace-link" aria-current={id === active ? 'page' : undefined} onClick={() => onSelect(id)}>
                 <Icon size={17} /> {label}
               </button>
             ))}
-            <button className="workspace-link" onClick={onClosing}><CalendarCheck size={17} /> Daily Closing</button>
+
           </nav>
         </div>
         <div className="space-y-1">
@@ -40,7 +40,7 @@ export function WorkspaceNavigation({ active, user, darkMode, onTheme, onSelect,
         </div>
       </aside>
       <header className="workspace-topbar">
-        <div className="workspace-desktop-title"><b>MarketOS Workspace</b><span aria-hidden="true">/</span><span>{links.find((link) => link.id === active)?.label || 'Main Counter'}</span></div>
+        <div className="workspace-desktop-title"><b>MarketOS Workspace</b><span aria-hidden="true">/</span><span>{links.find((link) => link.id === active)?.label || (active === 'more' ? 'More' : 'Make a sale')}</span></div>
         <div className="workspace-mobile-title">
           <button className="workspace-wordmark" onClick={() => onSelect('home')}>MarketOS</button>
           <span>{user.business_name || 'Your shop'}</span>
@@ -68,8 +68,8 @@ export function WorkspaceNavigation({ active, user, darkMode, onTheme, onSelect,
 export function WorkspaceMore({ user, onSelect, onSettings, onAdmin, onLogout, onClosing }) {
   const items = [
     ['Sales & activity', History, () => onSelect('history')],
-    ['Cashbook', Wallet, () => onSelect('cashbook')],
-    ['Daily Closing', CalendarCheck, onClosing],
+    ['Customer debts', Users, () => onSelect('debtors')],
+    ['Check today’s cash', CalendarCheck, onClosing],
     ['Reports', BarChart3, () => onSelect('analytics')],
     ['Settings & Shop', Settings, onSettings],
     ...(onAdmin ? [['Admin Console', ShieldCheck, onAdmin]] : []),

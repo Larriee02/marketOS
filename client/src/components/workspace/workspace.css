@@ -209,3 +209,11 @@
 #ledgerPage-results, #creditPage-results {
   scroll-margin-top: calc(var(--workspace-header) + 12px);
 }
+
+.shop-tasks { display: grid; gap: 12px; }
+.shop-tasks button { min-height: 64px; justify-content: flex-start; gap: 14px; padding: 16px 20px; font-size: 1rem; text-align: left; }
+.shop-details > summary { cursor: pointer; min-height: 44px; align-content: center; font-weight: 700; }
+.shop-details[open] > * + * { margin-top: 16px; }
+@media (min-width: 768px) {
+  .shop-tasks { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
