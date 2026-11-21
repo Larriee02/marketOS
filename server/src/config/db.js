@@ -109,7 +109,7 @@ async function rawTransaction(fn) {
 async function runMigrations() {
   if (mode === 'serverless') return;
 
-  const runAll = async (q, exec) => {
+  const runAll = async (q, apply) => {
     await q(`CREATE TABLE IF NOT EXISTS schema_migrations (
       id VARCHAR(120) PRIMARY KEY,
       applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -118,32 +118,17 @@ async function runMigrations() {
     const applied = new Set(rows.map((r) => r.id));
     for (const migration of migrations) {
       if (applied.has(migration.id)) continue;
-      await exec(
-        `BEGIN;\n${migration.sql}\nINSERT INTO schema_migrations (id) VALUES ('${migration.id}');\nCOMMIT;`
-      );
+      await apply(`${migration.sql}\nINSERT INTO schema_migrations (id) VALUES ('${migration.id}');`);
       console.log(`[DB] Applied migration ${migration.id}`);
     }
   };
 
   if (mode === 'postgres') {
-    const client = await pool.connect();
-    try {
-      await client.query('SELECT pg_advisory_lock(727274001)');
-      await runAll(
-        (t, p) => client.query(t, p),
-        async (sql) => {
-          try {
-            await client.query(sql);
-          } catch (err) {
-            await client.query('ROLLBACK').catch(() => {});
-            throw err;
-          }
-        }
-      );
-    } finally {
-      await client.query('SELECT pg_advisory_unlock(727274001)').catch(() => {});
-      client.release();
-    }
+    await rawTransaction(async ({ query }) => {
+      await query("SET LOCAL lock_timeout = '8s'");
+      await query('SELECT pg_advisory_xact_lock(727274001)');
+      await runAll(query, query);
+    });
     return;
   }
 
@@ -152,7 +137,7 @@ async function runMigrations() {
     (t, p) => db.query(t, p),
     async (sql) => {
       try {
-        await db.exec(sql);
+        await db.exec(`BEGIN;\n${sql}\nCOMMIT;`);
       } catch (err) {
         await db.exec('ROLLBACK').catch(() => {});
         throw err;
@@ -233,7 +218,10 @@ function ready() {
 
       await runMigrations();
       await rawTransaction(async (client) => {
-        if (mode === 'postgres') await client.query('SELECT pg_advisory_xact_lock(727274002)');
+        if (mode === 'postgres') {
+          await client.query("SET LOCAL lock_timeout = '8s'");
+          await client.query('SELECT pg_advisory_xact_lock(727274002)');
+        }
         await bootstrapAdmin(client);
       });
     })().catch((err) => {

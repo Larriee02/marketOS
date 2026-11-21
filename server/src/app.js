@@ -69,6 +69,8 @@ const asyncHandler = (fn) => (req, res, next) =>
 
 if (env.IS_PROD) {
   app.use('/api/v1', asyncHandler(async (req, res, next) => {
+    // The auth handlers can answer public config and missing-session checks without a database.
+    if (req.method === 'GET' && (req.path === '/auth/config' || req.path === '/auth/me')) return next();
     await db.ready();
     next();
   }));
