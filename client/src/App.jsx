@@ -49,6 +49,7 @@ import {
 import { WorkspaceMore, WorkspaceNavigation } from './components/workspace/WorkspaceNavigation';
 import { TraderHome, WorkspaceLedger, WorkspaceMetric } from './components/workspace/TraderHome';
 import './components/workspace/workspace.css';
+import './components/workspace/trader-tools.css';
 import { useDebounce } from './hooks/useDebounce';
 import { Modal } from './components/ui/Modal';
 import { ListPagination, useListPage } from './components/ui/ListPagination';
@@ -1920,14 +1921,12 @@ function AppShell({ darkMode, setDarkMode }) {
 
         {/* TAB 1: QUICK SELL (SHOP COUNTER) */}
         {activeTab === 'counter' && (
-          <section className="space-y-4">
-            <div className="workspace-page-heading">
-              <div><h1 className="workspace-title">Make a sale</h1><p className="workspace-muted">Tap an item to add it to the basket.</p></div>
-              <div className="workspace-inset"><span className="workspace-caption">Drawer cash</span><b className="ml-2">{cashbookSession ? formatNaira(cashbookSession.expectedClosingCash) : '—'}</b></div>
+          <section className="shop-tool space-y-4">
+            <div className="workspace-page-heading shop-tool-heading">
+              <div className="shop-tool-title"><span className="shop-tool-sign"><ShoppingCart aria-hidden="true" /></span><div><h1 className="workspace-title">Make a sale</h1><p className="workspace-muted">Tap an item to add it to the basket.</p></div></div>
+              <div className="shop-drawer-total"><span>Drawer cash</span><b>{cashbookSession ? formatNaira(cashbookSession.expectedClosingCash) : '—'}</b></div>
             </div>
             <div className="workspace-columns workspace-sale">
-            <div className="space-y-4 min-w-0">
-            {/* Left 2 Columns: Tap Products to Sell */}
             <div id="counter-results" className="workspace-panel space-y-4">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
                 <div className="relative flex-1">
@@ -1941,6 +1940,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   />
                 </div>
                 <select
+                  aria-label="Product category"
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="liquid-input text-xs rounded-2xl px-3.5 py-2.5 font-bold"
@@ -1961,8 +1961,10 @@ function AppShell({ darkMode, setDarkMode }) {
                   actionLabel="Add your first product"
                   onAction={openAddProduct}
                 />
+              ) : filteredProducts.length === 0 ? (
+                <p role="status" className="workspace-muted p-4 text-sm">No items match this search.</p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="shop-sale-items">
                   {productPage.rows.map((p) => {
                     const inBasket = cart[p.id] || 0;
                     const stock = Number(p.stock_quantity);
@@ -1979,10 +1981,10 @@ function AppShell({ darkMode, setDarkMode }) {
                               }
                             : undefined
                         }
-                        className={`liquid-glass-subtle p-4 rounded-2xl flex items-center justify-between gap-3 cursor-pointer select-none ${
+                        className={`shop-sale-item ${
                           stock <= 0
-                            ? 'opacity-50 cursor-not-allowed'
-                            : 'hover:-translate-y-0.5 active:scale-[0.99]'
+                            ? 'shop-sale-item-empty'
+                            : 'cursor-pointer'
                         }`}
                       >
                         <div className="space-y-1 min-w-0">
@@ -1991,7 +1993,7 @@ function AppShell({ darkMode, setDarkMode }) {
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5 text-xs">
                             <span className="font-extrabold tabular-nums text-theme-brand">
-                              {formatNaira(p.selling_price)} / {p.unit}
+                              {formatNaira(p.selling_price)} <span className="shop-unit">/ {p.unit}</span>
                             </span>
                             <Badge
                               variant={
@@ -2000,11 +2002,6 @@ function AppShell({ darkMode, setDarkMode }) {
                             >
                               {stock <= 0 ? 'Out of stock' : `${stock} ${p.unit}`}
                             </Badge>
-                            {inBasket > 0 && (
-                              <Badge variant="info">
-                                {inBasket} in cart
-                              </Badge>
-                            )}
                           </div>
                         </div>
 
@@ -2049,10 +2046,10 @@ function AppShell({ darkMode, setDarkMode }) {
               <ListPagination list={productPage} label="Products to sell" targetId="counter-results" />
             </div>
 
-            {/* Right Column: Liquid Glass Customer Basket */}
+            {/* Keep checkout beside the items on wide screens. */}
             <div
               ref={basketRef}
-              className="workspace-panel space-y-4"
+              className="workspace-panel shop-basket space-y-4"
             >
               <div
                 style={{ borderColor: 'var(--border-outer)' }}
@@ -2090,7 +2087,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 <div className="py-10 text-center space-y-2 text-theme-secondary">
                   <ShoppingCart className="w-8 h-8 mx-auto stroke-1 opacity-60" />
                   <p className="text-xs font-medium">
-                    Choose an item above to start this sale.
+                    Choose an item to start this sale.
                   </p>
                 </div>
               ) : (
@@ -2148,6 +2145,7 @@ function AppShell({ darkMode, setDarkMode }) {
                             <div className="flex items-center gap-1.5 shrink-0">
                               <button
                                 type="button"
+                                aria-label={`Remove one ${product.name}`}
                                 onClick={() =>
                                   updateCartQty(product.id, -1, stock)
                                 }
@@ -2161,6 +2159,7 @@ function AppShell({ darkMode, setDarkMode }) {
                               <button
                                 type="button"
                                 disabled={isAtMax}
+                                aria-label={`Add one ${product.name}`}
                                 onClick={() =>
                                   updateCartQty(product.id, 1, stock)
                                 }
@@ -2205,6 +2204,7 @@ function AppShell({ darkMode, setDarkMode }) {
                         <button
                           type="button"
                           key={m.id}
+                          aria-pressed={checkoutMethod === m.id}
                           onClick={() => setCheckoutMethod(m.id)}
                           className={`py-2.5 px-2.5 rounded-xl text-xs font-bold cursor-pointer ${
                             checkoutMethod === m.id
@@ -2286,13 +2286,12 @@ function AppShell({ darkMode, setDarkMode }) {
                 </form>
               )}
             </div>
-            </div>
-            <aside className="space-y-4 min-w-0">
-              <WorkspaceLedger title="Recent Sales Activity" entries={recentSales} formatMoney={formatNaira} onViewAll={() => handleSelectTab('history')} />
+            <aside className="shop-tool-notes">
+              <WorkspaceLedger title="Recent sales" entries={recentSales} formatMoney={formatNaira} onViewAll={() => handleSelectTab('history')} />
               <section className="workspace-panel space-y-2">
-                <h2 className="font-bold">Drawer Reconciliation</h2>
-                <p className="workspace-muted text-sm">Review and reconcile the day’s cash drawer.</p>
-                <button className="workspace-chip" onClick={openClosing}>Preview daily closing</button>
+                <h2 className="font-bold">End of day</h2>
+                <p className="workspace-muted text-sm">Count your cash and check it against your sales.</p>
+                <button className="workspace-chip" onClick={openClosing}>Check today’s cash</button>
               </section>
             </aside>
             </div>
@@ -2301,9 +2300,9 @@ function AppShell({ darkMode, setDarkMode }) {
 
         {/* TAB 2: MY SHELF STOCK & STOCK-TAKING */}
         {activeTab === 'inventory' && (
-          <section className="space-y-4">
-            <div className="workspace-page-heading">
-              <div><h1 className="workspace-title">Your stock</h1></div>
+          <section className="shop-tool space-y-4">
+            <div className="workspace-page-heading shop-tool-heading">
+              <div className="shop-tool-title"><span className="shop-tool-sign"><Package aria-hidden="true" /></span><h1 className="workspace-title">Your stock</h1></div>
               <div className="flex flex-wrap gap-2">
                 <button className="workspace-chip" onClick={() => setShowAuditModal(true)}><ClipboardCheck size={16} />Count stock</button>
                 <button className="workspace-primary" onClick={openAddProduct}><Plus size={16} />Add Product</button>
@@ -2535,9 +2534,9 @@ function AppShell({ darkMode, setDarkMode }) {
                   className="border-b text-[11px] font-bold uppercase tracking-wider text-theme-secondary"
                 >
                   <tr>
-                    <th className="py-3.5 px-4">Provision / Goods Name</th>
-                    <th className="py-3.5 px-4">Category & Market</th>
-                    <th className="py-3.5 px-4 text-right">Market Cost</th>
+                    <th className="py-3.5 px-4">Item</th>
+                    <th className="py-3.5 px-4">Category</th>
+                    <th className="py-3.5 px-4 text-right">Cost</th>
                     <th className="py-3.5 px-4 text-right">Selling Price</th>
                     <th className="py-3.5 px-4 text-right">Gain / Unit</th>
                     <th className="py-3.5 px-4 text-center">Remaining</th>
@@ -2671,15 +2670,15 @@ function AppShell({ darkMode, setDarkMode }) {
             </div>
               <ListPagination list={productPage} label="Stock catalog" targetId="inventory-results" />
             </div>
-            <aside className="space-y-4 min-w-0">
+            <aside className="shop-tool-notes">
               <section className="workspace-panel space-y-3">
-                <h2 className="font-bold">Stock Audit Trail</h2>
+                <h2 className="font-bold">Stock history</h2>
                 <p className="workspace-muted text-sm">Review stock movements or compare shelf counts against the catalog.</p>
                 <button className="workspace-chip" onClick={() => handleSelectTab('history')}>View movement log</button>
                 <button className="workspace-chip" onClick={() => setShowAuditModal(true)}>Begin physical count</button>
               </section>
               <section className="workspace-panel space-y-3">
-                <h2 className="font-bold">Emergency Reorders</h2>
+                <h2 className="font-bold">Running low</h2>
                 {lowStockRestockPlan.length === 0 && <p className="workspace-muted text-sm">No products need reordering.</p>}
                 {lowStockRestockPlan.slice(0, 3).map((product) => (
                   <div key={product.id} className="workspace-warning-row"><div className="min-w-0 flex-1"><b>{product.name}</b><p className="workspace-muted">{product.stock_quantity} {product.unit} left</p></div><button className="workspace-chip" onClick={() => openRestock(product)}>Restock</button></div>

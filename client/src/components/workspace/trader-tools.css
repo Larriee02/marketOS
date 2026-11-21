@@ -1,0 +1,73 @@
+/* Counter signage and compact shelf labels share the shop's cobalt ink. */
+.shop-tool-heading {
+  position: relative;
+  padding: clamp(18px, 3vw, 32px) 0;
+  border-bottom: 3px double var(--workspace-border);
+  column-gap: 18px;
+  row-gap: 16px;
+}
+
+.shop-tool-title { display: flex; align-items: center; gap: clamp(12px, 1.7vw, 22px); min-width: 0; }
+.shop-tool-title .workspace-title {
+  font-size: clamp(32px, 4vw, 56px);
+  letter-spacing: -.055em;
+  line-height: 1;
+  margin: 0;
+}
+.shop-tool-title p { margin-top: 8px; }
+.shop-tool-sign {
+  position: relative;
+  flex: none;
+  display: grid;
+  width: clamp(46px, 5vw, 72px);
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 12px 12px 12px 2px;
+  color: #fff;
+  background: #194db8;
+  box-shadow: inset 0 -5px #123888;
+}
+.shop-tool-sign svg { width: 54%; height: 54%; stroke-width: 1.5; }
+
+.shop-drawer-total {
+  padding-left: 15px;
+  border-left: 2px solid var(--brand-blue);
+  display: grid;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.shop-drawer-total span {
+  font-size: 12px;
+  color: var(--workspace-muted);
+}
+.shop-drawer-total b { font-size: clamp(18px, 2vw, 26px); line-height: 1.15; }
+
+.shop-sale-items { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 8px; }
+.shop-sale-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  border: 1px solid var(--workspace-border);
+  border-left: 3px solid var(--brand-blue-border);
+  border-radius: 3px 9px 9px 3px;
+  background: var(--workspace-surface);
+}
+.shop-sale-item:not(.shop-sale-item-empty):hover { border-color: var(--brand-blue); }
+.shop-sale-item > button { min-height: 42px; }
+.shop-unit { font-weight: 500; color: var(--workspace-muted); }
+.shop-basket { border-top: 4px solid var(--brand-blue); }
+.shop-basket > :first-child { border-bottom-style: dashed; }
+.shop-tool .workspace-stock-filters { flex-wrap: wrap; }
+.shop-tool .workspace-stock-filters .workspace-chip { min-height: 40px; }
+.shop-tool table th { text-transform: none; font-size: 12px; letter-spacing: 0; white-space: nowrap; }
+
+.shop-tool-notes { display: grid; gap: 16px; grid-column: 1 / -1; }
+@media (min-width: 768px) {
+  .shop-tool-notes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .shop-tool .workspace-sale { grid-template-columns: minmax(0, 1.55fr) minmax(290px, 1fr); }
+  .shop-tool .workspace-stock { grid-template-columns: minmax(0, 1fr); }
+}

@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, BarChart3, CalendarCheck, Download, Package, ShoppingCart, TriangleAlert, Users, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowRight, ArrowUpRight, BarChart3, BookOpen, CalendarCheck, ChevronDown, Download, Package, ShoppingBasket, Store, TriangleAlert, Users, Wallet } from 'lucide-react';
+
+import './trader-home.css';
 
 const paymentLabels = { CASH: 'Cash', BANK_TRANSFER: 'Transfer', POS: 'POS', MOBILE_MONEY: 'Mobile wallet' };
 
@@ -55,21 +57,45 @@ export function TraderHome({ user, dashboard, products, session, report, loading
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const label = period === 'TODAY' ? 'Today’s' : period === 'WEEK' ? 'This week’s' : 'This month’s';
+  const hasCatalog = products.length > 0 || loading;
+  const today = new Date();
   return (
-    <div className="workspace-home space-y-5">
-      <div className="workspace-page-heading">
-        <div>
-          <h1 className="workspace-title">{greeting}{firstName ? `, ${firstName}` : ''}</h1>
-          <p className="workspace-muted">{user.business_name || 'Your shop'} · {new Date().toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
-        </div>
-      </div>
-      <section aria-label="Shop tasks" className="shop-tasks">
-        <button className="workspace-primary" onClick={() => onSelect('counter')}><ShoppingCart />Make a sale</button>
-        <button className="workspace-action" onClick={products.length || loading ? () => onSelect('inventory') : onAddProduct}><Package />{products.length || loading ? 'Check stock' : 'Add your first product'}</button>
-        <button className="workspace-action" onClick={onMoney}><Wallet />Record money in or out</button>
+    <div className="workspace-home trader-home">
+      <header className="trader-heading">
+        <div className="trader-shop-name"><Store size={17} aria-hidden="true" />{user.business_name || 'Your shop'}</div>
+        <h1>{greeting}{firstName && <>, <em>{firstName}</em></>}</h1>
+        <time className="trader-date" dateTime={today.toLocaleDateString('en-CA')}>
+          {today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+        </time>
+      </header>
+
+      <section aria-label="Shop tasks" className="trader-tasks">
+        <button type="button" className="trader-sale" onClick={() => onSelect('counter')}>
+          <span className="trader-sale-icon"><ShoppingBasket size={25} aria-hidden="true" /></span>
+          <span className="trader-sale-footer">
+            <span>Make a sale</span>
+            <span className="trader-sale-arrow"><ArrowRight size={20} aria-hidden="true" /></span>
+          </span>
+        </button>
+
+        <button type="button" className="trader-task trader-stock" aria-label={hasCatalog ? 'Check stock' : 'Add your first product'} onClick={hasCatalog ? () => onSelect('inventory') : onAddProduct}>
+          <span className="trader-task-icon"><Package aria-hidden="true" /></span>
+          <span className="trader-task-body">
+            <strong>{hasCatalog ? 'Check stock' : 'Add your first product'}</strong>
+            {!loading && products.length > 0 && <small>{products.length} {products.length === 1 ? 'product' : 'products'}{stockWarnings.length > 0 && ` · ${stockWarnings.length} running low`}</small>}
+          </span>
+          <ArrowUpRight size={19} className="trader-task-arrow" aria-hidden="true" />
+        </button>
+
+        <button type="button" className="trader-task trader-money" onClick={onMoney}>
+          <span className="trader-task-icon"><Wallet aria-hidden="true" /></span>
+          <span className="trader-task-body"><strong>Record money in or out</strong></span>
+          <ArrowUpRight size={19} className="trader-task-arrow" aria-hidden="true" />
+        </button>
       </section>
-      <details className="workspace-panel shop-details">
-        <summary>Shop figures and activity</summary>
+
+      <details className="workspace-panel trader-figures">
+        <summary><BookOpen size={20} aria-hidden="true" /><span>Shop figures and activity</span><ChevronDown size={18} className="trader-disclosure" aria-hidden="true" /></summary>
         <div className="flex flex-wrap gap-2 items-center">
           <div className="workspace-period" aria-label="Reporting period">
             {[['TODAY', 'Today'], ['WEEK', 'This Week'], ['MONTH', 'This Month']].map(([id, text]) => (

@@ -1,7 +1,8 @@
+import './account-pages.css';
+import { MarketOSLogo } from '../components/ui/MarketOSLogo';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import React from 'react';
 import {
-  ShieldCheck,
   Store,
   LogOut,
   CheckCircle2,
@@ -24,18 +25,16 @@ export function AdminPage({
   const currencySymbol = getCurrencySymbol(currencyCode);
 
   return (
-    <div className="min-h-screen pb-16">
+    <div className="account-page account-admin min-h-screen pb-16">
       {/* Admin Header */}
-      <header className="liquid-glass-header text-slate-100 sticky top-0 z-30">
+      <header className="account-masthead text-slate-100">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2.5 rounded-2xl liquid-btn-primary shrink-0">
-              <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
+            <MarketOSLogo variant="icon" size="sm" />
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-base sm:text-xl font-extrabold font-luxury tracking-tight truncate text-white">
-                  Administration Console
+                  Administration
                 </h1>
                 <span className="text-[10px] sm:text-[11px] bg-sky-400/20 text-sky-200 border border-sky-300/35 px-2.5 py-0.5 rounded-full font-extrabold">
                   {currencyCode} ({currencySymbol})
@@ -47,7 +46,7 @@ export function AdminPage({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="account-toolbar">
             {/* Switch to Store Workspace */}
             <button
               type="button"
@@ -55,7 +54,7 @@ export function AdminPage({
               className="liquid-btn-primary px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
             >
               <Store className="w-4 h-4" />
-              <span>Store Workspace</span>
+              <span>Back to shop</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
 
@@ -63,7 +62,8 @@ export function AdminPage({
               type="button"
               onClick={() => onNavigate('/settings')}
               className="flex items-center gap-1.5 bg-white/12 hover:bg-white/20 text-slate-100 border border-white/25 px-3 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
-              title="Account & Currency Settings"
+              aria-label="Shop settings"
+              title="Shop settings"
             >
               <Settings className="w-4 h-4 text-sky-300" />
               <span className="hidden sm:inline">Settings</span>
@@ -74,6 +74,7 @@ export function AdminPage({
 
             <button
               type="button"
+              aria-label="Sign out"
               onClick={onLogout}
               className="flex items-center gap-1.5 bg-rose-500/25 hover:bg-rose-500/40 text-slate-100 border border-rose-300/35 px-3 py-2 rounded-xl text-xs font-bold backdrop-blur-md cursor-pointer"
             >

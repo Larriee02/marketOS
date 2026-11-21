@@ -1,3 +1,4 @@
+import '../../pages/account-pages.css';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import React, { useState, useEffect } from 'react';
 import {
@@ -6,7 +7,6 @@ import {
   XCircle,
   RefreshCw,
   LogOut,
-  Package,
   Store,
   Mail,
   Settings,
@@ -51,8 +51,8 @@ export function AccountStatusScreen({
   const isSuspended = user?.status === 'SUSPENDED';
 
   return (
-    <div className="min-h-screen flex flex-col justify-between p-4 sm:p-6">
-      <header className="max-w-4xl w-full mx-auto flex items-center justify-between">
+    <div className="account-page account-status min-h-screen flex flex-col p-4 sm:p-6">
+      <header className="account-status-header max-w-4xl w-full mx-auto flex items-center justify-between flex-wrap gap-3">
         <MarketOSLogo size="sm" />
 
         <div className="flex items-center gap-2">
@@ -81,9 +81,9 @@ export function AccountStatusScreen({
         </div>
       </header>
 
-      <div className="max-w-lg w-full mx-auto my-auto py-8">
-        <div className="liquid-glass-elevated rounded-3xl p-6 sm:p-8 text-center space-y-5">
-          <div className="w-16 h-16 mx-auto rounded-2xl liquid-glass-subtle flex items-center justify-center">
+      <main className="max-w-lg w-full mx-auto my-auto py-8">
+        <div className="account-status-card space-y-5">
+          <div className="w-14 h-14 rounded-2xl liquid-glass-subtle flex items-center justify-center">
             {isPending ? (
               <Clock className="w-8 h-8 text-theme-warning" />
             ) : isSuspended ? (
@@ -104,36 +104,36 @@ export function AccountStatusScreen({
 
             <h1 className="text-xl sm:text-2xl font-extrabold font-luxury text-theme-primary pt-1">
               {isPending
-                ? 'Account Pending Administrator Approval'
+                ? 'Your shop is under review'
                 : isSuspended
-                ? 'Account Access Suspended'
-                : 'Account Registration Declined'}
+                ? 'Your account is paused'
+                : 'Registration declined'}
             </h1>
 
             <p className="text-xs sm:text-sm text-theme-secondary leading-relaxed">
               {isPending
-                ? 'Your registration has been received. An administrator will review and approve your account shortly. This page will unlock automatically once approved.'
+                ? 'We received your registration. Your shop will open here when an administrator approves it.'
                 : isSuspended
                 ? 'Access to this account has been temporarily paused by an administrator.'
                 : 'Your registration request was declined by the administrator.'}
             </p>
           </div>
 
-          <div className="liquid-glass-subtle rounded-2xl p-4 text-left space-y-2 text-xs">
+          <div className="account-facts text-sm">
             <div className="flex items-center justify-between gap-2">
               <span className="text-theme-secondary font-semibold flex items-center gap-1.5">
-                <Store className="w-3.5 h-3.5" /> Business Name:
+                <Store className="w-3.5 h-3.5" /> Shop name
               </span>
               <span className="font-extrabold text-theme-primary">{user?.business_name}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
               <span className="text-theme-secondary font-semibold flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5" /> Email:
+                <Mail className="w-3.5 h-3.5" /> Email
               </span>
               <span className="font-bold text-theme-primary">{user?.email}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-theme-secondary font-semibold">Authentication:</span>
+              <span className="text-theme-secondary font-semibold">Sign-in method</span>
               <Badge variant="info">{user?.auth_provider}</Badge>
             </div>
           </div>
@@ -162,11 +162,8 @@ export function AccountStatusScreen({
             Last checked at {lastChecked.toLocaleTimeString()}
           </p>
         </div>
-      </div>
+      </main>
 
-      <footer className="text-center text-[11px] text-theme-secondary">
-        MarketOS • Account Verification
-      </footer>
     </div>
   );
 }

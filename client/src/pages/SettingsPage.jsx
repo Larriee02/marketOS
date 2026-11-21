@@ -1,7 +1,7 @@
+import './account-pages.css';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import React, { useState } from 'react';
 import {
-  Package,
   User,
   Store,
   Phone,
@@ -119,23 +119,23 @@ export function SettingsPage({
   const isAdmin = currentUser?.role === 'ADMIN';
 
   return (
-    <div className="min-h-screen pb-16">
+    <div className="account-page account-settings min-h-screen pb-16">
       {/* Top Header */}
-      <header className="liquid-glass-header text-slate-100 sticky top-0 z-30">
+      <header className="account-masthead text-slate-100">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <MarketOSLogo variant="icon" size="sm" />
-            <div>
-              <h1 style={{ color: '#f8fafc' }} className="text-base sm:text-lg font-extrabold font-luxury">
-                Account & Currency Settings
+            <div className="min-w-0">
+              <h1>
+                Shop settings
               </h1>
-              <p className="text-xs text-slate-300">
+              <p className="truncate text-xs text-slate-300">
                 {currentUser.full_name} • {currentUser.email}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="account-toolbar">
             {isAdmin && (
               <button
                 type="button"
@@ -153,7 +153,7 @@ export function SettingsPage({
               className="liquid-btn-primary px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Store Workspace</span>
+              <span>Back to shop</span>
             </button>
 
             <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((current) => !current)}
@@ -179,14 +179,14 @@ export function SettingsPage({
               </div>
               <div>
                 <h2 className="text-base font-extrabold font-luxury text-theme-primary">
-                  Display Currency
+                  Shop currency
                 </h2>
                 <p className="text-xs text-theme-secondary">
-                  Choose the currency used across your inventory, point of sale, cashbook, and reports.
+                  Prices, sales and reports use this currency.
                 </p>
               </div>
             </div>
-            <Badge variant="info">Active: {profileForm.currency}</Badge>
+
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -196,6 +196,7 @@ export function SettingsPage({
                 <button
                   key={curr.code}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => handleSelectCurrency(curr.code)}
                   className={`p-3.5 rounded-2xl text-left transition-all cursor-pointer ${
                     active
@@ -219,10 +220,10 @@ export function SettingsPage({
           <div className="flex items-center justify-between border-b pb-3.5 theme-divider">
             <div>
               <h2 className="text-base font-extrabold font-luxury text-theme-primary">
-                Profile & Business Information
+                Shop details
               </h2>
               <p className="text-xs text-theme-secondary">
-                Update your account details and business profile shown on customer receipts.
+                These details appear on customer receipts.
               </p>
             </div>
             <Badge variant={isAdmin ? 'info' : 'success'}>
@@ -233,12 +234,13 @@ export function SettingsPage({
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold mb-1.5 text-theme-primary">
+                <label htmlFor="shop-full_name" className="block text-xs font-bold mb-1.5 text-theme-primary">
                   Full Name
                 </label>
                 <div className="relative">
                   <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
                   <input
+                    id="shop-full_name"
                     type="text"
                     required
                     value={profileForm.full_name}
@@ -251,12 +253,13 @@ export function SettingsPage({
               </div>
 
               <div>
-                <label className="block text-xs font-bold mb-1.5 text-theme-primary">
+                <label htmlFor="shop-business_name" className="block text-xs font-bold mb-1.5 text-theme-primary">
                   Business / Store Name
                 </label>
                 <div className="relative">
                   <Store className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
                   <input
+                    id="shop-business_name"
                     type="text"
                     required
                     value={profileForm.business_name}
@@ -269,12 +272,13 @@ export function SettingsPage({
               </div>
 
               <div>
-                <label className="block text-xs font-bold mb-1.5 text-theme-primary">
+                <label htmlFor="shop-phone" className="block text-xs font-bold mb-1.5 text-theme-primary">
                   Phone Number
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
                   <input
+                    id="shop-phone"
                     type="tel"
                     value={profileForm.phone}
                     onChange={(e) =>
@@ -286,10 +290,11 @@ export function SettingsPage({
               </div>
 
               <div>
-                <label className="block text-xs font-bold mb-1.5 text-theme-primary">
+                <label htmlFor="shop-business_type" className="block text-xs font-bold mb-1.5 text-theme-primary">
                   Business Category
                 </label>
                 <select
+                  id="shop-business_type"
                   value={profileForm.business_type}
                   onChange={(e) =>
                     setProfileForm({ ...profileForm, business_type: e.target.value })
@@ -305,12 +310,13 @@ export function SettingsPage({
               </div>
 
               <div>
-                <label className="block text-xs font-bold mb-1.5 text-theme-primary">
+                <label htmlFor="shop-city" className="block text-xs font-bold mb-1.5 text-theme-primary">
                   Location / Region
                 </label>
                 <div className="relative">
                   <MapPin className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
                   <select
+                    id="shop-city"
                     value={profileForm.city}
                     onChange={(e) =>
                       setProfileForm({ ...profileForm, city: e.target.value })
@@ -327,10 +333,11 @@ export function SettingsPage({
               </div>
 
               <div>
-                <label className="block text-xs font-bold mb-1.5 text-theme-primary">
+                <label htmlFor="shop-currency" className="block text-xs font-bold mb-1.5 text-theme-primary">
                   Default Currency
                 </label>
                 <select
+                  id="shop-currency"
                   value={profileForm.currency}
                   onChange={(e) =>
                     setProfileForm({ ...profileForm, currency: e.target.value })
@@ -352,7 +359,7 @@ export function SettingsPage({
                 disabled={submittingProfile}
                 className="liquid-btn-primary px-5 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer disabled:opacity-50"
               >
-                {submittingProfile ? 'Saving Changes...' : 'Save Profile & Preferences'}
+                {submittingProfile ? 'Saving Changes...' : 'Save shop details'}
               </button>
             </div>
           </form>
@@ -363,10 +370,10 @@ export function SettingsPage({
           <div className="flex items-center justify-between border-b pb-3.5 theme-divider">
             <div>
               <h2 className="text-base font-extrabold font-luxury text-theme-primary">
-                Security & Password
+                Password and security
               </h2>
               <p className="text-xs text-theme-secondary">
-                Sign-in method: <strong>{currentUser.auth_provider || 'EMAIL'}</strong>
+                Signed in with <strong>{currentUser.auth_provider || 'EMAIL'}</strong>
               </p>
             </div>
           </div>
@@ -374,12 +381,13 @@ export function SettingsPage({
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-bold mb-1.5 text-theme-primary">
+                <label htmlFor="shop-current_password" className="block text-xs font-bold mb-1.5 text-theme-primary">
                   Current Password
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
                   <input
+                    id="shop-current_password"
                     type="password"
                     placeholder="Leave blank if OAuth account"
                     value={passwordForm.current_password}
@@ -392,12 +400,13 @@ export function SettingsPage({
               </div>
 
               <div>
-                <label className="block text-xs font-bold mb-1.5 text-theme-primary">
+                <label htmlFor="shop-new_password" className="block text-xs font-bold mb-1.5 text-theme-primary">
                   New Password
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
                   <input
+                    id="shop-new_password"
                     type="password"
                     required
                     minLength={6}
@@ -412,12 +421,13 @@ export function SettingsPage({
               </div>
 
               <div>
-                <label className="block text-xs font-bold mb-1.5 text-theme-primary">
+                <label htmlFor="shop-confirm_password" className="block text-xs font-bold mb-1.5 text-theme-primary">
                   Confirm New Password
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
                   <input
+                    id="shop-confirm_password"
                     type="password"
                     required
                     minLength={6}
