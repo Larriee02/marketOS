@@ -242,40 +242,12 @@ app.get(
       throw new AppError('Unsupported OAuth provider.', 400);
     }
 
-    const origin = oauthService.getRequestOrigin(req);
-    const clientIdOverride = String(req.query.client_id || '').trim() || null;
     const state = oauthService.signOAuthState({
       provider,
-      client_id: clientIdOverride,
       currency: req.query.currency || 'NGN',
       city: req.query.city || 'Lagos',
     });
-
-    if (env.GOOGLE_CLIENT_ID || clientIdOverride) {
-      const url = oauthService.buildGoogleAuthorizeUrl({
-        req,
-        state,
-        clientId: clientIdOverride,
-      });
-      return res.redirect(302, url);
-    }
-
-    // Render authentic Google Accounts OAuth 2.0 Authorization Gateway window
-    const callbackUrl = `${origin}/api/v1/auth/oauth/google/callback`;
-    const authorizeUrl = `${origin}/api/v1/auth/oauth/google/authorize`;
-    res
-      .status(200)
-      .type('html')
-      .send(
-        oauthService.renderOAuthProviderGatewayHtml({
-          provider,
-          state,
-          callbackUrl,
-          authorizeUrl,
-          origin,
-          error: req.query.error || '',
-        })
-      );
+    res.redirect(302, oauthService.buildGoogleAuthorizeUrl({ req, state }));
   })
 );
 
@@ -303,34 +275,27 @@ const handleOAuthCallback = asyncHandler(async (req, res) => {
   try {
     let verifiedProfile = null;
     if (params.code) {
-      const verified = await oauthService.exchangeGoogleCodeForProfile({
+      verifiedProfile = await oauthService.exchangeGoogleCodeForProfile({
         code: params.code,
         redirectUri: env.GOOGLE_REDIRECT_URI || callbackUrl,
-        clientId: stateData.client_id || env.GOOGLE_CLIENT_ID,
+        clientId: env.GOOGLE_CLIENT_ID,
         clientSecret: env.GOOGLE_CLIENT_SECRET,
       });
-      verifiedProfile = {
-        sub: verified.sub,
-        email: verified.email,
-        fullName: verified.name || verified.email.split('@')[0],
-        avatarUrl: verified.picture,
-      };
     }
 
     const { user, token, isNewUser } = await authService.oauthSignIn(
       {
         provider,
-        client_id: stateData.client_id || undefined,
         id_token: params.id_token || undefined,
         access_token: params.access_token || undefined,
-        verifiedProfile,
         email: params.email,
         full_name: params.full_name,
         business_name: params.business_name,
         currency: stateData.currency || params.currency || 'NGN',
         city: stateData.city || params.city || 'Lagos',
       },
-      clientIp(req)
+      clientIp(req),
+      verifiedProfile
     );
 
     const authUser = await userRepo.findAuthById(user.id);

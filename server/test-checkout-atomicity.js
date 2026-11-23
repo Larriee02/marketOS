@@ -13,11 +13,13 @@ const authService = require(`${S}/services/auth.service`);
 const inventoryService = require(`${S}/services/inventory.service`);
 const db = require(`${S}/config/db`);
 
+const registerMerchant = require('./test-support/register-merchant');
+
 async function runTest() {
   console.log('--- Starting Checkout Atomicity & Rollback Verification ---');
 
   // 1. Create a test merchant user
-  const { user } = await authService.register({
+  const { user } = await registerMerchant(authService, {
     email: 'merchant-atomicity@test.com',
     password: 'Password123#',
     full_name: 'Test Merchant',

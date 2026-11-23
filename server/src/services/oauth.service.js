@@ -51,8 +51,8 @@ function verifyOAuthState(stateStr) {
 /**
  * Verifies a Google Identity Services / OIDC ID token.
  */
-async function verifyGoogleIdToken(idToken, clientIdOverride = null) {
-  const audience = clientIdOverride || env.GOOGLE_CLIENT_ID;
+async function verifyGoogleIdToken(idToken) {
+  const audience = env.GOOGLE_CLIENT_ID;
   if (!idToken || typeof idToken !== 'string') {
     throw new AppError('Missing Google credential.', 400, 'INVALID_GOOGLE_TOKEN');
   }
@@ -64,7 +64,7 @@ async function verifyGoogleIdToken(idToken, clientIdOverride = null) {
       verifyOptions.audience = audience;
     }
     const { payload } = await jwtVerify(idToken, GOOGLE_JWKS, verifyOptions);
-    if (!payload.email) throw new Error('No email in token');
+    if (!payload.email || !payload.sub) throw new Error('No email in token');
     return {
       sub: String(payload.sub),
       email: String(payload.email).toLowerCase(),
@@ -85,6 +85,12 @@ async function verifyGoogleAccessToken(accessToken) {
   if (!accessToken || typeof accessToken !== 'string') {
     throw new AppError('Missing Google access token.', 400, 'INVALID_GOOGLE_TOKEN');
   }
+  const infoUrl = new URL('https://oauth2.googleapis.com/tokeninfo');
+  infoUrl.searchParams.set('access_token', accessToken);
+  const info = await fetch(infoUrl);
+  if (!info.ok || (await info.json()).aud !== env.GOOGLE_CLIENT_ID) {
+    throw new AppError('Invalid Google token audience.', 401, 'INVALID_GOOGLE_TOKEN');
+  }
   const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
@@ -92,13 +98,13 @@ async function verifyGoogleAccessToken(accessToken) {
     throw new AppError('Failed to verify Google access token with accounts.google.com.', 401, 'INVALID_GOOGLE_TOKEN');
   }
   const data = await res.json();
-  if (!data.email) {
+  if (!data.email || !data.sub) {
     throw new AppError('Google account did not return an email address.', 400, 'INVALID_GOOGLE_TOKEN');
   }
   return {
     sub: String(data.sub),
     email: String(data.email).toLowerCase(),
-    emailVerified: Boolean(data.email_verified),
+    emailVerified: data.email_verified === true || data.email_verified === 'true',
     name: data.name || '',
     picture: data.picture || null,
   };
@@ -141,7 +147,7 @@ async function exchangeGoogleCodeForProfile({ code, redirectUri, clientId, clien
   }
 
   if (tokenData.id_token) {
-    return verifyGoogleIdToken(tokenData.id_token, finalClientId);
+    return verifyGoogleIdToken(tokenData.id_token);
   }
   if (tokenData.access_token) {
     return verifyGoogleAccessToken(tokenData.access_token);

@@ -12,11 +12,13 @@ const authService = require(`${S}/services/auth.service`);
 const inventoryService = require(`${S}/services/inventory.service`);
 const db = require(`${S}/config/db`);
 
+const registerMerchant = require('./test-support/register-merchant');
+
 async function runTest() {
   console.log('--- Testing Bulk Import, Batch Adjustments & Physical Stock Audit ---');
 
   // 1. Register test merchant
-  const { user } = await authService.register({
+  const { user } = await registerMerchant(authService, {
     email: 'stock-audit-test@lagos.ng',
     password: 'Password123#',
     full_name: 'Audit Trader',

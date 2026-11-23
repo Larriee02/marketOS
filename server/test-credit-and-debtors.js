@@ -14,6 +14,8 @@ const path = require('path');
 
 process.env.NODE_ENV = 'test';
 
+const registerMerchant = require('./test-support/register-merchant');
+
 async function runTests() {
   console.log('🧪 Starting Debtor & Credit Management Test Suite...\n');
 
@@ -26,7 +28,7 @@ async function runTests() {
 
   // 1. Create a test user
   const testEmail = `retailer_debtor_${Date.now()}@marketos.test`;
-  const registerResult = await authService.register({
+  const registerResult = await registerMerchant(authService, {
     email: testEmail,
     password: 'Password123#',
     full_name: 'Debtor Test Retailer',

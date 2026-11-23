@@ -318,8 +318,7 @@ class NotificationService {
           console.log('[Notification:Email] Delivered via Resend:', data.id);
           return { success: true, provider: 'resend', id: data.id };
         }
-        const errText = await res.text();
-        console.warn('[Notification:Email] Resend API error:', errText);
+        console.warn('[Notification:Email] Resend API error:', res.status);
       } catch (err) {
         console.warn('[Notification:Email] Resend delivery failed:', err.message);
       }
@@ -349,15 +348,13 @@ class NotificationService {
           console.log('[Notification:Email] Delivered via SendGrid');
           return { success: true, provider: 'sendgrid' };
         }
-        const errText = await res.text();
-        console.warn('[Notification:Email] SendGrid API error:', errText);
+        console.warn('[Notification:Email] SendGrid API error:', res.status);
       } catch (err) {
         console.warn('[Notification:Email] SendGrid delivery failed:', err.message);
       }
     }
 
     // 4. Fallback: Simulated console delivery when no email provider key is set yet
-    console.log(`[Notification:Email] (Simulated Delivery) To: ${to} | Subject: ${subject}`);
     return { success: true, provider: 'console-simulated' };
   }
 
@@ -372,7 +369,6 @@ class NotificationService {
     const text = `Hello ${recipientName || 'there'},\n\nYour MarketOS verification code is: ${code}\nThis code will expire in 10 minutes.\n\nDo not share this code with anyone.`;
     const html = buildOtpEmailHtml({ code, recipientName, purpose });
 
-    console.log(`[Notification:Email] Sending OTP ${code} to ${to} (${purpose})`);
     return this.deliverEmail({ to, subject, text, html });
   }
 

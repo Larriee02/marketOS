@@ -8,7 +8,6 @@ const auditRepo = require('../repositories/audit.repository');
 const {
   verifyGoogleIdToken,
   verifyGoogleAccessToken,
-  verifyAppleIdToken,
 } = require('./oauth.service');
 const { seedStarterCatalog } = require('../db/starterCatalog');
 const otpService = require('./otp.service');
@@ -127,15 +126,7 @@ class AuthService {
       );
     }
 
-    // Verify OTP if provided (or verify signup request challenge)
-    if (otp) {
-      await otpService.verifyOtp({
-        purpose: 'SIGNUP',
-        email,
-        phone,
-        code: otp,
-      });
-    }
+    await otpService.verifyOtp({ purpose: 'SIGNUP', email, code: otp });
 
     const passwordHash = await bcrypt.hash(password, 10);
     // Self-registration can NEVER create an administrator. Any client-supplied `role` is ignored.
@@ -278,71 +269,26 @@ class AuthService {
     return { user: publicUser, token };
   }
 
-  async oauthSignIn(payload, ip = null) {
+  async oauthSignIn(payload, ip = null, exchangedProfile = null) {
     const provider = String(payload.provider || '').toUpperCase();
     if (provider !== 'GOOGLE') {
       throw new AppError('Unsupported OAuth provider.', 400, 'INVALID_PROVIDER');
     }
 
-    let profile = null;
-    let tokenVerified = false;
-    // 1. Verify cryptographic ID token or access token if provided
-    if (payload.verifiedProfile) {
-      tokenVerified = true;
-      const vp = payload.verifiedProfile;
-      const fallbackName =
-        String(vp.email || '')
-          .split('@')[0]
-          .replace(/[._-]+/g, ' ')
-          .replace(/\b\w/g, (l) => l.toUpperCase()) ||
-        'Google Trader';
-      profile = {
-        sub: vp.sub,
-        email: vp.email,
-        fullName: vp.fullName || vp.full_name || vp.name || payload.full_name || fallbackName,
-        avatarUrl: vp.avatarUrl || vp.avatar_url || vp.picture || null,
-        businessName: vp.businessName || vp.business_name || payload.business_name || '',
-      };
-    } else if (payload.id_token) {
-      tokenVerified = true;
-      const verified = await verifyGoogleIdToken(payload.id_token, payload.client_id);
-      profile = {
-        sub: verified.sub,
-        email: verified.email,
-        fullName: verified.name || payload.full_name || verified.email.split('@')[0],
-        avatarUrl: verified.picture,
-      };
-    } else if (payload.access_token) {
-      tokenVerified = true;
-      const verified = await verifyGoogleAccessToken(payload.access_token);
-      profile = {
-        sub: verified.sub,
-        email: verified.email,
-        fullName: verified.name || payload.full_name || verified.email.split('@')[0],
-        avatarUrl: verified.picture,
-      };
-    } else {
-      // 2. Interactive OAuth flow
-      const nested = payload.profile && typeof payload.profile === 'object' ? payload.profile : {};
-      const email = String(payload.email || nested.email || '').trim().toLowerCase();
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new AppError('Please enter a valid Google email address.', 400, 'INVALID_EMAIL');
-      }
-      const fullName =
-        String(payload.full_name || nested.full_name || nested.name || '').trim() ||
-        email
-          .split('@')[0]
-          .replace(/[._-]+/g, ' ')
-          .replace(/\b\w/g, (l) => l.toUpperCase());
-
-      profile = {
-        sub: payload.sub || nested.sub || `${provider.toLowerCase()}-${email}`,
-        email,
-        fullName,
-        avatarUrl: payload.avatar_url || nested.picture || null,
-        businessName: payload.business_name || nested.business_name || '',
-      };
+    let verified = exchangedProfile;
+    if (!verified) {
+      if (payload.id_token) verified = await verifyGoogleIdToken(payload.id_token);
+      else if (payload.access_token) verified = await verifyGoogleAccessToken(payload.access_token);
     }
+    if (!verified?.sub || !verified.email || verified.emailVerified !== true) {
+      throw new AppError('A verified Google credential is required.', 401, 'INVALID_GOOGLE_TOKEN');
+    }
+    const profile = {
+      sub: verified.sub,
+      email: verified.email,
+      fullName: verified.name || verified.email.split('@')[0],
+      avatarUrl: verified.picture || null,
+    };
 
     // The platform owner (sole admin) can only sign in with email + password + OTP.
     if (isOwnerEmail(profile.email)) {
@@ -354,19 +300,13 @@ class AuthService {
     }
 
     let user = await userRepo.findAuthByProviderSub(provider, profile.sub);
-    if (!user && profile.email) {
+    if (user && (user.role === 'ADMIN' || user.email.toLowerCase() !== profile.email)) {
+      throw new AppError('Google account does not match the linked account.', 403, 'GOOGLE_ACCOUNT_MISMATCH');
+    }
+    if (!user) {
       user = await userRepo.findAuthByEmail(profile.email);
       if (user && user.role === 'ADMIN') {
         throw new AppError('This account must sign in with email and password.', 403);
-      }
-      // Without a cryptographically verified ID token we cannot prove email ownership,
-      // so never attach an unverified OAuth identity to an existing password account.
-      if (user && !tokenVerified && user.password_hash) {
-        throw new AppError(
-          'An account with this email already exists. Please sign in with your email and password.',
-          409,
-          'EMAIL_TAKEN'
-        );
       }
       if (user) {
         await userRepo.linkProvider(user.id, provider, profile.sub, profile.avatarUrl);

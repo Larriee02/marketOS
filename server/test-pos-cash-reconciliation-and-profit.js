@@ -17,6 +17,8 @@ const path = require('path');
 
 process.env.NODE_ENV = 'test';
 
+const registerMerchant = require('./test-support/register-merchant');
+
 async function runTests() {
   console.log('🧪 Starting POS vs Cash Reconciliation & Profit Disambiguation Test Suite...\n');
 
@@ -29,7 +31,7 @@ async function runTests() {
 
   // 1. Create a dedicated test retailer
   const testEmail = `reconcile_retailer_${Date.now()}@marketos.test`;
-  const registerResult = await authService.register({
+  const registerResult = await registerMerchant(authService, {
     email: testEmail,
     password: 'Password123#',
     full_name: 'Reconciliation Manager',

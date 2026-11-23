@@ -13,6 +13,8 @@ const path = require('path');
 
 process.env.NODE_ENV = 'test';
 
+const registerMerchant = require('./test-support/register-merchant');
+
 async function runTests() {
   console.log('🧪 Starting Signup-to-First-Sale End-to-End Test Suite...\n');
 
@@ -29,7 +31,7 @@ async function runTests() {
   console.log('📌 MILESTONE 1: Create Account & Auto-Approval');
   const testEmail = `retailer_first_sale_${Date.now()}@marketos.test`;
   const testPhone = `080${String(Date.now()).slice(-8)}`;
-  const registerResult = await authService.register({
+  const registerResult = await registerMerchant(authService, {
     email: testEmail,
     password: 'SecureRetailPassword123#',
     full_name: 'Alhaja Bisi Adeyemi',
@@ -281,15 +283,13 @@ async function runTests() {
   const oauthEmail = `oauth.${Date.now()}@gmail.com`;
   const oauthResult = await authService.oauthSignIn({
     provider: 'GOOGLE',
-    verifiedProfile: {
-      provider: 'GOOGLE',
-      sub: `google-sub-${Date.now()}`,
-      email: oauthEmail,
-      email_verified: true,
-      full_name: 'Chidi Okafor',
-    },
     business_name: 'Okafor Superstore',
     currency: 'NGN',
+  }, null, {
+    sub: `google-sub-${Date.now()}`,
+    email: oauthEmail,
+    emailVerified: true,
+    name: 'Chidi Okafor',
   });
   assert.strictEqual(oauthResult.user.email, oauthEmail, 'OAuth user email must match verified Google profile');
   assert.ok(oauthResult.token, 'OAuth sign-in must return a signed JWT session token');
@@ -329,7 +329,7 @@ async function runTests() {
   // MILESTONE 9: Multi-Industry Business Categories & Tailored Starter Catalogs
   // ==========================================
   console.log('\n📌 MILESTONE 9: Multi-Industry Trade Categories (Car Dealers, Gadgets, Fabrics, Pharmacy)');
-  const carDealerReg = await authService.register({
+  const carDealerReg = await registerMerchant(authService, {
     email: `car_dealer_${Date.now()}@marketos.test`,
     password: 'SecureRetailPassword123#',
     full_name: 'Tunde Motors',

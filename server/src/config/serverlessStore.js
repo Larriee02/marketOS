@@ -110,6 +110,17 @@ function loadState() {
         }
         saveState(memoryState);
       }
+      if (!memoryState.correctionLinksRestored) {
+        const transactions = new Map(memoryState.cash_transactions.map((tx) => [tx.id, tx]));
+        for (const tx of memoryState.cash_transactions) {
+          const parent = transactions.get(tx.parent_transaction_id);
+          if (parent?.stock_movement_id && parent.user_id === tx.user_id) {
+            tx.stock_movement_id ??= parent.stock_movement_id;
+          }
+        }
+        memoryState.correctionLinksRestored = true;
+        saveState(memoryState);
+      }
       if (ensureOwner(memoryState)) saveState(memoryState);
       return memoryState;
     }
@@ -179,6 +190,47 @@ async function executeQuery(text, params = []) {
     return { rows: [], rowCount: 0 };
   }
 
+  if (upper.includes('OTP_CHALLENGES')) {
+    const challenges = state.otp_challenges ||= [];
+    const [key, hash, now, expires, payload, cutoff] = params;
+    const challenge = challenges.find((item) => item.challenge_key === key);
+    if (upper.startsWith('SELECT')) return { rows: challenge ? [challenge] : [] };
+    if (upper.startsWith('INSERT')) {
+      if (challenge && challenge.requested_at > cutoff) return { rows: [] };
+      const row = { challenge_key: key, code_hash: hash, requested_at: now,
+        expires_at: expires, payload: JSON.parse(payload), attempts: 0 };
+      if (challenge) Object.assign(challenge, row);
+      else challenges.push(row);
+      saveState(state);
+      return { rows: [row] };
+    }
+    if (upper.startsWith('UPDATE')) challenge.attempts++;
+    else if (upper.includes('WHERE EXPIRES_AT')) {
+      state.otp_challenges = challenges.filter((item) => item.expires_at > key);
+    } else {
+      state.otp_challenges = challenges.filter((item) => item !== challenge || item.code_hash !== hash);
+    }
+    saveState(state);
+    return { rows: [] };
+  }
+
+  if (upper.startsWith('SELECT TRANSACTION_DATE <')) {
+    const [uid, start, end, afterClose] = params;
+    const totals = new Map();
+    for (const tx of state.cash_transactions) {
+      const date = Date.parse(tx.transaction_date);
+      if (Number(tx.user_id) !== Number(uid) || (tx.status || 'ACTIVE') !== 'ACTIVE' ||
+          date >= Date.parse(end) || (afterClose && date < Date.parse(afterClose))) continue;
+      const prior = date < Date.parse(start);
+      const { type, payment_method } = tx;
+      const key = JSON.stringify([prior, type, payment_method]);
+      const row = totals.get(key) || { prior, type, payment_method, amount: 0 };
+      row.amount += Number(tx.amount);
+      totals.set(key, row);
+    }
+    return { rows: [...totals.values()] };
+  }
+
   if (upper.startsWith("SELECT 'SALE' AS TYPE")) {
     const [uid, start, end] = params;
     const startTime = Date.parse(start);
@@ -197,8 +249,9 @@ async function executeQuery(text, params = []) {
       if (Number(tx.user_id) !== Number(uid) || (tx.status || 'ACTIVE') !== 'ACTIVE' ||
           !inPeriod(tx.transaction_date)) continue;
       const { type, payment_method, category } = tx;
-      const key = JSON.stringify([type, payment_method, category]);
-      const row = cash.get(key) || { type, payment_method, category, entry_count: 0, amount: 0 };
+      const linked = tx.stock_movement_id != null;
+      const key = JSON.stringify([type, payment_method, category, linked]);
+      const row = cash.get(key) || { type, payment_method, category, linked, entry_count: 0, amount: 0 };
       row.entry_count++;
       row.amount += Number(tx.amount);
       cash.set(key, row);
@@ -1217,7 +1270,7 @@ async function executeQuery(text, params = []) {
         stock_movement_id: null,
         transaction_date: new Date().toISOString(),
       };
-    } else if (params.length === 10) {
+    } else if (params.length === 11) {
       const [
         user_id,
         idempotency_key,
@@ -1229,6 +1282,7 @@ async function executeQuery(text, params = []) {
         description,
         expense_reason,
         parent_transaction_id,
+        stock_movement_id,
       ] = params;
       tx = {
         id: nextId(state.cash_transactions),
@@ -1246,7 +1300,7 @@ async function executeQuery(text, params = []) {
         replaced_by_id: null,
         correction_reason: null,
         corrected_at: null,
-        stock_movement_id: null,
+        stock_movement_id: stock_movement_id ?? null,
         transaction_date: new Date().toISOString(),
       };
     } else if (params.length === 9) {
@@ -1347,6 +1401,12 @@ async function executeQuery(text, params = []) {
   if (upper.startsWith('SELECT * FROM CASHBOOK_SESSIONS')) {
     const uid = Number(params[0]);
     if (!Array.isArray(state.cashbook_sessions)) state.cashbook_sessions = [];
+    if (upper.includes('AND SESSION_DATE < $2')) {
+      const rows = state.cashbook_sessions.filter((s) => Number(s.user_id) === uid &&
+        s.status === 'CLOSED' && s.session_date < params[1])
+        .sort((a, b) => b.session_date.localeCompare(a.session_date)).slice(0, 1);
+      return { rows };
+    }
     if (upper.includes('AND SESSION_DATE = $2')) {
       const dateStr = String(params[1]).slice(0, 10);
       const found = state.cashbook_sessions.find(

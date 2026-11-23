@@ -3,12 +3,14 @@ const db = require('./src/config/db');
 const authService = require('./src/services/auth.service');
 const cashbookService = require('./src/services/cashbook.service');
 
+const registerMerchant = require('./test-support/register-merchant');
+
 async function runTests() {
   console.log('--- Testing Cashbook Reports, Opening/Closing Balances & Audit Trail Corrections ---');
   await db.ready();
 
   const testEmail = `cashbook-audit-${Date.now()}@lagos.ng`;
-  const { user } = await authService.register({
+  const { user } = await registerMerchant(authService, {
     email: testEmail,
     password: 'Password123#',
     full_name: 'Cashbook Auditor',

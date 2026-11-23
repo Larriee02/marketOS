@@ -14,6 +14,8 @@ const path = require('path');
 
 process.env.NODE_ENV = 'test';
 
+const registerMerchant = require('./test-support/register-merchant');
+
 async function runTests() {
   console.log('🧪 Starting Business Data Isolation & Multi-Tenancy Test Suite...\n');
 
@@ -28,7 +30,7 @@ async function runTests() {
   // SETUP: Create Two Independent Merchants
   // ==========================================
   const timestamp = Date.now();
-  const merchantARes = await authService.register({
+  const merchantARes = await registerMerchant(authService, {
     email: `merchant_alpha_${timestamp}@marketos.test`,
     password: 'AlphaPassword123#',
     full_name: 'Merchant Alpha',
@@ -38,7 +40,7 @@ async function runTests() {
   });
   const userA = merchantARes.user.id;
 
-  const merchantBRes = await authService.register({
+  const merchantBRes = await registerMerchant(authService, {
     email: `merchant_beta_${timestamp}@marketos.test`,
     password: 'BetaPassword123#',
     full_name: 'Merchant Beta',

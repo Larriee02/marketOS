@@ -264,4 +264,32 @@ module.exports = [
         ON stock_movements (user_id, created_at) WHERE movement_type = 'SALE';
     `,
   },
+  {
+    id: '008_otp_challenges',
+    sql: `
+      CREATE TABLE otp_challenges (
+        challenge_key TEXT PRIMARY KEY,
+        code_hash TEXT NOT NULL,
+        requested_at BIGINT NOT NULL,
+        expires_at BIGINT NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        payload JSONB
+      );
+      CREATE INDEX otp_challenges_expiry ON otp_challenges (expires_at);
+    `,
+  },
+  {
+    id: '009_restore_cash_correction_movement_links',
+    sql: `
+      WITH RECURSIVE links AS (
+        SELECT id, user_id, stock_movement_id FROM cash_transactions WHERE stock_movement_id IS NOT NULL
+        UNION
+        SELECT child.id, child.user_id, links.stock_movement_id FROM cash_transactions child
+        JOIN links ON links.id = child.parent_transaction_id AND links.user_id = child.user_id
+        WHERE child.stock_movement_id IS NULL
+      )
+      UPDATE cash_transactions tx SET stock_movement_id = links.stock_movement_id
+      FROM links WHERE tx.id = links.id AND tx.stock_movement_id IS NULL;
+    `,
+  },
 ];

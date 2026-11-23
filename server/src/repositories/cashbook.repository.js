@@ -3,16 +3,16 @@ const db = require('../config/db');
 class CashbookRepository {
   async getPeriodTotals(userId, start, end) {
     const { rows } = await db.query(
-      `SELECT 'SALE' AS type, NULL AS payment_method, NULL AS category, COUNT(*) AS entry_count,
+      `SELECT 'SALE' AS type, NULL AS payment_method, NULL AS category, FALSE AS linked, COUNT(*) AS entry_count,
               COALESCE(SUM(total_value), 0) AS amount,
               COALESCE(SUM(ABS(quantity_change) * unit_cost), 0) AS cost
        FROM stock_movements
        WHERE user_id = $1 AND movement_type = 'SALE' AND created_at >= $2 AND created_at < $3
        UNION ALL
-       SELECT type, payment_method, category, COUNT(*), SUM(amount), 0
+       SELECT type, payment_method, category, stock_movement_id IS NOT NULL AS linked, COUNT(*), SUM(amount), 0
        FROM cash_transactions
        WHERE user_id = $1 AND status = 'ACTIVE' AND transaction_date >= $2 AND transaction_date < $3
-       GROUP BY type, payment_method, category`,
+       GROUP BY type, payment_method, category, linked`,
       [userId, start, end]
     );
     return rows;
@@ -158,7 +158,7 @@ class CashbookRepository {
     return rows;
   }
 
-  async createTransaction(userId, data, client = db) {
+  async createTransaction(userId, data, client = db, movementId = null) {
     if (data.idempotency_key) {
       const existing = await client.query(
         'SELECT * FROM cash_transactions WHERE user_id = $1 AND idempotency_key = $2',
@@ -176,8 +176,8 @@ class CashbookRepository {
     const { rows } = await client.query(
       `INSERT INTO cash_transactions (
         user_id, idempotency_key, type, category, amount, payment_method,
-        counterparty_name, description, expense_reason, status, parent_transaction_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ACTIVE', $10)
+        counterparty_name, description, expense_reason, status, parent_transaction_id, stock_movement_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ACTIVE', $10, $11)
       RETURNING *`,
       [
         userId,
@@ -190,9 +190,29 @@ class CashbookRepository {
         data.description.trim(),
         expenseReason,
         data.parent_transaction_id || null,
+        movementId,
       ]
     );
     return rows[0];
+  }
+
+  async findPreviousClose(userId, date) {
+    const { rows } = await db.query(
+      `SELECT * FROM cashbook_sessions WHERE user_id = $1 AND session_date < $2
+       AND status = 'CLOSED' ORDER BY session_date DESC LIMIT 1`, [userId, date]
+    );
+    return rows[0] || null;
+  }
+
+  async getSessionTotals(userId, start, end, afterClose) {
+    const { rows } = await db.query(
+      `SELECT transaction_date < $2 AS prior, type, payment_method, SUM(amount) AS amount
+       FROM cash_transactions WHERE user_id = $1 AND status = 'ACTIVE'
+         AND transaction_date < $3 AND ($4::timestamptz IS NULL OR transaction_date >= $4)
+       GROUP BY prior, type, payment_method`,
+      [userId, start, end, afterClose]
+    );
+    return rows;
   }
 
   async findSessions(userId, limit = 30) {

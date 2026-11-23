@@ -27,8 +27,8 @@ class CashbookService {
     );
     const channels = new Map();
     const expenses = new Map();
-    let salesInflow = 0;
-    let salesInflowCount = 0;
+    let manualSales = 0;
+    let manualSalesCount = 0;
     let expenseTotal = 0;
     let expenseCount = 0;
     let salesTotal = 0;
@@ -51,20 +51,26 @@ class CashbookService {
       };
       if (row.type === 'INFLOW') {
         channel.inflow += amount;
-        channel.salesCount += count;
-        salesInflow += amount;
-        salesInflowCount += count;
+        if (['counter sales', 'wholesale order'].includes(String(row.category).trim().toLowerCase())) {
+          channel.salesCount += count;
+          if (!row.linked) {
+            manualSales += amount;
+            manualSalesCount += count;
+          }
+        }
       } else {
         const category = row.category || 'General Expense';
         channel.outflow += amount;
-        expenseTotal += amount;
-        expenseCount += count;
-        expenses.set(category, (expenses.get(category) || 0) + amount);
+        if (!['inventory restock', 'market restock'].includes(category.trim().toLowerCase()) && !row.linked) {
+          expenseTotal += amount;
+          expenseCount += count;
+          expenses.set(category, (expenses.get(category) || 0) + amount);
+        }
       }
       channels.set(method, channel);
     }
 
-    const revenue = salesTotal > 0 ? salesTotal : salesInflow;
+    const revenue = salesTotal + manualSales;
     const grossProfit = revenue - cost;
     const netProfit = grossProfit - expenseTotal;
     const asAmount = (cents) => Number(fromCents(cents));
@@ -77,7 +83,7 @@ class CashbookService {
         operatingExpenses: asAmount(expenseTotal),
         netOperatingProfit: asAmount(netProfit),
         netMarginPercent: revenue > 0 ? (netProfit / revenue) * 100 : 0,
-        salesCount: salesCount || salesInflowCount,
+        salesCount: salesCount + manualSalesCount,
         expenseCount,
       },
       expenseBreakdown: [...expenses]
@@ -213,7 +219,8 @@ class CashbookService {
           expense_reason: newType === 'OUTFLOW' ? newExpenseReason || newDescription : null,
           parent_transaction_id: original.id,
         },
-        client
+        client,
+        original.stock_movement_id
       );
 
       const updatedOrigRes = await client.query(
@@ -272,12 +279,15 @@ class CashbookService {
       ...s,
       session_date: toDateKey(s.session_date),
     }));
-    const todaySession =
-      sessions.find((s) => s.session_date === targetDate) || null;
-
-    // Calculate active transactions for targetDate and prior to targetDate
-    const allTx = await cashbookRepo.findTransactions(userId, { limit: 2000 });
-    const activeTx = allTx.filter((t) => (t.status || 'ACTIVE') === 'ACTIVE');
+    const todaySession = sessions.find((s) => s.session_date === targetDate)
+      || await cashbookRepo.findSessionByDate(userId, targetDate);
+    const previousClosed = await cashbookRepo.findPreviousClose(userId, targetDate);
+    const dayStart = (date) => new Date(`${toDateKey(date)}T00:00:00.000Z`);
+    const nextDay = (date) => new Date(dayStart(date).getTime() + 86400000).toISOString();
+    const totals = await cashbookRepo.getSessionTotals(
+      userId, dayStart(targetDate).toISOString(), nextDay(targetDate),
+      previousClosed ? nextDay(previousClosed.session_date) : null
+    );
 
     let priorCashNet = 0;
     let priorBankPosNet = 0;
@@ -288,12 +298,11 @@ class CashbookService {
     let dayBankPosInflow = 0;
     let dayBankPosOutflow = 0;
 
-    for (const t of activeTx) {
-      const txDateStr = toDateKey(t.transaction_date);
+    for (const t of totals) {
       const amt = Number(t.amount || 0);
       const isCash = (t.payment_method || 'CASH') === 'CASH';
 
-      if (txDateStr < targetDate) {
+      if (t.prior) {
         if (t.type === 'INFLOW') {
           if (isCash) priorCashNet += amt;
           else priorBankPosNet += amt;
@@ -301,7 +310,7 @@ class CashbookService {
           if (isCash) priorCashNet -= amt;
           else priorBankPosNet -= amt;
         }
-      } else if (txDateStr === targetDate) {
+      } else {
         if (t.type === 'INFLOW') {
           dayInflow += amt;
           if (isCash) dayCashInflow += amt;
@@ -314,20 +323,9 @@ class CashbookService {
       }
     }
 
-    // Check if there is a previous closed session before targetDate to carry forward
-    const previousClosed = sessions.find(
-      (s) => s.session_date < targetDate && s.status === 'CLOSED'
-    );
-
-    const suggestedOpeningCash = previousClosed
-      ? Number(previousClosed.actual_closing_cash ?? previousClosed.actual_closing_balance ?? 0)
-      : Number(priorCashNet.toFixed(2));
-    const suggestedOpeningBankPos = previousClosed
-      ? Number(previousClosed.actual_closing_bank_pos ?? 0)
-      : Number(priorBankPosNet.toFixed(2));
-    const suggestedOpeningBalance = previousClosed
-      ? Number(previousClosed.actual_closing_balance ?? suggestedOpeningCash + suggestedOpeningBankPos)
-      : Number((priorCashNet + priorBankPosNet).toFixed(2));
+    const suggestedOpeningCash = Number(previousClosed?.actual_closing_cash ?? previousClosed?.actual_closing_balance ?? 0) + priorCashNet;
+    const suggestedOpeningBankPos = Number(previousClosed?.actual_closing_bank_pos ?? 0) + priorBankPosNet;
+    const suggestedOpeningBalance = Number(previousClosed?.actual_closing_balance ?? 0) + priorCashNet + priorBankPosNet;
 
     const effectiveOpeningBalance = todaySession
       ? Number(todaySession.opening_balance)
