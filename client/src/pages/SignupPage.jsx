@@ -40,7 +40,6 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
     role: 'USER',
     password: '',
     confirm_password: '',
-    seed_catalog: true,
   });
 
   const handleRequestOtp = async (e) => {
@@ -345,20 +344,6 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
               </div>
             </div>
 
-            <label className="liquid-glass-subtle p-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold cursor-pointer text-theme-primary">
-              <input
-                type="checkbox"
-                checked={signupForm.seed_catalog}
-                onChange={(e) =>
-                  setSignupForm({ ...signupForm, seed_catalog: e.target.checked })
-                }
-              />
-              <span>
-                Pre-load starter items tailored for{' '}
-                <strong className="text-theme-brand">{signupForm.business_type}</strong>{' '}
-                ready to count and sell
-              </span>
-            </label>
 
             <button
               type="submit"
