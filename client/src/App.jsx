@@ -239,18 +239,11 @@ function AppShell({ darkMode, setDarkMode }) {
     [currencyCode]
   );
 
-  const [activeTab, setActiveTab] = useState(() => ROUTE_TO_TAB[path] || 'counter');
+  const activeTab = ROUTE_TO_TAB[path] || 'counter';
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
-
-  // Keep activeTab synchronized when user navigates via URL (/store/sell, /store/stock, etc.)
-  useEffect(() => {
-    if (ROUTE_TO_TAB[path]) {
-      setActiveTab(ROUTE_TO_TAB[path]);
-    }
-  }, [path]);
 
   // Server Data
   const [dashboard, setDashboard] = useState({});
@@ -374,7 +367,6 @@ function AppShell({ darkMode, setDarkMode }) {
   }, [toastSuccess]);
 
   const handleSelectTab = (tabId) => {
-    setActiveTab(tabId);
     navigate(TAB_TO_ROUTE[tabId] || '/store/sell');
   };
 
@@ -428,7 +420,6 @@ function AppShell({ darkMode, setDarkMode }) {
     checkoutAttempt.current = null;
     setCart({});
     setShowProfileModal(false);
-    setActiveTab('counter');
     navigate('/login');
   };
 
