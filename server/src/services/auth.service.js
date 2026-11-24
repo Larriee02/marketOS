@@ -90,6 +90,25 @@ class AuthService {
     });
   }
 
+  async requestPasswordReset({ email }) {
+    const address = String(email || '').trim().toLowerCase();
+    const user = await userRepo.findAuthByEmail(address);
+    if (user?.password_hash) {
+      await otpService.requestOtp({ purpose: 'RESET', email: address, recipientName: user.full_name,
+        payload: { userId: user.id } });
+    }
+    return { message: 'If this account uses a password, check your email for a reset code.' };
+  }
+
+  async resetPassword({ email, code, password }) {
+    if (typeof password !== 'string' || password.length < 6 || Buffer.byteLength(password) > 72) {
+      throw new AppError('Use at least 6 characters and at most 72 bytes for your password.');
+    }
+    const challenge = await otpService.verifyOtp({ purpose: 'RESET', email, code });
+    await userRepo.setPassword(challenge.payload.userId, await bcrypt.hash(password, 10));
+    return { message: 'Password updated. Sign in with your new password.' };
+  }
+
   async register(payload, ip = null) {
     const email = String(payload.email || '').trim().toLowerCase();
     const password = String(payload.password || '');

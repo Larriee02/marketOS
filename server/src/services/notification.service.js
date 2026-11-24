@@ -41,7 +41,7 @@ function getNodemailer() {
 
 function buildOtpEmailHtml({ code, recipientName, purpose, expiresInMinutes = 10 }) {
   const isSignup = purpose === 'SIGNUP';
-  const actionText = isSignup ? 'complete your MarketOS registration' : 'sign in to your MarketOS workspace';
+  const actionText = purpose === 'RESET' ? 'reset your MarketOS password' : isSignup ? 'complete your MarketOS registration' : 'sign in to your MarketOS workspace';
   const title = isSignup ? 'Confirm Your MarketOS Account' : 'MarketOS Security Verification Code';
 
   return `
@@ -363,7 +363,7 @@ class NotificationService {
    */
   async sendEmailOtp({ to, code, recipientName = '', purpose = 'LOGIN' }) {
     const isSignup = purpose === 'SIGNUP';
-    const subject = isSignup
+    const subject = purpose === 'RESET' ? 'Your MarketOS password reset code' : isSignup
       ? `${code} is your MarketOS registration code`
       : `${code} is your MarketOS sign-in code`;
     const text = `Hello ${recipientName || 'there'},\n\nYour MarketOS verification code is: ${code}\nThis code will expire in 10 minutes.\n\nDo not share this code with anyone.`;

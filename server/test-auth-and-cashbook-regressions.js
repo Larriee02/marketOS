@@ -19,6 +19,32 @@ async function run() {
   await assert.rejects(auth.oauthSignIn({ provider: 'GOOGLE' }), { code: 'INVALID_GOOGLE_TOKEN' });
   const { user } = await registerMerchant(auth, details);
 
+  const originalDelivery = notifications.sendEmailOtp;
+  let resetCode;
+  notifications.sendEmailOtp = async ({ code }) => {
+    resetCode = code;
+    return { success: true, provider: 'smtp' };
+  };
+  try {
+    const reset = { email: details.email, password: 'NewMerchantPass123!' };
+    await auth.requestPasswordReset(reset);
+    await auth.resetPassword({ ...reset, code: resetCode });
+    await assert.rejects(auth.resetPassword({ ...reset, code: resetCode }), { code: 'OTP_NOT_FOUND' });
+    await assert.rejects(auth.login({ identifier: details.email, password: details.password }), { code: 'INVALID_CREDENTIALS' });
+    const repo = require('./src/repositories/user.repository');
+    const updated = await repo.findAuthById(user.id);
+    assert.ok(await require('bcryptjs').compare(reset.password, updated.password_hash));
+    assert.equal(Number(updated.token_version), 1);
+    const { issueSessionCookie } = require('./src/utils/session');
+    for (const persistent of [false, true]) {
+      await issueSessionCookie({ cookie(name, token, options) {
+        assert.equal(Boolean(options.maxAge), persistent);
+        assert.equal(options.httpOnly, true);
+      } }, updated, persistent);
+    }
+  } finally {
+    notifications.sendEmailOtp = originalDelivery;
+  }
   const request = { purpose: 'LOGIN', email: details.email };
   const send = notifications.sendEmailOtp;
   env.ALLOW_OTP_PREVIEW = false;

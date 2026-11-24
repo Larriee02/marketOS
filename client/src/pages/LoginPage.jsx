@@ -16,6 +16,11 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
   const [loginMethod, setLoginMethod] = useState('EMAIL'); // 'EMAIL' | 'PHONE'
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [notice, setNotice] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -33,6 +38,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
         method: 'POST',
         body: JSON.stringify({
           identifier: identifier.trim(),
+          rememberMe,
           password,
         }),
       });
@@ -44,7 +50,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
         return;
       }
 
-      if (data.token) setStoredToken(data.token);
+      setStoredToken(rememberMe ? data.token : '');
       onAuthenticated(data.user);
     } catch (err) {
       setError(err.message);
@@ -61,12 +67,13 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
         method: 'POST',
         body: JSON.stringify({
           identifier: otpInfo?.email || identifier.trim(),
+          rememberMe,
           password,
           otp: otpCode,
         }),
       });
 
-      if (data.token) setStoredToken(data.token);
+      setStoredToken(rememberMe ? data.token : '');
       onAuthenticated(data.user);
     } catch (err) {
       setError(err.message);
@@ -87,9 +94,54 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
     setOtpInfo(data);
   };
 
+  const handleRecovery = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError('');
+    try {
+      const requesting = step === 'REQUEST';
+      const result = await apiFetch('/api/v1/auth/password/' + (requesting ? 'request' : 'reset'), {
+        method: 'POST',
+        body: JSON.stringify(requesting ? { email: resetEmail } : { email: resetEmail, code: resetCode, password: newPassword }),
+      });
+      setNotice(result.message);
+      setStep(requesting ? 'RESET' : 'FORM');
+      if (!requesting) {
+        setIdentifier(resetEmail);
+        setLoginMethod('EMAIL');
+        setPassword('');
+        setNewPassword('');
+        setResetCode('');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <AuthLayout darkMode={darkMode} setDarkMode={setDarkMode} onNavigate={onNavigate}>
-      {step === 'OTP' ? (
+      {notice && <p role="status">{notice}</p>}
+      {step === 'REQUEST' || step === 'RESET' ? (
+        <form onSubmit={handleRecovery} className="space-y-4">
+          <div className="auth-intro"><h1>Reset your password</h1></div>
+          {error && <p role="alert" className="text-theme-outflow">{error}</p>}
+          <label className="block">Account email
+            <input type="email" required autoComplete="email" readOnly={step === 'RESET'} value={resetEmail} onChange={e => setResetEmail(e.target.value)} className="liquid-input w-full p-3" />
+          </label>
+          {step === 'RESET' && <>
+            <label className="block">6-digit email code
+              <input required inputMode="numeric" pattern="[0-9]{6}" autoComplete="one-time-code" value={resetCode} onChange={e => setResetCode(e.target.value)} className="liquid-input w-full p-3" />
+            </label>
+            <label className="block">New password
+              <input required type="password" minLength={6} autoComplete="new-password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="liquid-input w-full p-3" />
+            </label>
+          </>}
+          <button disabled={submitting} className="liquid-btn-primary w-full p-3">{step === 'REQUEST' ? 'Email reset code' : 'Save new password'}</button>
+          <button type="button" disabled={submitting} onClick={() => { setStep('FORM'); setError(''); setNotice(''); setNewPassword(''); setResetCode(''); }}>Back to sign in</button>
+        </form>
+      ) : step === 'OTP' ? (
         <OtpVerificationStep
           purpose="LOGIN"
           email={otpInfo?.email || identifier}
@@ -216,6 +268,10 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
               </div>
             </div>
 
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <label className="flex items-center gap-2"><input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} /> Remember me</label>
+              <button type="button" className="text-theme-brand" onClick={() => { setResetEmail(loginMethod === 'EMAIL' ? identifier : ''); setError(''); setNotice(''); setStep('REQUEST'); }}>Forgot password?</button>
+            </div>
             <button
               type="submit"
               disabled={submitting}

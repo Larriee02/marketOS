@@ -39,9 +39,11 @@ function cookieOptions() {
   };
 }
 
-async function issueSessionCookie(res, user) {
+async function issueSessionCookie(res, user, persistent = true) {
   const token = await signSession(user);
-  res.cookie(COOKIE_NAME, token, cookieOptions());
+  const options = cookieOptions();
+  if (!persistent) delete options.maxAge;
+  res.cookie(COOKIE_NAME, token, options);
   return token;
 }
 

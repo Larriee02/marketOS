@@ -196,6 +196,14 @@ app.post(
   })
 );
 
+app.post('/api/v1/auth/password/request', otpLimiter, asyncHandler(async (req, res) => {
+  res.json(await authService.requestPasswordReset(req.body));
+}));
+
+app.post('/api/v1/auth/password/reset', authLimiter, asyncHandler(async (req, res) => {
+  res.json(await authService.resetPassword(req.body));
+}));
+
 app.post(
   '/api/v1/auth/register',
   authLimiter,
@@ -215,7 +223,7 @@ app.post(
       return res.json(result);
     }
     const authUser = await userRepo.findAuthById(result.user.id);
-    await issueSessionCookie(res, authUser);
+    await issueSessionCookie(res, authUser, req.body.rememberMe === true);
     res.json({ user: result.user, token: result.token });
   })
 );
