@@ -1615,15 +1615,8 @@ function AppShell({ darkMode, setDarkMode }) {
   // 1. Loading Session State
   if (authChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="liquid-glass rounded-3xl px-8 py-6 text-center space-y-2">
-          <div className="w-10 h-10 mx-auto rounded-2xl liquid-btn-primary flex items-center justify-center animate-pulse">
-            <Package className="w-5 h-5" />
-          </div>
-          <p className="text-xs font-bold text-theme-secondary">
-            Loading workspace...
-          </p>
-        </div>
+      <div className="market-launch" role="status" aria-label="Loading MarketOS">
+        <img src="/favicon.svg" width="80" height="80" alt="" />
       </div>
     );
   }

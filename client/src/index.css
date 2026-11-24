@@ -661,3 +661,25 @@ textarea {
     display: none !important;
   }
 }
+
+.market-launch {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: var(--bg-app);
+  perspective: 560px;
+}
+
+.market-launch img {
+  border-radius: 25%;
+  transform: rotateX(10deg) rotateY(-15deg) rotateZ(-4deg);
+  box-shadow: 1px 1px #214687, 2px 2px #193969, 3px 3px #142e56,
+    4px 4px #10284b, 6px 15px 15px -8px rgb(8 22 48 / 36%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .market-launch img { animation: market-launch-turn 2.6s ease-in-out infinite alternate; }
+  @keyframes market-launch-turn {
+    to { transform: rotateX(6deg) rotateY(-5deg) rotateZ(-2deg); }
+  }
+}
