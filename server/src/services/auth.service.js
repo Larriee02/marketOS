@@ -1,3 +1,4 @@
+const validatePassword = require('../utils/password');
 const bcrypt = require('bcryptjs');
 const db = require('../config/db');
 const env = require('../config/env');
@@ -16,6 +17,8 @@ const { isOwnerEmail } = require('../config/owner');
 
 const MAX_FAILED_ATTEMPTS = 6;
 const LOCK_MINUTES = 15;
+// Match the password-check cost for unknown accounts.
+const dummyPasswordHash = "$2a$10$KXK0PiGFZK9D57PsycuQheccyfRxtW138tS6U3Kzhigy2vbcbJOUS";
 
 class AuthService {
   getPublicConfig() {
@@ -52,15 +55,6 @@ class AuthService {
       throw new AppError('This email address is reserved.', 403, 'EMAIL_RESERVED');
     }
 
-    const existing = await userRepo.findAuthByEmail(email);
-    if (existing) {
-      throw new AppError(
-        'An account with this email already exists. Please sign in instead.',
-        409,
-        'EMAIL_TAKEN'
-      );
-    }
-
     return otpService.requestOtp({
       purpose: 'SIGNUP',
       email,
@@ -69,27 +63,8 @@ class AuthService {
   }
 
   /**
-   * Request/Resend Email OTP for Login (accepts email or phone number)
+   * Send a reset code only to accounts that use a password.
    */
-  async requestLoginOtp(payload) {
-    const identifier = String(payload.identifier || payload.email || payload.phone || '').trim();
-    if (!identifier) {
-      throw new AppError('Please enter your email address or phone number.', 400, 'INVALID_IDENTIFIER');
-    }
-
-    const user = await userRepo.findAuthByIdentifier(identifier);
-    if (!user) {
-      throw new AppError('Account not found with this email or phone number.', 404, 'USER_NOT_FOUND');
-    }
-
-    return otpService.requestOtp({
-      purpose: 'LOGIN',
-      email: user.email,
-      recipientName: user.full_name,
-      payload: { userId: user.id },
-    });
-  }
-
   async requestPasswordReset({ email }) {
     const address = String(email || '').trim().toLowerCase();
     const user = await userRepo.findAuthByEmail(address);
@@ -101,9 +76,7 @@ class AuthService {
   }
 
   async resetPassword({ email, code, password }) {
-    if (typeof password !== 'string' || password.length < 6 || Buffer.byteLength(password) > 72) {
-      throw new AppError('Use at least 6 characters and at most 72 bytes for your password.');
-    }
+    validatePassword(password);
     const challenge = await otpService.verifyOtp({ purpose: 'RESET', email, code });
     await userRepo.setPassword(challenge.payload.userId, await bcrypt.hash(password, 10));
     return { message: 'Password updated. Sign in with your new password.' };
@@ -111,7 +84,7 @@ class AuthService {
 
   async register(payload, ip = null) {
     const email = String(payload.email || '').trim().toLowerCase();
-    const password = String(payload.password || '');
+    const password = payload.password;
     const fullName = String(payload.full_name || '').trim();
     const businessName = String(payload.business_name || '').trim();
     const phone = String(payload.phone || '').trim() || null;
@@ -129,13 +102,12 @@ class AuthService {
     if (!businessName || businessName.length < 2) {
       throw new AppError('Please enter your shop or business name.', 400, 'INVALID_BUSINESS');
     }
-    if (password.length < 6) {
-      throw new AppError('Password must be at least 6 characters long.', 400, 'WEAK_PASSWORD');
-    }
+    validatePassword(password);
     if (isOwnerEmail(email)) {
       throw new AppError('This email address is reserved.', 403, 'EMAIL_RESERVED');
     }
 
+    await otpService.verifyOtp({ purpose: 'SIGNUP', email, code: otp });
     const existing = await userRepo.findAuthByEmail(email);
     if (existing) {
       throw new AppError(
@@ -145,7 +117,6 @@ class AuthService {
       );
     }
 
-    await otpService.verifyOtp({ purpose: 'SIGNUP', email, code: otp });
 
     const passwordHash = await bcrypt.hash(password, 10);
     // Self-registration can NEVER create an administrator. Any client-supplied `role` is ignored.
@@ -218,14 +189,12 @@ class AuthService {
     }
 
     const user = await userRepo.findAuthByIdentifier(identifier);
-    if (!user || !user.password_hash) {
-      throw new AppError(
-        user && !user.password_hash
-          ? `This account uses ${user.auth_provider} sign-in. Please continue with ${user.auth_provider}.`
-          : 'Invalid email/phone or password.',
-        401,
-        'INVALID_CREDENTIALS'
-      );
+    const valid = await bcrypt.compare(password, user?.password_hash || dummyPasswordHash);
+    if (!valid || !user?.password_hash) {
+      if (user?.password_hash && !(new Date(user.locked_until) > new Date())) {
+        await userRepo.recordLoginFailure(user.id, MAX_FAILED_ATTEMPTS, LOCK_MINUTES);
+      }
+      throw new AppError('Invalid email/phone or password.', 401, 'INVALID_CREDENTIALS');
     }
 
     if (user.locked_until && new Date(user.locked_until) > new Date()) {
@@ -240,10 +209,8 @@ class AuthService {
       );
     }
 
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) {
-      await userRepo.recordLoginFailure(user.id, MAX_FAILED_ATTEMPTS, LOCK_MINUTES);
-      throw new AppError('Invalid email/phone or password.', 401, 'INVALID_CREDENTIALS');
+    if (user.must_change_password && !(new Date(user.temporary_password_expires_at).getTime() > Date.now())) {
+      throw new AppError('Request a password reset code to continue.', 401, 'TEMPORARY_PASSWORD_EXPIRED');
     }
 
     // Two-factor Email OTP step: if OTP was not supplied, issue an Email OTP challenge
@@ -328,8 +295,7 @@ class AuthService {
         throw new AppError('This account must sign in with email and password.', 403);
       }
       if (user) {
-        await userRepo.linkProvider(user.id, provider, profile.sub, profile.avatarUrl);
-        user = await userRepo.findAuthById(user.id);
+        throw new AppError('Sign in with the method already linked to this account.', 403, 'ACCOUNT_LINK_REQUIRED');
       }
     }
 
@@ -439,11 +405,9 @@ class AuthService {
     const user = await userRepo.findAuthById(userId);
     if (!user) throw new AppError('Account not found.', 404);
 
-    if (!new_password || String(new_password).length < 6) {
-      throw new AppError('New password must be at least 6 characters long.', 400);
-    }
+    validatePassword(new_password);
 
-    if (user.password_hash && !user.must_change_password) {
+    if (user.password_hash) {
       const ok = await bcrypt.compare(String(current_password || ''), user.password_hash);
       if (!ok) {
         throw new AppError('Current password is incorrect.', 401, 'INVALID_PASSWORD');
@@ -451,7 +415,8 @@ class AuthService {
     }
 
     const hash = await bcrypt.hash(String(new_password), 10);
-    await userRepo.setPassword(userId, hash, { mustChange: false, bumpTokenVersion: false });
+    const updated = await userRepo.setPassword(userId, hash, { expectedVersion: user.token_version });
+    if (!updated) throw new AppError('Your credentials changed. Please sign in again.', 401);
     await auditRepo.log({
       actorUserId: userId,
       action: 'PASSWORD_CHANGED',
@@ -460,7 +425,7 @@ class AuthService {
       ip,
     });
 
-    return userRepo.findPublicById(userId);
+    return { user: await userRepo.findPublicById(userId), token: await signSession({ id: userId, token_version: updated.token_version }) };
   }
 }
 

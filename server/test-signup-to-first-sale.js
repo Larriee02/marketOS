@@ -294,15 +294,8 @@ async function runTests() {
   assert.strictEqual(oauthResult.user.email, oauthEmail, 'OAuth user email must match verified Google profile');
   assert.ok(oauthResult.token, 'OAuth sign-in must return a signed JWT session token');
 
-  const callbackHtml = oauthService.renderOAuthCallbackSuccessHtml({
-    provider: 'GOOGLE',
-    token: oauthResult.token,
-    user: oauthResult.user,
-    isNewUser: oauthResult.isNewUser,
-    origin: 'https://marketos.vercel.app',
-  });
-  assert.ok(callbackHtml.includes('MARKETOS_OAUTH_SUCCESS'), 'Callback HTML must post MARKETOS_OAUTH_SUCCESS to opener');
-  console.log('✅ Google (`accounts.google.com`) OAuth 2.0 Redirect, Gateway & Callback verified');
+  assert.throws(() => oauthService.verifyOAuthState('invalid'), { code: 'INVALID_STATE' });
+  assert.equal(new URL(googleAuthUrl).searchParams.get('nonce'), 'test-nonce-123');
 
   // ==========================================
   // MILESTONE 8: Sign In with Phone Number or Email + Email OTP

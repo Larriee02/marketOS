@@ -1,27 +1,9 @@
-const TOKEN_KEY = 'marketos_auth_token';
-
-export function getStoredToken() {
-  try {
-    return localStorage.getItem(TOKEN_KEY) || '';
-  } catch {
-    return '';
-  }
-}
-
-export function setStoredToken(token) {
-  try {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-    else localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    // ignore storage errors
-  }
-}
+// Discard bearer credentials left by older versions.
+try { localStorage.removeItem('marketos_auth_token'); } catch { /* Storage can be disabled. */ }
 
 export async function apiFetch(path, options = {}) {
-  const token = getStoredToken();
   const headers = {
     ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
 

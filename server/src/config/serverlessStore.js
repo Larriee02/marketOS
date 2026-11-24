@@ -441,18 +441,18 @@ async function executeQuery(text, params = []) {
   }
 
   if (upper.startsWith('UPDATE USERS SET PASSWORD_HASH = $1')) {
-    const [hash, mustChange, bump, id] = params;
+    const [hash, mustChange, bump, id, expectedVersion] = params;
     const u = state.users.find((x) => Number(x.id) === Number(id));
-    if (u) {
-      u.password_hash = hash;
-      u.must_change_password = Boolean(mustChange);
-      u.token_version = (u.token_version || 0) + Number(bump || 0);
-      u.failed_login_attempts = 0;
-      u.locked_until = null;
-      u.updated_at = new Date().toISOString();
-      saveState(state);
-    }
-    return { rows: [], rowCount: u ? 1 : 0 };
+    if (!u || (expectedVersion != null && u.token_version !== expectedVersion)) return { rows: [], rowCount: 0 };
+    u.password_hash = hash;
+    u.must_change_password = Boolean(mustChange);
+    u.temporary_password_expires_at = mustChange ? new Date(Date.now() + 86400000).toISOString() : null;
+    u.token_version = (u.token_version || 0) + Number(bump || 0);
+    u.failed_login_attempts = 0;
+    u.locked_until = null;
+    u.updated_at = new Date().toISOString();
+    saveState(state);
+    return { rows: [{ token_version: u.token_version }], rowCount: 1 };
   }
 
   if (upper.startsWith('UPDATE USERS SET TOKEN_VERSION = TOKEN_VERSION + 1')) {

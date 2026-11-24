@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, ExternalLink } from 'lucide-react';
-import { apiFetch, getStoredToken, setStoredToken } from '../../services/api';
-
-const GOOGLE_CLIENT_ID =
-  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-  '7652655046-941j1no6adnoimmiqfa7laef255iv2su.apps.googleusercontent.com';
+import { apiFetch } from '../../services/api';
 
 import { BUSINESS_TYPES } from '../../utils/businessCategories';
 
@@ -49,11 +45,10 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
   const [connectingGoogle, setConnectingGoogle] = useState(false);
   const popupRef = useRef(null);
   const pollTimerRef = useRef(null);
-  const initialTokenRef = useRef('');
 
   useEffect(() => {
-    const handleMessage = (event) => {
-      if (event.origin !== window.location.origin) return;
+    const handleMessage = async (event) => {
+      if (event.origin !== window.location.origin || event.source !== popupRef.current) return;
       const data = event.data;
       if (!data || data.type !== 'MARKETOS_OAUTH_SUCCESS') return;
 
@@ -62,13 +57,13 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
         pollTimerRef.current = null;
       }
 
-      if (data.token) {
-        setStoredToken(data.token);
-      }
-
-      setConnectingGoogle(false);
-      if (data.user && onAuthenticated) {
-        onAuthenticated(data.user);
+      try {
+        const session = await apiFetch('/api/v1/auth/me');
+        onAuthenticated?.(session.user);
+      } catch (err) {
+        onError?.(err.message);
+      } finally {
+        setConnectingGoogle(false);
       }
     };
 
@@ -79,73 +74,13 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
         clearInterval(pollTimerRef.current);
       }
     };
-  }, [onAuthenticated]);
+  }, [onAuthenticated, onError]);
 
   const startGoogleOAuthPopup = () => {
     if (onError) onError('');
 
-    // Use official Google Identity Services (accounts.google.com/gsi/client) popup when available
-    if (
-      GOOGLE_CLIENT_ID &&
-      typeof window !== 'undefined' &&
-      window.google?.accounts?.oauth2?.initTokenClient
-    ) {
-      setConnectingGoogle(true);
-      try {
-        const tokenClient = window.google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID,
-          scope: 'openid email profile',
-          prompt: 'select_account',
-          callback: async (tokenResponse) => {
-            if (tokenResponse?.error) {
-              setConnectingGoogle(false);
-              if (tokenResponse.error !== 'popup_closed_by_user' && onError) {
-                onError(tokenResponse.error_description || 'Google sign-in was cancelled.');
-              }
-              return;
-            }
-            if (!tokenResponse?.access_token) {
-              setConnectingGoogle(false);
-              return;
-            }
-            try {
-              const data = await apiFetch('/api/v1/auth/oauth', {
-                method: 'POST',
-                body: JSON.stringify({
-                  provider: 'GOOGLE',
-                  access_token: tokenResponse.access_token,
-                  client_id: GOOGLE_CLIENT_ID,
-                }),
-              });
-              if (data?.token) {
-                setStoredToken(data.token);
-              }
-              setConnectingGoogle(false);
-              if (data?.user && onAuthenticated) {
-                onAuthenticated(data.user);
-              }
-            } catch (err) {
-              setConnectingGoogle(false);
-              if (onError) onError(err.message || 'Failed to verify Google account.');
-            }
-          },
-          error_callback: (err) => {
-            setConnectingGoogle(false);
-            if (err?.type && err.type !== 'popup_closed' && onError) {
-              onError('Google sign-in window closed before completing.');
-            }
-          },
-        });
-        tokenClient.requestAccessToken({ prompt: 'select_account' });
-        return;
-      } catch {
-        // Fall through to standard OAuth 2.0 /authorize popup redirect
-      }
-    }
-
     const authorizeUrl = '/api/v1/auth/oauth/google/authorize';
 
-    initialTokenRef.current = getStoredToken() || '';
     setConnectingGoogle(true);
 
     // Center the OAuth 2.0 popup window over the current browser window
@@ -179,23 +114,6 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
     }
 
     pollTimerRef.current = setInterval(async () => {
-      // Check if localStorage token was updated by the callback window
-      const currentToken = getStoredToken() || '';
-      if (currentToken && currentToken !== initialTokenRef.current) {
-        clearInterval(pollTimerRef.current);
-        pollTimerRef.current = null;
-        try {
-          const meData = await apiFetch('/api/v1/auth/me');
-          if (meData?.user && onAuthenticated) {
-            setConnectingGoogle(false);
-            onAuthenticated(meData.user);
-            return;
-          }
-        } catch {
-          // Continue waiting or let close handler clean up
-        }
-      }
-
       if (!popupRef.current || popupRef.current.closed) {
         clearInterval(pollTimerRef.current);
         pollTimerRef.current = null;

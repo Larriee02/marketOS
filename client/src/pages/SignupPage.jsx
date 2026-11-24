@@ -11,7 +11,7 @@ import {
   ArrowRight,
   Globe,
 } from 'lucide-react';
-import { apiFetch, setStoredToken } from '../services/api';
+import { apiFetch } from '../services/api';
 import { CURRENCY_OPTIONS } from '../utils/currency';
 import {
   OAuthButtons,
@@ -80,7 +80,6 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
           otp: otpCode,
         }),
       });
-      if (data.token) setStoredToken(data.token);
       onAuthenticated(data.user);
     } catch (err) {
       setError(err.message);
@@ -300,8 +299,8 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
                   <input id="signup-password"
                     type={showPassword ? 'text' : 'password'}
                     required
-                    minLength={6}
-                    placeholder="Minimum 6 characters"
+                    minLength={12}
+                    placeholder="Minimum 12 characters"
                     value={signupForm.password}
                     onChange={(e) =>
                       setSignupForm({ ...signupForm, password: e.target.value })
@@ -332,7 +331,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
                   <input id="signup-confirm"
                     type={showPassword ? 'text' : 'password'}
                     required
-                    minLength={6}
+                    minLength={12}
                     placeholder="Re-enter password"
                     value={signupForm.confirm_password}
                     onChange={(e) =>

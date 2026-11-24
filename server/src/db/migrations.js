@@ -292,4 +292,19 @@ module.exports = [
       FROM links WHERE tx.id = links.id AND tx.stock_movement_id IS NULL;
     `,
   },
+  {
+    id: '010_auth_security',
+    sql: `
+      ALTER TABLE users ADD COLUMN temporary_password_expires_at TIMESTAMPTZ;
+      CREATE TABLE request_limits (key TEXT PRIMARY KEY, hits INTEGER NOT NULL, expires_at BIGINT NOT NULL);
+      CREATE INDEX request_limits_expiry ON request_limits (expires_at);
+    `,
+  },
+  {
+    id: '011_session_revocations',
+    sql: `
+      CREATE TABLE revoked_sessions (id UUID PRIMARY KEY, expires_at TIMESTAMPTZ NOT NULL);
+      CREATE INDEX revoked_sessions_expiry ON revoked_sessions (expires_at);
+    `,
+  },
 ];

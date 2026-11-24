@@ -81,7 +81,7 @@ import { SignupPage } from './pages/SignupPage';
 import { AdminPage } from './pages/AdminPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { RouterProvider, useRouter } from './router/RouterContext';
-import { apiFetch, setStoredToken } from './services/api';
+import { apiFetch } from './services/api';
 import { formatCurrency, getCurrencySymbol } from './utils/currency';
 import { getBusinessProfile, getAllCommonUnits } from './utils/businessCategories';
 
@@ -370,14 +370,12 @@ function AppShell({ darkMode, setDarkMode }) {
     navigate(TAB_TO_ROUTE[tabId] || '/store/sell');
   };
 
-  // Check active session on mount (and capture ?oauth_token=... from full-page OAuth redirects)
   const checkAuthSession = useCallback(async () => {
     try {
       if (typeof window !== 'undefined' && window.location.search) {
         const params = new URLSearchParams(window.location.search);
         const oauthToken = params.get('oauth_token');
         if (oauthToken) {
-          setStoredToken(oauthToken);
           params.delete('oauth_token');
           params.delete('oauth_provider');
           const cleanQuery = params.toString();
@@ -412,10 +410,12 @@ function AppShell({ darkMode, setDarkMode }) {
   const handleLogout = async () => {
     try {
       await apiFetch('/api/v1/auth/logout', { method: 'POST' });
-    } catch {
-      // Ignore network error on logout
+    } catch (err) {
+      if (err.status !== 401) {
+        showSuccessToast('Sign-out could not be confirmed. Please try again.');
+        return;
+      }
     }
-    setStoredToken('');
     setCurrentUser(null);
     checkoutAttempt.current = null;
     setCart({});
@@ -1545,7 +1545,7 @@ function AppShell({ darkMode, setDarkMode }) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await apiFetch('/api/v1/auth/password', {
+      await apiFetch('/api/v1/auth/change-password', {
         method: 'POST',
         body: JSON.stringify(passwordForm),
       });
@@ -1635,7 +1635,7 @@ function AppShell({ darkMode, setDarkMode }) {
   }
 
   // 3. Dedicated Standalone Settings Page (/settings) for both Admin and User accounts
-  if (path === '/settings' || path === '/store/settings' || path === '/admin/settings') {
+  if (currentUser.must_change_password || path === '/settings' || path === '/store/settings' || path === '/admin/settings') {
     return (
       <SettingsPage
         currentUser={currentUser}
@@ -5531,12 +5531,12 @@ function AppShell({ darkMode, setDarkMode }) {
               </div>
               <div>
                 <label className="block text-xs font-bold mb-1 text-theme-primary">
-                  New Password (Min 6 chars)
+                  New Password (Min 12 chars)
                 </label>
                 <input
                   type="password"
                   required
-                  minLength={6}
+                  minLength={12}
                   value={passwordForm.new_password}
                   onChange={(e) =>
                     setPasswordForm({ ...passwordForm, new_password: e.target.value })

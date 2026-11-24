@@ -8,7 +8,7 @@ import {
   EyeOff,
   ArrowRight,
 } from 'lucide-react';
-import { apiFetch, setStoredToken } from '../services/api';
+import { apiFetch } from '../services/api';
 import { OAuthButtons } from '../components/auth/OAuthButtons';
 import { OtpVerificationStep } from '../components/auth/OtpVerificationStep';
 
@@ -23,7 +23,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
   const [notice, setNotice] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => new URLSearchParams(location.search).has('oauth_error') ? 'Google sign-in could not be completed. Please try again or use your original sign-in method.' : '');
 
   // Step state: 'FORM' | 'OTP'
   const [step, setStep] = useState('FORM');
@@ -50,7 +50,6 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
         return;
       }
 
-      setStoredToken(rememberMe ? data.token : '');
       onAuthenticated(data.user);
     } catch (err) {
       setError(err.message);
@@ -73,7 +72,6 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
         }),
       });
 
-      setStoredToken(rememberMe ? data.token : '');
       onAuthenticated(data.user);
     } catch (err) {
       setError(err.message);
@@ -84,10 +82,10 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
 
   const handleResendOtp = async () => {
     setError('');
-    const data = await apiFetch('/api/v1/auth/otp/request', {
+    const data = await apiFetch('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify({
-        purpose: 'LOGIN',
+        password,
         identifier: otpInfo?.email || identifier.trim(),
       }),
     });
@@ -135,7 +133,7 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
               <input required inputMode="numeric" pattern="[0-9]{6}" autoComplete="one-time-code" value={resetCode} onChange={e => setResetCode(e.target.value)} className="liquid-input w-full p-3" />
             </label>
             <label className="block">New password
-              <input required type="password" minLength={6} autoComplete="new-password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="liquid-input w-full p-3" />
+              <input required type="password" minLength={12} autoComplete="new-password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="liquid-input w-full p-3" />
             </label>
           </>}
           <button disabled={submitting} className="liquid-btn-primary w-full p-3">{step === 'REQUEST' ? 'Email reset code' : 'Save new password'}</button>

@@ -100,13 +100,14 @@ export function SettingsPage({
     }
     setSubmittingPassword(true);
     try {
-      await apiFetch('/api/v1/auth/password', {
+      const data = await apiFetch('/api/v1/auth/change-password', {
         method: 'POST',
         body: JSON.stringify({
           current_password: passwordForm.current_password,
           new_password: passwordForm.new_password,
         }),
       });
+      onUserUpdated(data.user);
       setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
       notifyToast('Password updated successfully.');
     } catch (err) {
@@ -120,6 +121,7 @@ export function SettingsPage({
 
   return (
     <div className="account-page account-settings min-h-screen pb-16">
+      {currentUser.must_change_password && <p role="status" className="p-4">Change your temporary password below to open your workspace.</p>}
       {/* Top Header */}
       <header className="account-masthead text-slate-100">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
@@ -409,8 +411,8 @@ export function SettingsPage({
                     id="shop-new_password"
                     type="password"
                     required
-                    minLength={6}
-                    placeholder="Minimum 6 characters"
+                    minLength={12}
+                    placeholder="Minimum 12 characters"
                     value={passwordForm.new_password}
                     onChange={(e) =>
                       setPasswordForm({ ...passwordForm, new_password: e.target.value })
@@ -430,7 +432,7 @@ export function SettingsPage({
                     id="shop-confirm_password"
                     type="password"
                     required
-                    minLength={6}
+                    minLength={12}
                     placeholder="Repeat new password"
                     value={passwordForm.confirm_password}
                     onChange={(e) =>

@@ -39,6 +39,11 @@ function getNodemailer() {
   };
 }
 
+function escapeHtml(value) {
+  const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  return String(value).replace(/[&<>"']/g, character => entities[character]);
+}
+
 function buildOtpEmailHtml({ code, recipientName, purpose, expiresInMinutes = 10 }) {
   const isSignup = purpose === 'SIGNUP';
   const actionText = purpose === 'RESET' ? 'reset your MarketOS password' : isSignup ? 'complete your MarketOS registration' : 'sign in to your MarketOS workspace';
@@ -163,7 +168,7 @@ function buildOtpEmailHtml({ code, recipientName, purpose, expiresInMinutes = 10
       </div>
     </div>
 
-    <h2>Hello ${recipientName || 'there'},</h2>
+    <h2>Hello ${escapeHtml(recipientName || 'there')},</h2>
     <p>Use the 6-digit verification code below to ${actionText}:</p>
 
     <div class="otp-box">
@@ -257,11 +262,11 @@ function buildWelcomeEmailHtml({ recipientName, businessName, currency = 'NGN' }
 <body>
   <div class="container">
     <div class="badge">Workspace Activated</div>
-    <h1>Welcome to MarketOS, ${recipientName || 'Trader'}!</h1>
+    <h1>Welcome to MarketOS, ${escapeHtml(recipientName || 'Trader')}!</h1>
     <p>Your retail inventory and cashbook workspace is now active and ready to record sales and stock movements.</p>
     <div class="card">
-      <div class="row">Store / Business: <strong>${businessName || 'Retail Store'}</strong></div>
-      <div class="row">Default Currency: <strong>${currency}</strong></div>
+      <div class="row">Store / Business: <strong>${escapeHtml(businessName || 'Retail Store')}</strong></div>
+      <div class="row">Default Currency: <strong>${escapeHtml(currency)}</strong></div>
       <div class="row">Status: <strong style="color:#34D399;">Approved & Active</strong></div>
     </div>
     <p>You can now add stock, sell items from the Point of Sale counter or Inventory tab, and track all movements in your Activity History.</p>

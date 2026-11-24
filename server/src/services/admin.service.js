@@ -1,3 +1,4 @@
+const validatePassword = require('../utils/password');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const AppError = require('../utils/AppError');
@@ -185,11 +186,8 @@ class AdminService {
       throw new AppError('The platform owner password can only be changed from Settings.', 400, 'OWNER_PROTECTED');
     }
 
-    const tempPassword =
-      temporary_password && String(temporary_password).length >= 6
-        ? String(temporary_password)
-        : `Lagos-${crypto.randomInt(100000, 999999)}`;
-
+    const tempPassword = temporary_password || crypto.randomBytes(18).toString('base64url');
+    validatePassword(tempPassword);
     const hash = await bcrypt.hash(tempPassword, 10);
     await userRepo.setPassword(id, hash, { mustChange: true, bumpTokenVersion: true });
 

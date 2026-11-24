@@ -152,14 +152,16 @@ class UserRepository {
     );
   }
 
-  async setPassword(id, hash, { mustChange = false, bumpTokenVersion = true } = {}) {
-    await db.query(
+  async setPassword(id, hash, { mustChange = false, bumpTokenVersion = true, expectedVersion = null } = {}) {
+    const result = await db.query(
       `UPDATE users SET password_hash = $1, must_change_password = $2,
+              temporary_password_expires_at = CASE WHEN $2 THEN NOW() + INTERVAL '24 hours' END,
               token_version = token_version + $3, failed_login_attempts = 0, locked_until = NULL,
               updated_at = NOW()
-       WHERE id = $4`,
-      [hash, mustChange, bumpTokenVersion ? 1 : 0, id]
+       WHERE id = $4 AND ($5::integer IS NULL OR token_version = $5) RETURNING token_version`,
+      [hash, mustChange, bumpTokenVersion ? 1 : 0, id, expectedVersion]
     );
+    return result.rows[0];
   }
 
   async bumpTokenVersion(id) {

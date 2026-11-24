@@ -35,12 +35,12 @@ async function run() {
     const updated = await repo.findAuthById(user.id);
     assert.ok(await require('bcryptjs').compare(reset.password, updated.password_hash));
     assert.equal(Number(updated.token_version), 1);
-    const { issueSessionCookie } = require('./src/utils/session');
+    const { issueSessionCookie, signSession } = require('./src/utils/session');
     for (const persistent of [false, true]) {
       await issueSessionCookie({ cookie(name, token, options) {
         assert.equal(Boolean(options.maxAge), persistent);
         assert.equal(options.httpOnly, true);
-      } }, updated, persistent);
+      } }, await signSession(updated), persistent);
     }
   } finally {
     notifications.sendEmailOtp = originalDelivery;

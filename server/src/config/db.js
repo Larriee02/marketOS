@@ -28,10 +28,10 @@ function sanitizeDatabaseUrl(raw) {
   }
   try {
     const parsed = new URL(cleaned);
-    // Strip libpq-specific sslmode/channel_binding params so node-postgres (`pg`)
-    // uses the explicit `ssl: { rejectUnauthorized: false }` config cleanly on Neon poolers.
-    parsed.searchParams.delete('sslmode');
-    parsed.searchParams.delete('channel_binding');
+    // Keep TLS and host selection under application control.
+    for (const key of ['ssl', 'sslmode', 'sslrootcert', 'sslcert', 'sslkey', 'channel_binding', 'host', 'hostaddr']) {
+      parsed.searchParams.delete(key);
+    }
     return ['postgres:', 'postgresql:'].includes(parsed.protocol) ? parsed.toString() : null;
   } catch {
     return null;
@@ -50,10 +50,10 @@ let pglite = null;
 let pglitePromise = null;
 
 if (mode === 'postgres' && hasValidPgUrl) {
-  const isLocal = /localhost|127\.0\.0\.1/.test(connectionString);
+  const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(new URL(connectionString).hostname);
   pool = new Pool({
     connectionString,
-    ssl: isLocal ? false : { rejectUnauthorized: false },
+    ssl: isLocal ? false : { rejectUnauthorized: true },
     max: env.IS_PROD ? 3 : 10,
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 8000,
@@ -66,7 +66,7 @@ async function getPglite() {
   if (!pglitePromise) {
     pglitePromise = (async () => {
       const { PGlite } = require('@electric-sql/pglite');
-      const db = new PGlite(path.join(__dirname, '../../pgdata'));
+      const db = new PGlite(isTestEnv ? undefined : path.join(__dirname, '../../pgdata'));
       await db.waitReady;
       pglite = db;
       return db;

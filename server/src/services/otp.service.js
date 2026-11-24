@@ -1,3 +1,4 @@
+const { limit } = require('../utils/rateLimiter');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const env = require('../config/env');
@@ -19,6 +20,7 @@ class OtpService {
   async requestOtp({ purpose = 'LOGIN', email, recipientName = '', payload = null }) {
     const cleanEmail = String(email || '').trim().toLowerCase();
     const key = `${purpose}:${cleanEmail}`;
+    await limit('email-send', cleanEmail, 900000, 12, 'Please wait before requesting another email.');
     const code = String(crypto.randomInt(100000, 1000000));
     const hash = await bcrypt.hash(code, 10);
     const now = Date.now();
