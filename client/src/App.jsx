@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   Plus,
   Minus,
+  ArrowRight,
   ClipboardCheck,
   Search,
   ShoppingCart,
