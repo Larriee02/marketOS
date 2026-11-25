@@ -426,3 +426,59 @@
   padding: 8px 20px;
   font-size: 13px;
 }
+
+.money-heading { align-items: center; }
+.money-workspace { display: grid; gap: 16px; }
+.money-register, .money-report { padding: 0; overflow: hidden; }
+.money-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 16px;
+}
+.money-section-header h2 { font-size: 17px; font-weight: 750; }
+.money-section-header p, .money-totals dt, .money-channel-detail {
+  color: var(--workspace-muted);
+  font-size: 12px;
+}
+.money-register-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.money-totals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  border-block: 1px solid var(--workspace-border);
+  background: var(--workspace-border);
+}
+.money-totals > div { padding: 12px 16px; background: var(--workspace-surface); }
+.money-totals dd { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.money-totals .money-key-total { background: var(--workspace-soft); }
+.money-channels { padding: 14px 16px; }
+.money-channels h3 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.money-channel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.money-channel-grid button {
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: 3px;
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid var(--workspace-border);
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.money-channel-grid button:hover { background: var(--workspace-soft); }
+.money-channel-grid button[aria-pressed="true"] { border-color: var(--brand-blue); background: var(--brand-blue-soft); }
+.money-channel-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 650; }
+.money-channel-label svg { flex: none; color: var(--brand-blue); }
+@media (min-width: 760px) {
+  .money-totals { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .money-channel-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

@@ -40,7 +40,6 @@ import {
   Landmark,
   Smartphone,
   Lock,
-  Unlock,
   RotateCcw,
   UserPlus,
   Clock,
@@ -1809,8 +1808,8 @@ function AppShell({ darkMode, setDarkMode }) {
 
         {activeTab === 'cashbook' && (
           <>
-            <div className="workspace-page-heading"><h1 className="workspace-title">Shop money</h1><button className="workspace-primary" onClick={openCashEntry}><Plus size={16} />Record money in or out</button></div>
-        <details className="workspace-panel shop-details"><summary>See shop balances</summary>
+            <div className="workspace-page-heading money-heading"><h1 className="workspace-title">Shop money</h1><button type="button" className="workspace-primary" onClick={openCashEntry}><Plus size={16} aria-hidden="true" />Record money</button></div>
+        <details className="workspace-panel inventory-totals"><summary>Shop balances</summary>
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           <StatCard
             title="Net Balance"
@@ -2698,193 +2697,66 @@ function AppShell({ darkMode, setDarkMode }) {
 
         {/* TAB 3: MONEY IN & MONEY OUT (CASHBOOK) */}
         {activeTab === 'cashbook' && (
-          <div className="space-y-4">
-            {/* 1. DAILY OPENING & CLOSING BALANCE REGISTER BAR */}
-            <div className="liquid-glass p-4 rounded-3xl flex flex-col lg:flex-row lg:items-center justify-between gap-3 border border-emerald-500/20">
-              <div className="flex items-start sm:items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
-                  <Wallet className="w-5 h-5" />
-                </div>
+          <div className="money-workspace">
+            <section className="workspace-panel money-register">
+              <header className="money-section-header">
                 <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-extrabold font-luxury text-sm sm:text-base text-theme-primary">
-                      Daily Cash Register ({cashbookSession?.targetDate || new Date().toISOString().slice(0, 10)})
-                    </span>
-                    <Badge
-                      variant={
-                        cashbookSession?.todaySession?.status === 'CLOSED' ? 'success' : 'info'
-                      }
-                    >
-                      {cashbookSession?.todaySession?.status === 'CLOSED'
-                        ? 'RECONCILED & CLOSED'
-                        : 'REGISTER OPEN'}
-                    </Badge>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-theme-secondary mt-1 tabular-nums">
-                    <span>
-                      Opening Float:{' '}
-                      <strong className="text-theme-primary">
-                        {formatNaira(cashbookSession?.effectiveOpeningBalance || 0)}
-                      </strong>
-                    </span>
-                    <span>•</span>
-                    <span>
-                      Today In:{' '}
-                      <strong className="text-theme-inflow">
-                        +{formatNaira(cashbookSession?.dayInflow || 0)}
-                      </strong>
-                    </span>
-                    <span>•</span>
-                    <span>
-                      Today Out:{' '}
-                      <strong className="text-theme-outflow">
-                        -{formatNaira(cashbookSession?.dayOutflow || 0)}
-                      </strong>
-                    </span>
-                    <span>•</span>
-                    <span>
-                      Expected Closing:{' '}
-                      <strong className="text-sky-400">
-                        {formatNaira(cashbookSession?.expectedClosingBalance || 0)}
-                      </strong>
-                    </span>
-                    {cashbookSession?.todaySession?.status === 'CLOSED' && (
-                      <>
-                        <span>•</span>
-                        <span>
-                          Counted Closing:{' '}
-                          <strong className="text-emerald-400">
-                            {formatNaira(cashbookSession?.todaySession?.actual_closing_balance || 0)}
-                          </strong>
-                        </span>
-                      </>
-                    )}
-                  </div>
+                  <h2>Daily cash register</h2>
+                  <p>{cashbookSession?.targetDate || 'Today'}{cashbookSession ? (cashbookSession.todaySession?.status === 'CLOSED' ? ' · Closed' : ' · Open') : ''}</p>
                 </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
+                <div className="money-register-actions">
+                  <button type="button" className="workspace-chip" onClick={() => {
                     setSessionModalMode('OPEN');
                     setShowSessionModal(true);
-                  }}
-                  className="liquid-glass-subtle px-3.5 py-2 rounded-2xl text-xs font-bold text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 cursor-pointer hover:bg-emerald-500/10"
-                >
-                  <Unlock className="w-3.5 h-3.5" />
-                  Opening Balance
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
+                  }}>Opening balance</button>
+                  <button type="button" className="workspace-chip" onClick={() => {
                     setSessionModalMode('CLOSE');
                     setShowSessionModal(true);
-                  }}
-                  className="liquid-btn-primary px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Lock className="w-3.5 h-3.5" />
-                  Reconcile & Close Day
-                </button>
-              </div>
-            </div>
+                  }}>Reconcile &amp; close</button>
+                </div>
+              </header>
+              <dl className="money-totals">
+                <div className="money-key-total"><dt>Expected closing cash</dt><dd>{cashbookSession ? formatNaira(cashbookSession.expectedClosingBalance ?? 0) : '—'}</dd></div>
+                <div><dt>Opening float</dt><dd>{cashbookSession ? formatNaira(cashbookSession.effectiveOpeningBalance ?? 0) : '—'}</dd></div>
+                <div><dt>Cash in</dt><dd className="workspace-positive">{cashbookSession ? formatNaira(cashbookSession.dayInflow ?? 0) : '—'}</dd></div>
+                <div><dt>Cash out</dt><dd className="workspace-negative">{cashbookSession ? formatNaira(cashbookSession.dayOutflow ?? 0) : '—'}</dd></div>
+                {cashbookSession?.todaySession?.status === 'CLOSED' && (
+                  <div><dt>Counted closing cash</dt><dd>{formatNaira(cashbookSession.todaySession.actual_closing_balance ?? 0)}</dd></div>
+                )}
+              </dl>
+            </section>
 
-            {/* 2. PERIOD BALANCE & REPORT SUMMARY CARDS (OPENING -> INFLOW -> OUTFLOW -> CLOSING) */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="liquid-glass p-4 rounded-2xl">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-theme-secondary">
-                  Period Opening Balance
-                </p>
-                <p className="text-lg sm:text-xl font-extrabold font-luxury tabular-nums mt-1 text-theme-primary">
-                  {formatNaira(cashbookReportSummary.openingBalance)}
-                </p>
-                <p className="text-[11px] mt-0.5 text-theme-secondary truncate">
-                  {cashPeriodBounds.label}
-                </p>
-              </div>
+            <section className="workspace-panel money-report">
+              <header className="money-section-header">
+                <div><h2>Cashbook summary</h2><p>{cashPeriodBounds.label}</p></div>
+              </header>
+              <dl className="money-totals">
+                <div><dt>Opening balance</dt><dd>{formatNaira(cashbookReportSummary.openingBalance)}</dd></div>
+                <div><dt>Money in</dt><dd className="workspace-positive">{formatNaira(cashbookReportSummary.periodInflow)}</dd></div>
+                <div><dt>Money out</dt><dd className="workspace-negative">{formatNaira(cashbookReportSummary.periodOutflow)}</dd></div>
+                <div className="money-key-total"><dt>Closing balance</dt><dd>{formatNaira(cashbookReportSummary.closingBalance)}</dd></div>
+              </dl>
 
-              <div className="liquid-glass p-4 rounded-2xl">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-theme-secondary">
-                  Period Money In (+)
-                </p>
-                <p className="text-lg sm:text-xl font-extrabold font-luxury tabular-nums mt-1 text-theme-inflow">
-                  +{formatNaira(cashbookReportSummary.periodInflow)}
-                </p>
-                <p className="text-[11px] mt-0.5 text-theme-secondary">
-                  Sales, repayments & inflows
-                </p>
+              <div className="money-channels">
+                <h3>Payment channels</h3>
+                <div className="money-channel-grid" role="group" aria-label="Filter ledger by payment channel">
+                  {['CASH', 'POS', 'BANK_TRANSFER', 'MOBILE_MONEY'].map((channel) => {
+                    const { icon: Icon, label } = getChannelBadgeMeta(channel);
+                    const stats = cashbookReportSummary.byChannel[channel] || { net: 0, inflow: 0, outflow: 0, count: 0 };
+                    const selected = channelFilter === channel;
+                    return (
+                      <button type="button" key={channel} aria-pressed={selected}
+                        onClick={() => setChannelFilter(selected ? 'ALL' : channel)}>
+                        <span className="money-channel-label"><Icon size={16} aria-hidden="true" />{label}</span>
+                        <strong>{formatNaira(stats.net)}</strong>
+                        <span className="money-channel-detail">In {formatNaira(stats.inflow)} · Out {formatNaira(stats.outflow)}</span>
+                        <span className="money-channel-detail">{stats.count} {stats.count === 1 ? 'entry' : 'entries'}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-
-              <div className="liquid-glass p-4 rounded-2xl">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-theme-secondary">
-                  Period Expenses & Out (-)
-                </p>
-                <p className="text-lg sm:text-xl font-extrabold font-luxury tabular-nums mt-1 text-theme-outflow">
-                  -{formatNaira(cashbookReportSummary.periodOutflow)}
-                </p>
-                <p className="text-[11px] mt-0.5 text-theme-secondary">
-                  Across {cashbookReportSummary.expensesByCategory.length} expense category(s)
-                </p>
-              </div>
-
-              <div className="liquid-glass p-4 rounded-2xl border border-sky-500/25">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-sky-400">
-                  Period Closing Balance
-                </p>
-                <p className="text-lg sm:text-xl font-extrabold font-luxury tabular-nums mt-1 text-sky-300">
-                  {formatNaira(cashbookReportSummary.closingBalance)}
-                </p>
-                <p className="text-[11px] mt-0.5 text-theme-secondary">
-                  Opening + Inflow − Outflow
-                </p>
-              </div>
-            </div>
-
-            {/* 3. PAYMENT CHANNEL BREAKDOWN CARDS (CASH vs POS vs BANK TRANSFER vs MOBILE WALLET) */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-              {['CASH', 'POS', 'BANK_TRANSFER', 'MOBILE_MONEY'].map((chKey) => {
-                const meta = getChannelBadgeMeta(chKey);
-                const chStats = cashbookReportSummary.byChannel[chKey] || {
-                  inflow: 0,
-                  outflow: 0,
-                  net: 0,
-                  count: 0,
-                };
-                const Icon = meta.icon;
-                const isSelected = channelFilter === chKey;
-                return (
-                  <button
-                    type="button"
-                    key={chKey}
-                    onClick={() => setChannelFilter(isSelected ? 'ALL' : chKey)}
-                    className={`liquid-glass p-3 rounded-2xl text-left transition-all cursor-pointer border ${
-                      isSelected
-                        ? 'border-emerald-400 ring-1 ring-emerald-400/40'
-                        : 'border-transparent hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold border ${meta.pillClass}`}
-                      >
-                        <Icon className="w-3.5 h-3.5" />
-                        {meta.label}
-                      </span>
-                      <span className="text-[10px] font-bold text-theme-secondary">
-                        {chStats.count} tx
-                      </span>
-                    </div>
-                    <div className="text-sm sm:text-base font-extrabold font-luxury tabular-nums text-theme-primary">
-                      {formatNaira(chStats.net)}
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] text-theme-secondary mt-1 tabular-nums">
-                      <span className="text-theme-inflow">In: +{formatNaira(chStats.inflow)}</span>
-                      <span className="text-theme-outflow">Out: -{formatNaira(chStats.outflow)}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            </section>
 
             {/* 4. EXPENSE BREAKDOWN BY CATEGORY STRIP (WHEN EXPENSES EXIST IN PERIOD) */}
             {cashbookReportSummary.expensesByCategory.length > 0 && (
