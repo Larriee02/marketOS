@@ -9,9 +9,9 @@ export function AuthLayout({ signup = false, darkMode, setDarkMode, onNavigate, 
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <div className="auth-shopfront">
         <div className="auth-brand"><MarketOSLogo variant="monochrome" /></div>
-        <div className="auth-signboard">
+        {!signup && <div className="auth-signboard">
           <p>Run your market.<br /><em>Smarter.</em></p>
-        </div>
+        </div>}
       </div>
       <div className="auth-paper">
         <header className="auth-toolbar">

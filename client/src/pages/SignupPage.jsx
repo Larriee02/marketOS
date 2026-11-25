@@ -119,23 +119,8 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
       ) : (
         <>
           <div className="auth-intro">
-            <h1>Create your account</h1>
-            <p>Enter your shop details. We’ll email you a code to verify your account.</p>
-          </div>
-
-          {/* Google OAuth Sign-Up Button */}
-          <OAuthButtons
-            actionLabel="Sign up"
-            onAuthenticated={onAuthenticated}
-            onError={setError}
-          />
-
-          <div className="auth-separator">
-            <div className="border-t w-full theme-divider" />
-            <span className="px-3 text-[11px] font-bold uppercase tracking-wider text-theme-muted whitespace-nowrap">
-              or
-            </span>
-            <div className="border-t w-full theme-divider" />
+            <h1>Set up your shop</h1>
+            <p>We’ll send a verification code to your email.</p>
           </div>
 
           {error && (
@@ -355,6 +340,11 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
+
+          <div className="signup-alternative">
+            <span>Or</span>
+            <OAuthButtons actionLabel="Sign up" onAuthenticated={onAuthenticated} onError={setError} />
+          </div>
 
         </>
       )}
