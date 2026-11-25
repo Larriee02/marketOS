@@ -2625,20 +2625,49 @@ function AppShell({ darkMode, setDarkMode }) {
             </div>
               <ListPagination list={productPage} label="Stock catalog" targetId="inventory-results" />
             </div>
-            <aside className="shop-tool-notes">
-              <section className="workspace-panel space-y-3">
-                <h2 className="font-bold">Stock history</h2>
-                <p className="workspace-muted text-sm">Review stock movements or compare shelf counts against the catalog.</p>
-                <button className="workspace-chip" onClick={() => handleSelectTab('history')}>View movement log</button>
-                <button className="workspace-chip" onClick={() => setShowAuditModal(true)}>Begin physical count</button>
+            <aside className="shop-tool-notes inventory-followup">
+              <section className="workspace-panel inventory-followup-panel">
+                <h2>Stock history</h2>
+                <button type="button" className="inventory-followup-link" onClick={() => handleSelectTab('history')}>
+                  <History size={18} aria-hidden="true" />
+                  <span><strong>View movement log</strong><small>Review sales, restocks and adjustments.</small></span>
+                  <ArrowRight size={16} aria-hidden="true" />
+                </button>
+                <button type="button" className="inventory-followup-link" onClick={() => setShowAuditModal(true)}>
+                  <ClipboardCheck size={18} aria-hidden="true" />
+                  <span><strong>Count stock</strong><small>Compare what’s on the shelf with your catalog.</small></span>
+                  <ArrowRight size={16} aria-hidden="true" />
+                </button>
               </section>
-              <section className="workspace-panel space-y-3">
-                <h2 className="font-bold">Running low</h2>
-                {lowStockRestockPlan.length === 0 && <p className="workspace-muted text-sm">No products need reordering.</p>}
-                {lowStockRestockPlan.slice(0, 3).map((product) => (
-                  <div key={product.id} className="workspace-warning-row"><div className="min-w-0 flex-1"><b>{product.name}</b><p className="workspace-muted">{product.stock_quantity} {product.unit} left</p></div><button className="workspace-chip" onClick={() => openRestock(product)}>Restock</button></div>
-                ))}
-                <button className="workspace-chip" onClick={() => openRestock()}>View restock plan</button>
+              <section className="workspace-panel inventory-followup-panel">
+                <div className="inventory-followup-header">
+                  <h2>Needs restocking</h2>
+                  {lowStockRestockPlan.length > 0 && <span>{lowStockRestockPlan.length} products</span>}
+                </div>
+                {lowStockRestockPlan.length === 0 ? (
+                  <p className="workspace-muted text-sm py-3">No products need reordering.</p>
+                ) : (
+                  <ul>
+                    {lowStockRestockPlan.slice(0, 3).map((product) => {
+                      const quantity = Number(product.stock_quantity);
+                      return (
+                        <li key={product.id} className="inventory-restock-row">
+                          <span className="min-w-0">
+                            <strong>{product.name}</strong>
+                            <small className={quantity <= 0 ? 'workspace-negative' : undefined}>
+                              {quantity <= 0 ? 'Out of stock' : `${quantity} ${product.unit} left`}
+                            </small>
+                          </span>
+                          <button type="button" className="stock-row-action stock-row-adjust"
+                            aria-label={`Restock ${product.name}`} onClick={() => openRestock(product)}>Restock</button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                <button type="button" className="inventory-restock-plan" onClick={() => openRestock()}>
+                  View restock plan <ArrowRight size={15} aria-hidden="true" />
+                </button>
               </section>
             </aside>
             </div>
