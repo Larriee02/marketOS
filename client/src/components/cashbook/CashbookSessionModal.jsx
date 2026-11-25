@@ -1,23 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Wallet,
-  CheckCircle2,
-  AlertTriangle,
-  AlertCircle,
-  ArrowUpRight,
-  ArrowDownRight,
-  RefreshCw,
-  Calendar,
-  Lock,
-  Unlock,
-  Sparkles,
-  Banknote,
-  CreditCard,
-  History,
-} from 'lucide-react';
+import { ArrowRight, RefreshCw } from 'lucide-react';
 import { Modal } from '../ui/Modal';
-import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
+import './cashbook-session.css';
 
 export function CashbookSessionModal({
   isOpen,
@@ -155,353 +139,134 @@ export function CashbookSessionModal({
     }
   };
 
+  const opening = mode === 'OPEN';
+  const closed = sessionState?.todaySession?.status === 'CLOSED';
+  const sessions = sessionState?.sessions ?? [];
+  const fields = opening
+    ? [
+        { label: 'Cash in drawer', value: openingCash, setValue: setOpeningCash },
+        { label: 'POS and bank float', value: openingBankPos, setValue: setOpeningBankPos },
+      ]
+    : [
+        { label: 'Cash counted', value: actualClosingCash, setValue: setActualClosingCash, expected: Number(openingCash || 0) + Number(sessionState?.dayCashInflow || 0) - Number(sessionState?.dayCashOutflow || 0) },
+        { label: 'POS and bank balance', value: actualClosingBankPos, setValue: setActualClosingBankPos, expected: Number(openingBankPos || 0) + Number(sessionState?.dayBankPosInflow || 0) - Number(sessionState?.dayBankPosOutflow || 0) },
+      ];
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Daily Cashbook Opening & Closing Balance"
-      subtitle="Start the day with your opening drawer float and reconcile physical cash + POS/Bank at closing"
+      title="Daily cash register"
       maxWidth="max-w-2xl"
+      panelClassName="cashbook-register"
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Mode Switcher */}
-        <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-slate-900/70 border border-slate-800">
-          <button
-            type="button"
-            onClick={() => setMode('OPEN')}
-            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              mode === 'OPEN'
-                ? 'liquid-btn-primary shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Unlock className="w-3.5 h-3.5" />
-            1. Set Opening Balance
+      <form onSubmit={handleSubmit}>
+        <div className="register-switch" role="group" aria-label="Register action">
+          <button type="button" aria-pressed={opening} onClick={() => setMode('OPEN')}>
+            Opening balance
           </button>
-          <button
-            type="button"
-            onClick={() => setMode('CLOSE')}
-            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              mode === 'CLOSE'
-                ? 'liquid-btn-primary shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Lock className="w-3.5 h-3.5" />
-            2. Reconcile & Close Day
+          <button type="button" aria-pressed={!opening} onClick={() => setMode('CLOSE')}>
+            Close the day
           </button>
         </div>
 
-        {/* Date & Status Strip */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-900/50 border border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <Calendar className="w-4 h-4 text-emerald-400" />
-            <label className="text-xs font-bold text-slate-300">Register Date:</label>
-            <input
-              type="date"
-              value={sessionDate}
-              onChange={(e) => setSessionDate(e.target.value)}
-              className="liquid-input text-xs rounded-xl px-2.5 py-1.5"
-            />
+        <div className="register-body" key={mode}>
+          <div className="register-date-row">
+            <label>
+              Register date
+              <input type="date" required value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} />
+            </label>
+            {sessionDate === sessionState?.targetDate && (
+              <span className="register-status">{closed ? 'Register closed' : 'Register open'}</span>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <Badge
-              variant={sessionState?.todaySession?.status === 'CLOSED' ? 'success' : 'info'}
-            >
-              {sessionState?.todaySession?.status === 'CLOSED'
-                ? 'RECONCILED & CLOSED'
-                : 'REGISTER OPEN'}
-            </Badge>
-          </div>
-        </div>
 
-        {mode === 'OPEN' ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  Morning Opening Float & Balance
-                </h4>
-                <p className="text-[11px] text-slate-400">
-                  Enter the cash in your shop drawer and available POS/Bank float at the start of business.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handlePrefillSuggestedOpening}
-                className="liquid-glass-subtle px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-emerald-400 border border-emerald-500/30 flex items-center gap-1 cursor-pointer shrink-0"
-              >
-                <Sparkles className="w-3 h-3" />
-                Carry Forward ({formatCurrency(sessionState?.suggestedOpeningBalance || 0)})
+          {!opening && (
+            <dl className="register-ledger">
+              {[
+                ['Opening balance', formatCurrency(totalOpeningInput)],
+                ['Money in', `+${formatCurrency(dayInflow)}`],
+                ['Money out', `−${formatCurrency(dayOutflow)}`],
+                ['Expected close', formatCurrency(expectedClosing)],
+              ].map(([label, amount]) => (
+                <div key={label}><dt>{label}</dt><dd>{amount}</dd></div>
+              ))}
+            </dl>
+          )}
+
+          <div className="register-section">
+            <div className="register-section-heading">
+              <h3>{opening ? 'Starting balances' : 'Actual closing balances'}</h3>
+              <button type="button" onClick={opening ? handlePrefillSuggestedOpening : handleMatchExpectedClosing}>
+                {opening
+                  ? `Carry forward ${formatCurrency(sessionState?.suggestedOpeningBalance || 0)}`
+                  : 'Use expected amounts'}
               </button>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
-                <label className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-                  <Banknote className="w-4 h-4" />
-                  Opening Physical Cash ({currencySymbol})
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={openingCash}
-                  onChange={(e) => setOpeningCash(e.target.value)}
-                  placeholder="0.00"
-                  className="liquid-input w-full rounded-xl px-3 py-2 text-sm font-bold"
-                />
-                <span className="text-[10px] text-slate-400 block">
-                  Notes & coins inside the shop counter drawer
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
-                <label className="flex items-center gap-1.5 text-xs font-bold text-sky-400">
-                  <CreditCard className="w-4 h-4" />
-                  Opening POS & Bank Float ({currencySymbol})
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={openingBankPos}
-                  onChange={(e) => setOpeningBankPos(e.target.value)}
-                  placeholder="0.00"
-                  className="liquid-input w-full rounded-xl px-3 py-2 text-sm font-bold"
-                />
-                <span className="text-[10px] text-slate-400 block">
-                  Starting balance in shop POS / business bank account
-                </span>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
-              <span className="text-xs font-bold text-emerald-200">
-                Total Combined Opening Balance:
-              </span>
-              <span className="text-lg font-extrabold font-luxury tabular-nums text-emerald-400">
-                {formatCurrency(totalOpeningInput)}
-              </span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold mb-1 text-slate-300">
-                Opening Note (Optional)
-              </label>
-              <input
-                type="text"
-                value={openingNote}
-                onChange={(e) => setOpeningNote(e.target.value)}
-                placeholder="e.g. Morning float verified before opening shop"
-                className="liquid-input w-full rounded-xl px-3 py-2 text-xs"
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Expected vs Actual Reconciliation Breakdown */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
-              <div className="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800">
-                <span className="text-[10px] text-slate-400 uppercase block">Opening Balance</span>
-                <strong className="text-xs sm:text-sm font-bold text-slate-200 tabular-nums">
-                  {formatCurrency(totalOpeningInput)}
-                </strong>
-              </div>
-              <div className="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-800/40">
-                <span className="text-[10px] text-emerald-400 uppercase block">+ Day Money In</span>
-                <strong className="text-xs sm:text-sm font-bold text-emerald-400 tabular-nums">
-                  +{formatCurrency(dayInflow)}
-                </strong>
-              </div>
-              <div className="p-2.5 rounded-xl bg-rose-950/30 border border-rose-800/40">
-                <span className="text-[10px] text-rose-400 uppercase block">- Day Money Out</span>
-                <strong className="text-xs sm:text-sm font-bold text-rose-400 tabular-nums">
-                  -{formatCurrency(dayOutflow)}
-                </strong>
-              </div>
-              <div className="p-2.5 rounded-xl bg-sky-950/30 border border-sky-800/40">
-                <span className="text-[10px] text-sky-400 uppercase block">= Expected Closing</span>
-                <strong className="text-xs sm:text-sm font-extrabold text-sky-300 tabular-nums">
-                  {formatCurrency(expectedClosing)}
-                </strong>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-1">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                Enter Actual Counted Closing Balances
-              </h4>
-              <button
-                type="button"
-                onClick={handleMatchExpectedClosing}
-                className="liquid-glass-subtle px-2.5 py-1 rounded-xl text-[11px] font-bold text-sky-400 border border-sky-500/30 cursor-pointer"
-              >
-                Prefill Expected Amounts
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-                    <Banknote className="w-4 h-4" />
-                    Actual Cash Counted ({currencySymbol})
-                  </label>
-                  <span className="text-[10px] text-slate-400">
-                    Expected: {formatCurrency(Number(openingCash || 0) + Number(sessionState?.dayCashInflow || 0) - Number(sessionState?.dayCashOutflow || 0))}
+            <div className="register-amounts">
+              {fields.map(({ label, value, setValue, expected }) => (
+                <label key={label}>
+                  {label}
+                  <span className="register-amount">
+                    <span aria-hidden="true">{currencySymbol}</span>
+                    <input type="number" step="any" inputMode="decimal" value={value}
+                      onChange={(e) => setValue(e.target.value)} placeholder="0.00" />
                   </span>
-                </div>
-                <input
-                  type="number"
-                  step="any"
-                  value={actualClosingCash}
-                  onChange={(e) => setActualClosingCash(e.target.value)}
-                  placeholder="0.00"
-                  className="liquid-input w-full rounded-xl px-3 py-2 text-sm font-bold"
-                />
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-1.5 text-xs font-bold text-sky-400">
-                    <CreditCard className="w-4 h-4" />
-                    Actual POS / Bank Total ({currencySymbol})
-                  </label>
-                  <span className="text-[10px] text-slate-400">
-                    Expected: {formatCurrency(Number(openingBankPos || 0) + Number(sessionState?.dayBankPosInflow || 0) - Number(sessionState?.dayBankPosOutflow || 0))}
-                  </span>
-                </div>
-                <input
-                  type="number"
-                  step="any"
-                  value={actualClosingBankPos}
-                  onChange={(e) => setActualClosingBankPos(e.target.value)}
-                  placeholder="0.00"
-                  className="liquid-input w-full rounded-xl px-3 py-2 text-sm font-bold"
-                />
-              </div>
-            </div>
-
-            {/* Variance Banner */}
-            <div
-              className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
-                variance === 0
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                  : variance > 0
-                  ? 'bg-sky-500/10 border-sky-500/30 text-sky-300'
-                  : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                {variance === 0 ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                ) : (
-                  <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
-                )}
-                <div>
-                  <div className="text-xs font-bold">
-                    {variance === 0
-                      ? 'Cashbook Balanced Perfectly (Zero Variance)'
-                      : variance > 0
-                      ? `Cash Surplus / Overage (+${formatCurrency(variance)})`
-                      : `Cash Shortage / Discrepancy (${formatCurrency(variance)})`}
-                  </div>
-                  <div className="text-[11px] opacity-80">
-                    Actual Closing: {formatCurrency(totalActualClosingInput)} vs Expected:{' '}
-                    {formatCurrency(expectedClosing)}
-                  </div>
-                </div>
-              </div>
-              <span className="text-base font-extrabold font-luxury tabular-nums">
-                {formatCurrency(totalActualClosingInput)}
-              </span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold mb-1 text-slate-300">
-                Closing Reconciliation Note (Optional)
-              </label>
-              <input
-                type="text"
-                value={closingNote}
-                onChange={(e) => setClosingNote(e.target.value)}
-                placeholder="e.g. All POS slips reconciled with Moniepoint settlement report"
-                className="liquid-input w-full rounded-xl px-3 py-2 text-xs"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Recent Reconciled Sessions Log */}
-        {Array.isArray(sessionState?.sessions) && sessionState.sessions.length > 0 && (
-          <div className="pt-2 border-t border-slate-800/80">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-              <History className="w-3.5 h-3.5 text-emerald-400" />
-              Recent Daily Register Logs
-            </p>
-            <div className="max-h-32 overflow-y-auto space-y-1.5 pr-1">
-              {sessionState.sessions.slice(0, 5).map((s) => (
-                <div
-                  key={s.id}
-                  className="flex items-center justify-between text-xs px-3 py-2 rounded-xl bg-slate-900/50 border border-slate-800/70"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-slate-200">
-                      {String(s.session_date).slice(0, 10)}
-                    </span>
-                    <Badge variant={s.status === 'CLOSED' ? 'success' : 'info'}>
-                      {s.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3 tabular-nums text-[11px]">
-                    <span className="text-slate-400">
-                      Open: <strong className="text-slate-200">{formatCurrency(s.opening_balance)}</strong>
-                    </span>
-                    {s.status === 'CLOSED' && (
-                      <>
-                        <span className="text-slate-400">
-                          Close: <strong className="text-emerald-400">{formatCurrency(s.actual_closing_balance)}</strong>
-                        </span>
-                        {Number(s.variance || 0) !== 0 && (
-                          <span
-                            className={
-                              Number(s.variance) > 0 ? 'text-sky-400 font-bold' : 'text-rose-400 font-bold'
-                            }
-                          >
-                            ({Number(s.variance) > 0 ? '+' : ''}
-                            {formatCurrency(s.variance)})
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
+                  {expected !== undefined && <small>Expected {formatCurrency(expected)}</small>}
+                </label>
               ))}
             </div>
           </div>
-        )}
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-          <Button variant="ghost" type="button" onClick={onClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" type="submit" disabled={isSubmitting} className="flex items-center gap-1.5">
-            {isSubmitting ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Saving...
-              </>
-            ) : mode === 'OPEN' ? (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                Confirm Opening Balance
-              </>
-            ) : (
-              <>
-                <Lock className="w-4 h-4" />
-                Save & Close Daily Register
-              </>
-            )}
-          </Button>
+          {!opening && (
+            <div className="register-variance" data-state={variance === 0 ? 'balanced' : variance > 0 ? 'surplus' : 'shortage'}>
+              <strong>{variance === 0 ? 'Balances match' : variance > 0 ? 'Surplus' : 'Shortage'}</strong>
+              <span>{formatCurrency(Math.abs(variance))}</span>
+            </div>
+          )}
+
+          <label className="register-note">
+            {opening ? 'Opening note' : 'Closing note'} <small>(optional)</small>
+            <input type="text" value={opening ? openingNote : closingNote}
+              onChange={(e) => (opening ? setOpeningNote : setClosingNote)(e.target.value)}
+              placeholder={opening ? 'e.g. Float counted before opening' : 'e.g. POS settlements checked'} />
+          </label>
+
+          {sessions.length > 0 && (
+            <details className="register-history">
+              <summary>Recent register activity</summary>
+              <ul>
+                {sessions.slice(0, 5).map((session) => (
+                  <li key={session.id}>
+                    <strong>{String(session.session_date).slice(0, 10)}</strong>
+                    <span>Opened {formatCurrency(session.opening_balance)}</span>
+                    {session.status === 'CLOSED' && (
+                      <span>Closed {formatCurrency(session.actual_closing_balance)}
+                        {Number(session.variance) !== 0 && session.variance != null &&
+                          ` (${Number(session.variance) > 0 ? '+' : ''}${formatCurrency(session.variance)})`}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
+
+        <div className="register-footer">
+          <div className="register-total" aria-live="polite">
+            <span>{opening ? 'Total opening balance' : 'Total counted'}</span>
+            <strong>{formatCurrency(opening ? totalOpeningInput : totalActualClosingInput)}</strong>
+          </div>
+          <div className="register-actions">
+            <button type="button" onClick={onClose} disabled={isSubmitting}>Cancel</button>
+            <button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving…' : opening ? 'Save opening balance' : 'Save and close day'}
+              {isSubmitting
+                ? <RefreshCw aria-hidden="true" size={16} className="animate-spin" />
+                : <ArrowRight aria-hidden="true" size={16} />}
+            </button>
+          </div>
         </div>
       </form>
     </Modal>

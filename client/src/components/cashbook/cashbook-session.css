@@ -1,0 +1,201 @@
+.modal-panel.cashbook-register {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
+
+.cashbook-register > div:first-child {
+  margin: 0;
+  padding: 18px clamp(14px, 4vw, 26px);
+  align-items: center;
+}
+
+.cashbook-register > form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0;
+}
+
+.register-switch, .register-body, .register-footer {
+  padding-inline: clamp(14px, 4vw, 26px);
+}
+
+.register-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  border-bottom: 1px solid var(--border-outer);
+}
+
+.cashbook-register button {
+  cursor: pointer;
+}
+
+.register-switch button {
+  min-height: 44px;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: .875rem;
+  font-weight: 650;
+}
+
+.register-switch button[aria-pressed="true"] {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+}
+
+.register-body {
+  display: grid;
+  gap: 18px;
+  padding-block: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.register-date-row, .register-section-heading, .register-variance,
+.register-footer, .register-actions, .register-history li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.cashbook-register label, .register-section-heading h3, .register-history summary {
+  font-weight: 650;
+  font-size: .875rem;
+}
+
+.register-date-row label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.register-status, .cashbook-register small, .register-ledger dt, .register-history li {
+  color: var(--text-secondary);
+  font-size: .75rem;
+}
+
+.register-status { font-weight: 650; }
+
+.cashbook-register input, .register-amount {
+  min-height: 42px;
+  border: 1px solid var(--border-outer);
+  border-radius: 8px;
+  background: var(--bg-subtle);
+  padding: 8px 11px;
+  color: var(--text-primary);
+}
+
+.cashbook-register :is(button, input, summary):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.register-section, .register-amounts label {
+  display: grid;
+  gap: 8px;
+}
+
+.register-amounts, .register-ledger {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.register-amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.register-amount > span { color: var(--text-secondary); }
+
+.register-amount input {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.register-note input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.register-ledger, .register-variance {
+  padding: 12px;
+  border-radius: 9px;
+  background: var(--bg-subtle);
+}
+
+.register-ledger dd { font-weight: 650; }
+.register-variance { border-inline-start: 3px solid var(--accent); font-size: .875rem; }
+.register-variance[data-state="shortage"] { border-inline-start-color: #e46668; }
+.register-variance[data-state="balanced"] { border-inline-start-color: #3aa878; }
+
+.register-history {
+  border-top: 1px solid var(--border-outer);
+  padding-top: 12px;
+}
+
+.register-history summary { cursor: pointer; }
+.register-history li { padding-block: 8px; }
+
+.register-section-heading button, .register-actions button {
+  padding: 8px 10px;
+  min-height: 40px;
+  border: 1px solid var(--border-outer);
+  border-radius: 8px;
+  font-size: .8125rem;
+  font-weight: 650;
+}
+
+.register-section-heading button:hover, .register-actions button:hover {
+  background: var(--bg-subtle);
+}
+
+.register-footer {
+  flex-shrink: 0;
+  padding-block: 12px;
+  border-top: 1px solid var(--border-outer);
+}
+
+.register-total { display: grid; gap: 2px; }
+.register-total span { color: var(--text-secondary); font-size: .75rem; }
+.register-total strong { font-size: 1.25rem; }
+.register-total, .register-ledger, .register-amount { font-variant-numeric: tabular-nums; }
+
+.register-actions button[type="submit"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #2457d6;
+  border-color: transparent;
+  color: #f8fafc;
+}
+
+.register-actions button[type="submit"]:hover { background: #1946b8; }
+.register-actions button:disabled { opacity: .65; cursor: wait; }
+
+@media (min-width: 600px) {
+  .register-ledger { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 420px) {
+  .register-actions { width: 100%; }
+  .register-actions button[type="submit"] { flex: 1; justify-content: center; }
+}
