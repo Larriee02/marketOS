@@ -142,14 +142,6 @@
 }
 .auth-layout .liquid-input { font-size: .94rem; }
 .auth-layout .liquid-btn-primary { border-radius: 5px; }
-.auth-alternative {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 14px;
-  color: var(--text-secondary);
-  font-size: .875rem;
-}
 @media (max-width: 800px) {
   .auth-layout .auth-shopfront {
     height: 108px;
@@ -161,14 +153,14 @@
 
 .auth-layout--signup .auth-toolbar { max-width: 580px; }
 
-.auth-layout--signup .auth-sheet .liquid-input,
-.auth-layout--signup .auth-sheet button[type="submit"],
-.auth-layout--signup .signup-google button.liquid-glass-subtle {
+.auth-layout .auth-sheet .liquid-input,
+.auth-layout .auth-sheet button[type="submit"],
+.auth-layout .auth-google button.liquid-glass-subtle {
   border-radius: 12px;
   box-shadow: none;
 }
 
-.auth-layout--signup .auth-sheet .liquid-input,
+.auth-layout .auth-sheet .liquid-input,
 .signup-currency {
   background: var(--bg-card-elevated);
   border: 1px solid var(--border-outer);
@@ -219,21 +211,21 @@
   outline-offset: 2px;
 }
 
-.auth-layout--signup .auth-sheet button[type="submit"],
-.auth-layout--signup .signup-google button.liquid-glass-subtle {
+.auth-layout .auth-sheet button[type="submit"],
+.auth-layout .auth-google button.liquid-glass-subtle {
   min-height: 50px;
   transition: background-color 150ms ease, border-color 150ms ease;
 }
 
-.auth-layout--signup .auth-sheet form button[type="submit"] {
+.auth-layout .auth-sheet form button[type="submit"] {
   display: grid;
   grid-template-columns: 1rem 1fr 1rem;
   padding-inline: 16px;
 }
 
-.auth-layout--signup .auth-sheet form button[type="submit"] span { grid-column: 2; }
+.auth-layout .auth-sheet form button[type="submit"] span { grid-column: 2; }
 
-.auth-layout--signup .signup-google button.liquid-glass-subtle:hover:enabled {
+.auth-layout .auth-google button.liquid-glass-subtle:hover:enabled {
   background: var(--bg-subtle);
   border-color: var(--brand-blue);
 }

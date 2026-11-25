@@ -156,7 +156,6 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
         <>
           <div className="auth-intro">
             <h1>Sign in to your shop</h1>
-            <p>Use Google, email or your phone number to sign in.</p>
           </div>
 
           {error && (
@@ -265,9 +264,8 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
             </button>
           </form>
 
-          <div className="auth-alternative">
-            <span>Or</span>
-            <OAuthButtons actionLabel="Sign in" onAuthenticated={onAuthenticated} onError={setError} />
+          <div className="auth-google">
+            <OAuthButtons actionLabel="Sign in" showPopupNotice={false} onAuthenticated={onAuthenticated} onError={setError} />
           </div>
 
         </>

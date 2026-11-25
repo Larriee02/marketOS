@@ -352,7 +352,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
             </button>
           </form>
 
-          <div className="signup-google">
+          <div className="auth-google">
             <OAuthButtons actionLabel="Sign up" showPopupNotice={false} onAuthenticated={onAuthenticated} onError={setError} />
           </div>
 
