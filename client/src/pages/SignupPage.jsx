@@ -10,6 +10,8 @@ import {
   EyeOff,
   ArrowRight,
   ChevronDown,
+  MapPin,
+  LayoutGrid,
 } from 'lucide-react';
 import { apiFetch } from '../services/api';
 import { CURRENCY_OPTIONS } from '../utils/currency';
@@ -244,36 +246,42 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
                 <label htmlFor="signup-category" className="block text-xs font-bold mb-1 text-theme-primary">
                   Business Category
                 </label>
-                <select id="signup-category"
-                  value={signupForm.business_type}
-                  onChange={(e) =>
-                    setSignupForm({ ...signupForm, business_type: e.target.value })
-                  }
-                  className="liquid-input w-full px-3 py-2.5 rounded-xl text-xs"
-                >
-                  {BUSINESS_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
+                <div className="signup-currency">
+                  <div className="signup-currency-summary signup-option-summary" aria-hidden="true">
+                    <span className="signup-currency-symbol"><LayoutGrid size={17} /></span>
+                    <span>{signupForm.business_type}</span>
+                    <ChevronDown size={16} />
+                  </div>
+                  <select id="signup-category"
+                    value={signupForm.business_type}
+                    onChange={(event) => setSignupForm({ ...signupForm, business_type: event.target.value })}
+                  >
+                    {BUSINESS_TYPES.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>
                 <label htmlFor="signup-city" className="block text-xs font-bold mb-1 text-theme-primary">
                   Location
                 </label>
-                <select id="signup-city"
-                  value={signupForm.city}
-                  onChange={(e) => setSignupForm({ ...signupForm, city: e.target.value })}
-                  className="liquid-input w-full px-3 py-2.5 rounded-xl text-xs"
-                >
-                  {LAGOS_LOCATIONS.map((loc) => (
-                    <option key={loc} value={loc}>
-                      {loc}
-                    </option>
-                  ))}
-                </select>
+                <div className="signup-currency">
+                  <div className="signup-currency-summary signup-option-summary" aria-hidden="true">
+                    <span className="signup-currency-symbol"><MapPin size={17} /></span>
+                    <span>{signupForm.city}</span>
+                    <ChevronDown size={16} />
+                  </div>
+                  <select id="signup-city"
+                    value={signupForm.city}
+                    onChange={(event) => setSignupForm({ ...signupForm, city: event.target.value })}
+                  >
+                    {LAGOS_LOCATIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -345,7 +353,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
           </form>
 
           <div className="signup-google">
-            <OAuthButtons actionLabel="Sign up" onAuthenticated={onAuthenticated} onError={setError} />
+            <OAuthButtons actionLabel="Sign up" showPopupNotice={false} onAuthenticated={onAuthenticated} onError={setError} />
           </div>
 
         </>

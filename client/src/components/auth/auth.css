@@ -237,3 +237,12 @@
   background: var(--bg-subtle);
   border-color: var(--brand-blue);
 }
+
+.signup-option-summary {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.signup-option-summary > span:nth-child(2) {
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}

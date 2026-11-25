@@ -41,7 +41,7 @@ export function GoogleIcon() {
   );
 }
 
-export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onError }) {
+export function OAuthButtons({ actionLabel = 'Continue', showPopupNotice = true, onAuthenticated, onError }) {
   const [connectingGoogle, setConnectingGoogle] = useState(false);
   const popupRef = useRef(null);
   const pollTimerRef = useRef(null);
@@ -138,7 +138,7 @@ export function OAuthButtons({ actionLabel = 'Continue', onAuthenticated, onErro
         <span>{connectingGoogle ? 'Connecting to Google...' : `${actionLabel} with Google`}</span>
       </button>
 
-      {connectingGoogle && (
+      {connectingGoogle && showPopupNotice && (
         <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[11px] font-semibold text-theme-secondary">
           <span className="flex items-center gap-1.5">
             <ExternalLink className="w-3.5 h-3.5 text-blue-500 shrink-0" />
