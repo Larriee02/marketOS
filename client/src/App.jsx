@@ -4956,10 +4956,11 @@ function AppShell({ darkMode, setDarkMode }) {
       <Modal
         isOpen={showCashModal}
         onClose={() => setShowCashModal(false)}
-        title="Record money in or out"
+        title="Record money"
+        maxWidth="max-w-xl"
       >
-        <form onSubmit={handleCreateCashTx} className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
+        <form onSubmit={handleCreateCashTx} className="cash-entry-form">
+          <div className="cash-entry-direction" role="group" aria-label="Money direction">
             <button
               type="button"
               onClick={() =>
@@ -4969,11 +4970,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   category: 'Generator & Power',
                 })
               }
-              className={`py-2.5 rounded-xl text-xs font-bold border cursor-pointer ${
-                cashForm.type === 'OUTFLOW'
-                  ? 'bg-rose-600 text-white border-rose-500 shadow-md'
-                  : 'liquid-glass-subtle'
-              }`}
+              aria-pressed={cashForm.type === 'OUTFLOW'}
             >
               − Money out
             </button>
@@ -4986,11 +4983,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   category: 'Counter Sales',
                 })
               }
-              className={`py-2.5 rounded-xl text-xs font-bold cursor-pointer ${
-                cashForm.type === 'INFLOW'
-                  ? 'liquid-btn-primary'
-                  : 'liquid-glass-subtle'
-              }`}
+              aria-pressed={cashForm.type === 'INFLOW'}
             >
               + Money in
             </button>
@@ -5007,11 +5000,9 @@ function AppShell({ darkMode, setDarkMode }) {
           </label>
 
           {/* Visual Payment Channel Selector */}
-          <div>
-            <label className="block text-xs font-bold mb-1.5 text-theme-primary">
-              How was it paid?
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <fieldset>
+            <legend className="mb-2 text-sm font-bold">Payment method</legend>
+            <div className="cash-payment-options">
               {['CASH', 'POS', 'BANK_TRANSFER', 'MOBILE_MONEY'].map((chId) => {
                 const meta = getChannelBadgeMeta(chId);
                 const Icon = meta.icon;
@@ -5021,19 +5012,15 @@ function AppShell({ darkMode, setDarkMode }) {
                     type="button"
                     key={chId}
                     onClick={() => setCashForm({ ...cashForm, payment_method: chId })}
-                    className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
-                      active
-                        ? meta.pillClass
-                        : 'liquid-glass-subtle text-theme-secondary hover:opacity-90'
-                    }`}
+                    aria-pressed={active}
                   >
                     <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">{meta.label}</span>
+                    <span>{meta.label}</span>
                   </button>
                 );
               })}
             </div>
-          </div>
+          </fieldset>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -5095,7 +5082,7 @@ function AppShell({ darkMode, setDarkMode }) {
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="cash-entry-actions">
             <button
               type="button"
               onClick={() => setShowCashModal(false)}

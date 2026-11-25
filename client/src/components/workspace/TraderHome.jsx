@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowDownLeft, ArrowRight, ArrowUpRight, BarChart3, BookOpen, CalendarCheck, ChevronDown, Download, Package, ShoppingBasket, Store, TriangleAlert, Users, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowRight, ArrowUpRight, BarChart3, CalendarCheck, ChevronDown, Download, Package, ShoppingBasket, Store, TriangleAlert, Users, Wallet } from 'lucide-react';
 
 import './trader-home.css';
 
@@ -95,17 +95,17 @@ export function TraderHome({ user, dashboard, products, session, report, loading
       </section>
 
       <details className="workspace-panel trader-figures">
-        <summary><BookOpen size={20} aria-hidden="true" /><span>Shop figures and activity</span><ChevronDown size={18} className="trader-disclosure" aria-hidden="true" /></summary>
-        <div className="flex flex-wrap gap-2 items-center">
+        <summary><span>Shop figures and activity</span><ChevronDown size={18} className="trader-disclosure" aria-hidden="true" /></summary>
+        <div className="trader-figures-toolbar">
           <div className="workspace-period" aria-label="Reporting period">
             {[['TODAY', 'Today'], ['WEEK', 'This Week'], ['MONTH', 'This Month']].map(([id, text]) => (
               <button key={id} aria-pressed={period === id} onClick={() => onPeriod(id)}>{text}</button>
             ))}
           </div>
-          <button className="workspace-icon-button" onClick={onExport} aria-label="Export cash ledger"><Download size={17} /></button>
+          <button className="workspace-icon-button" onClick={onExport} aria-label="Export cash ledger"><Download size={16} aria-hidden="true" /> Export ledger</button>
         </div>
       {report?.error && <p className="workspace-negative text-sm" role="status">{report.error}</p>}
-      <div className="workspace-metrics">
+      <div className="workspace-metrics trader-figures-metrics">
         <WorkspaceMetric label={`${label} sales`} value={metrics ? formatMoney(metrics.salesRevenue) : '—'} detail={metrics ? `${metrics.salesCount} sales recorded` : 'Sales report'} icon={ArrowUpRight} />
         <WorkspaceMetric label="Cash in drawer" value={session ? formatMoney(session.expectedClosingCash) : '—'} detail={session ? 'Expected cash balance' : 'Daily register'} icon={Wallet} />
         <WorkspaceMetric label="Total stock value" value={loading ? '—' : formatMoney(dashboard.inventory_retail_value)} detail={`${products.length} ${products.length === 1 ? 'product' : 'products'} in the catalog`} icon={Package} />
