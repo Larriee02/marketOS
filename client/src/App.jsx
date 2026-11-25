@@ -1905,19 +1905,23 @@ function AppShell({ darkMode, setDarkMode }) {
 
         {/* TAB 1: QUICK SELL (SHOP COUNTER) */}
         {activeTab === 'counter' && (
-          <section className="shop-tool space-y-4">
-            <div className="workspace-page-heading shop-tool-heading">
-              <div className="shop-tool-title"><span className="shop-tool-sign"><ShoppingCart aria-hidden="true" /></span><div><h1 className="workspace-title">Make a sale</h1><p className="workspace-muted">Tap an item to add it to the basket.</p></div></div>
+          <section className="shop-tool sell-screen">
+            <div className="workspace-page-heading sell-heading">
+              <h1 className="workspace-title">Make a sale</h1>
               <div className="shop-drawer-total"><span>Drawer cash</span><b>{cashbookSession ? formatNaira(cashbookSession.expectedClosingCash) : '—'}</b></div>
             </div>
             <div className="workspace-columns workspace-sale">
-            <div id="counter-results" className="workspace-panel space-y-4">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            <div id="counter-results" className="workspace-panel sell-catalog">
+              <div className="sell-catalog-header">
+                <h2>Products</h2>
+                <span>{filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'}</span>
+              </div>
+              <div className="sell-filters">
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
                   <input
                     type="text"
-                    aria-label="Search products to sell" placeholder="Find an item by name or code…"
+                    aria-label="Search products to sell" placeholder="Search by name or code"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="liquid-input w-full pl-10 pr-4 py-2.5 text-sm rounded-2xl"
@@ -1956,44 +1960,27 @@ function AppShell({ darkMode, setDarkMode }) {
                     return (
                       <div
                         key={p.id}
-                        onClick={() => stock > 0 && addToCart(p)}
-                        style={
-                          inBasket > 0
-                            ? {
-                                backgroundColor: 'var(--brand-blue-soft)',
-                                borderColor: 'var(--brand-blue-border)',
-                              }
-                            : undefined
-                        }
-                        className={`shop-sale-item ${
-                          stock <= 0
-                            ? 'shop-sale-item-empty'
-                            : 'cursor-pointer'
-                        }`}
+                        onClick={stock > 0 ? () => addToCart(p) : undefined}
+                        className={stock > 0 ? "shop-sale-item cursor-pointer" : "shop-sale-item shop-sale-item-empty"}
                       >
                         <div className="space-y-1 min-w-0">
-                          <div className="font-extrabold font-luxury text-sm leading-snug break-words text-theme-primary">
+                          <div className="font-bold text-sm leading-snug break-words text-theme-primary">
                             {p.name}
                           </div>
-                          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                            <span className="font-extrabold tabular-nums text-theme-brand">
+                          <div className="sell-item-meta">
+                            <span className="font-bold tabular-nums text-theme-primary">
                               {formatNaira(p.selling_price)} <span className="shop-unit">/ {p.unit}</span>
                             </span>
-                            <Badge
-                              variant={
-                                stock <= 0 ? 'danger' : isLow ? 'warning' : 'success'
-                              }
-                            >
-                              {stock <= 0 ? 'Out of stock' : `${stock} ${p.unit}`}
-                            </Badge>
+                            <span className={stock <= 0 ? 'text-theme-outflow' : isLow ? 'sell-low-stock' : 'workspace-muted'}>
+                              {stock <= 0 ? 'Out of stock' : isLow ? `Low stock · ${stock} left` : `${stock} in stock`}
+                            </span>
                           </div>
                         </div>
 
                         {stock <= 0 ? (
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
+                            onClick={() => {
                               setSelectedProduct(p);
                               setMovementForm({
                                 movement_type: 'RESTOCK',
@@ -2005,21 +1992,22 @@ function AppShell({ darkMode, setDarkMode }) {
                                 note: '',
                               });
                             }}
-                            className="liquid-glass-subtle shrink-0 px-3 py-2 rounded-xl text-xs font-extrabold text-theme-brand cursor-pointer"
+                            className="sell-row-action"
                           >
-                            + Restock
+                            Restock
                           </button>
                         ) : (
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (stock > 0) addToCart(p);
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              addToCart(p);
                             }}
-                            className="liquid-btn-primary shrink-0 px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
+                            aria-label={`Add ${p.name} to basket${inBasket ? ` (${inBasket} in basket)` : ''}`}
+                            className="sell-row-action sell-row-add"
                           >
-                            <Plus className="w-3.5 h-3.5" />
-                            {inBasket > 0 ? `Added (${inBasket})` : 'Sell'}
+                            <Plus size={15} aria-hidden="true" />
+                            {inBasket > 0 ? `Add (${inBasket})` : 'Add'}
                           </button>
                         )}
                       </div>
@@ -2030,20 +2018,27 @@ function AppShell({ darkMode, setDarkMode }) {
               <ListPagination list={productPage} label="Products to sell" targetId="counter-results" />
             </div>
 
+            {cartItemCount > 0 && (
+              <a className="sell-basket-jump" href="#sell-basket">
+                <span>Basket · {cartItemCount}</span>
+                <strong>{formatNaira(cartTotal)} →</strong>
+              </a>
+            )}
+
             {/* Keep checkout beside the items on wide screens. */}
             <div
               ref={basketRef}
               className="workspace-panel shop-basket space-y-4"
+              id="sell-basket"
+              tabIndex={-1}
             >
               <div
                 style={{ borderColor: 'var(--border-outer)' }}
-                className="flex items-center justify-between border-b pb-3"
+                className="sell-basket-header"
               >
-                <div className="flex items-center gap-2">
-                  <ShoppingCart className="w-5 h-5 text-theme-brand" />
-                  <h2 className="font-extrabold font-luxury text-base">
-                    Your basket
-                  </h2>
+                <div className="sell-catalog-header">
+                  <h2>Basket</h2>
+                  <span>{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {lastReceipt && (
@@ -2068,11 +2063,10 @@ function AppShell({ darkMode, setDarkMode }) {
               </div>
 
               {cartItems.length === 0 ? (
-                <div className="py-10 text-center space-y-2 text-theme-secondary">
-                  <ShoppingCart className="w-8 h-8 mx-auto stroke-1 opacity-60" />
-                  <p className="text-xs font-medium">
-                    Choose an item to start this sale.
-                  </p>
+                <div className="sell-basket-empty">
+                  <ShoppingCart size={24} aria-hidden="true" />
+                  <p>Your basket is empty</p>
+                  <span>Add a product to start the sale.</span>
                 </div>
               ) : (
                 <form onSubmit={handleInitiateCheckout} className="space-y-4">
