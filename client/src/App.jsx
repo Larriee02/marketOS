@@ -1477,11 +1477,22 @@ function AppShell({ darkMode, setDarkMode }) {
   };
 
   // Record Direct Cash Entry
+  const [cashEntryError, setCashEntryError] = useState('');
+  useEffect(() => {
+    if (!showCashModal) setCashEntryError('');
+  }, [showCashModal]);
+
   const handleCreateCashTx = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setCashEntryError('');
+    if (!Number.isFinite(Number(cashForm.amount)) || Number(cashForm.amount) <= 0) {
+      setCashEntryError('Enter an amount greater than zero.');
+      return;
+    }
     const reasonText = (cashForm.expense_reason || cashForm.description || '').trim();
     if (cashForm.type === 'OUTFLOW' && !reasonText) {
-      toastWarning?.('Please enter a specific reason or purpose for this expense.');
+      setCashEntryError('Enter a reason for this expense.');
       return;
     }
     setSubmitting(true);
@@ -1501,7 +1512,7 @@ function AppShell({ darkMode, setDarkMode }) {
       showSuccessToast('Cashbook entry saved!');
       fetchAllData();
     } catch (err) {
-      alert(err.message);
+      setCashEntryError(err.message || 'Could not save the entry.');
     } finally {
       setSubmitting(false);
     }
@@ -4842,147 +4853,84 @@ function AppShell({ darkMode, setDarkMode }) {
       {/* MODAL 3: RECORD SHOP EXPENSE OR CASH INFLOW */}
       <Modal
         isOpen={showCashModal}
-        onClose={() => setShowCashModal(false)}
+        onClose={() => { if (!submitting) setShowCashModal(false); }}
         title="Record money"
-        maxWidth="max-w-xl"
+        maxWidth="max-w-lg"
+        panelClassName="cash-entry-panel"
       >
         <form onSubmit={handleCreateCashTx} className="cash-entry-form">
-          <div className="cash-entry-direction" role="group" aria-label="Money direction">
-            <button
-              type="button"
-              onClick={() =>
-                setCashForm({
-                  ...cashForm,
-                  type: 'OUTFLOW',
-                  category: 'Generator & Power',
-                })
-              }
-              aria-pressed={cashForm.type === 'OUTFLOW'}
-            >
-              − Money out
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setCashForm({
-                  ...cashForm,
-                  type: 'INFLOW',
-                  category: 'Counter Sales',
-                })
-              }
-              aria-pressed={cashForm.type === 'INFLOW'}
-            >
-              + Money in
-            </button>
-          </div>
-
-          <label className="block space-y-1.5 text-sm font-bold">
-            <span>{cashForm.type === 'OUTFLOW' ? 'What did you spend it on?' : 'Where did the money come from?'}</span>
-            <select className="liquid-input w-full rounded-xl p-3" value={cashForm.category}
-              onChange={(event) => setCashForm({ ...cashForm, category: event.target.value })}>
-              {(cashForm.type === 'OUTFLOW' ? LAGOS_EXPENSE_PRESETS : ['Counter Sales', 'Credit Repayment', 'Wholesale Order', 'Capital / Float In', 'Other Income']).map((category) => (
-                <option key={category} value={category}>{category}</option>
+          <div className="cash-entry-fields">
+            <div className="cash-entry-direction" role="group" aria-label="Money direction">
+              {[
+                ['OUTFLOW', 'Money out', 'Generator & Power'],
+                ['INFLOW', 'Money in', 'Counter Sales'],
+              ].map(([type, label, category]) => (
+                <button type="button" key={type} aria-pressed={cashForm.type === type}
+                  onClick={() => {
+                    if (cashForm.type !== type) setCashForm({ ...cashForm, type, category });
+                  }}>{label}</button>
               ))}
-            </select>
-          </label>
-
-          {/* Visual Payment Channel Selector */}
-          <fieldset>
-            <legend className="mb-2 text-sm font-bold">Payment method</legend>
-            <div className="cash-payment-options">
-              {['CASH', 'POS', 'BANK_TRANSFER', 'MOBILE_MONEY'].map((chId) => {
-                const meta = getChannelBadgeMeta(chId);
-                const Icon = meta.icon;
-                const active = cashForm.payment_method === chId;
-                return (
-                  <button
-                    type="button"
-                    key={chId}
-                    onClick={() => setCashForm({ ...cashForm, payment_method: chId })}
-                    aria-pressed={active}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{meta.label}</span>
-                  </button>
-                );
-              })}
             </div>
-          </fieldset>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="cash-amount" className="block text-xs font-bold mb-1 text-theme-primary">
-                Amount ({currencySymbol})
+            <label className="cash-entry-label" htmlFor="cash-amount">Amount</label>
+            <div className="cash-entry-amount">
+              <span aria-hidden="true">{currencySymbol}</span>
+              <input id="cash-amount" type="number" step="any" inputMode="decimal" required
+                aria-label={`Amount (${currencySymbol})`} placeholder="0.00" value={cashForm.amount}
+                onChange={(event) => setCashForm({ ...cashForm, amount: event.target.value })} />
+            </div>
+
+            <div className="cash-entry-pair">
+              <label className="cash-entry-label">
+                {cashForm.type === 'OUTFLOW' ? 'Expense category' : 'Income category'}
+                <select className="liquid-input" value={cashForm.category}
+                  onChange={(event) => setCashForm({ ...cashForm, category: event.target.value })}>
+                  {(cashForm.type === 'OUTFLOW' ? LAGOS_EXPENSE_PRESETS : ['Counter Sales', 'Credit Repayment', 'Wholesale Order', 'Capital / Float In', 'Other Income']).map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
               </label>
-              <input id="cash-amount"
-                type="number"
-                step="any"
-                required
-                placeholder="e.g. 5000"
-                value={cashForm.amount}
-                onChange={(e) => setCashForm({ ...cashForm, amount: e.target.value })}
-                className="liquid-input w-full rounded-xl px-3 py-2 text-sm font-bold"
-              />
-            </div>
-            <div>
-              <label htmlFor="cash-person" className="block text-xs font-bold mb-1 text-theme-primary">
-                {cashForm.type === 'OUTFLOW'
-                  ? 'Who did you pay? (optional)'
-                  : 'Who paid you? (optional)'}
+              <label className="cash-entry-label">
+                Payment method
+                <select className="liquid-input" value={cashForm.payment_method}
+                  onChange={(event) => setCashForm({ ...cashForm, payment_method: event.target.value })}>
+                  {['CASH', 'POS', 'BANK_TRANSFER', 'MOBILE_MONEY'].map((method) => (
+                    <option key={method} value={method}>{getChannelBadgeMeta(method).label}</option>
+                  ))}
+                </select>
               </label>
-              <input id="cash-person"
-                type="text"
-                value={cashForm.counterparty_name}
-                onChange={(e) => setCashForm({ ...cashForm, counterparty_name: e.target.value })}
-                placeholder={
-                  cashForm.type === 'OUTFLOW'
-                    ? 'e.g. Total Petrol Station / Market Driver'
-                    : 'e.g. Walk-in Customer'
-                }
-                className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
-              />
             </div>
-          </div>
 
-          <div>
-            <label htmlFor="cash-note" className="block text-xs font-bold mb-1 text-theme-primary">
-              {cashForm.type === 'OUTFLOW'
-                ? 'What was the payment for?'
-                : 'Note (optional)'}
+            <label className="cash-entry-label">
+              {cashForm.type === 'OUTFLOW' ? 'Expense reason' : 'Note (optional)'}
+              <input className="liquid-input" required={cashForm.type === 'OUTFLOW'}
+                value={cashForm.expense_reason || cashForm.description}
+                placeholder={cashForm.type === 'OUTFLOW' ? 'e.g. Generator fuel' : 'e.g. Wholesale order'}
+                onChange={(event) => setCashForm({ ...cashForm, expense_reason: event.target.value, description: event.target.value })} />
             </label>
-            <input id="cash-note"
-              required={cashForm.type === 'OUTFLOW'}
-              value={cashForm.expense_reason || cashForm.description}
-              onChange={(e) =>
-                setCashForm({
-                  ...cashForm,
-                  expense_reason: e.target.value,
-                  description: e.target.value,
-                })
-              }
-              placeholder={
-                cashForm.type === 'OUTFLOW'
-                  ? 'e.g. Bought 10 litres of petrol for evening shop generator'
-                  : 'e.g. Bulk carton order paid via transfer'
-              }
-              className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
-            />
+            <label className="cash-entry-label">
+              {cashForm.type === 'OUTFLOW' ? 'Paid to (optional)' : 'Received from (optional)'}
+              <input className="liquid-input" value={cashForm.counterparty_name}
+                onChange={(event) => setCashForm({ ...cashForm, counterparty_name: event.target.value })} />
+            </label>
           </div>
+          {cashEntryError && <p className="cash-entry-error workspace-negative" role="alert">{cashEntryError}</p>}
 
           <div className="cash-entry-actions">
             <button
               type="button"
               onClick={() => setShowCashModal(false)}
-              className="px-4 py-2 text-xs font-semibold cursor-pointer text-theme-secondary"
+              className="workspace-chip"
+              disabled={submitting}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="liquid-btn-primary px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+              className="workspace-primary"
             >
-              {submitting ? 'Saving...' : 'Save entry'}
+              {submitting ? 'Saving…' : cashForm.type === 'OUTFLOW' ? 'Save expense' : 'Save income'}
             </button>
           </div>
         </form>

@@ -253,36 +253,72 @@
   .trader-figures .trader-figures-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
-.cash-entry-form { display: grid; gap: 16px; }
-.cash-entry-direction,
-.cash-payment-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.cash-entry-direction button,
-.cash-payment-options button {
+.cash-entry-panel.modal-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg-card-elevated);
+}
+.cash-entry-panel > :first-child { padding: 10px 18px; align-items: center; }
+.cash-entry-panel .cash-entry-form { display: flex; flex-direction: column; min-height: 0; margin: 0; }
+.cash-entry-fields { display: grid; gap: 10px; overflow-y: auto; padding: 12px 18px; }
+.cash-entry-direction, .cash-entry-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.cash-entry-direction { padding: 4px; border-radius: 9px; background: var(--bg-subtle); }
+.cash-entry-direction button {
+  min-height: 38px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cash-entry-direction button[aria-pressed="true"] {
+  border-color: var(--brand-blue-border);
+  background: var(--bg-input);
+  color: var(--brand-blue);
+}
+.cash-entry-label { display: block; font-size: 13px; font-weight: 650; }
+.cash-entry-label .liquid-input {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 4px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+.cash-entry-amount {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 44px;
+  gap: 9px;
+  margin-top: -5px;
   padding: 8px 12px;
   border: 1px solid var(--border-outer);
   border-radius: 9px;
   background: var(--bg-input);
-  text-align: left;
-  font-size: 13px;
-  font-weight: 650;
-  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
-.cash-entry-direction button[aria-pressed="true"],
-.cash-payment-options button[aria-pressed="true"] {
-  border-color: var(--brand-blue);
-  background: var(--brand-blue-soft);
-  color: var(--brand-blue);
-}
-.cash-entry-form .liquid-input { min-height: 44px; box-shadow: none; }
+.cash-entry-amount input { width: 100%; min-width: 0; background: transparent; }
+.cash-entry-amount:focus-within { outline: 2px solid var(--brand-blue); }
+.cash-entry-amount input:focus { outline: none; }
+.cash-entry-error { padding: 6px 18px; font-size: 13px; }
 .cash-entry-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   border-top: 1px solid var(--border-outer);
-  padding-top: 12px;
+  padding: 8px 18px max(8px, env(safe-area-inset-bottom));
 }
 .cash-entry-actions button { min-height: 44px; }
+.cash-entry-actions button:disabled { opacity: .6; cursor: not-allowed; }
+@media (max-width: 380px) {
+  .cash-entry-pair { grid-template-columns: minmax(0, 1fr); }
+}
