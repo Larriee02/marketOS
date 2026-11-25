@@ -113,7 +113,6 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
           email={signupForm.email}
           maskedDestination={otpInfo?.maskedDestination}
           otpPreview={otpInfo?.otpPreview}
-          deliveryResults={otpInfo?.deliveryResults}
           submitting={submitting}
           error={error}
           onVerify={handleVerifyOtpAndRegister}

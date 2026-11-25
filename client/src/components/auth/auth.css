@@ -238,3 +238,50 @@
   overflow-wrap: anywhere;
   line-height: 1.25;
 }
+
+.auth-verification .auth-intro {
+  margin-bottom: 30px;
+}
+
+.auth-verification .auth-intro strong {
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.auth-layout .auth-sheet .auth-otp-code {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 16px;
+  font: 600 1.45rem / 1.4 "JetBrains Mono", monospace;
+  letter-spacing: .36em;
+}
+
+.auth-otp-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin-top: 24px;
+  border-top: 1px solid var(--border-outer);
+}
+
+.auth-otp-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 7px;
+  color: var(--brand-blue);
+  font-size: .875rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.auth-otp-link:hover:enabled { text-decoration: underline; }
+
+.auth-otp-link:disabled,
+.auth-otp-status {
+  color: var(--text-secondary);
+}
+
+.auth-otp-link:disabled { cursor: default; }
+.auth-otp-status { font-size: .875rem; }

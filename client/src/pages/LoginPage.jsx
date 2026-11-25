@@ -145,7 +145,6 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
           email={otpInfo?.email || identifier}
           maskedDestination={otpInfo?.maskedDestination}
           otpPreview={otpInfo?.otpPreview}
-          deliveryResults={otpInfo?.deliveryResults}
           submitting={submitting}
           error={error}
           onVerify={handleVerifyOtpAndLogin}
