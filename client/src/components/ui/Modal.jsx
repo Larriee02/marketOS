@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 
-export function Modal({ isOpen, onClose, title, subtitle, maxWidth = 'max-w-lg', children }) {
+export function Modal({ isOpen, onClose, title, subtitle, maxWidth = 'max-w-lg', panelClassName = '', children }) {
   const dialog = useRef(null);
   const titleId = useId();
   const close = useRef(onClose);
@@ -54,7 +54,7 @@ export function Modal({ isOpen, onClose, title, subtitle, maxWidth = 'max-w-lg',
     >
       <div
         style={{ color: 'var(--text-primary)' }}
-        className={`liquid-glass-elevated rounded-t-3xl sm:rounded-3xl ${maxWidth} w-full p-4 sm:p-6 space-y-4 max-h-[90dvh] overflow-y-auto overscroll-contain pb-safe modal-panel`}
+        className={`liquid-glass-elevated rounded-t-3xl sm:rounded-3xl ${maxWidth} w-full p-4 sm:p-6 space-y-4 max-h-[90dvh] overflow-y-auto overscroll-contain pb-safe modal-panel ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div

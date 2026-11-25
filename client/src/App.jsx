@@ -1322,9 +1322,25 @@ function AppShell({ darkMode, setDarkMode }) {
     return qty * price;
   }, [selectedProduct, movementForm.quantity, movementForm.movement_type]);
 
+  const [productError, setProductError] = useState('');
+  useEffect(() => {
+    if (!showProductModal) setProductError('');
+  }, [showProductModal]);
+
   // Save Product
   const handleSaveProduct = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setProductError('');
+    const name = productForm.name.trim();
+    if (!name) {
+      setProductError('Enter a product name.');
+      return;
+    }
+    if (Number(productForm.selling_price) < Number(productForm.cost_price)) {
+      setProductError('Selling price must be at least the unit cost.');
+      return;
+    }
     setSubmitting(true);
     try {
       const url = editingProduct
@@ -1336,7 +1352,7 @@ function AppShell({ darkMode, setDarkMode }) {
 
       await apiFetch(url, {
         method,
-        body: JSON.stringify({ ...productForm, sku: autoSku }),
+        body: JSON.stringify({ ...productForm, name, sku: autoSku }),
       });
 
       setShowProductModal(false);
@@ -1349,7 +1365,7 @@ function AppShell({ darkMode, setDarkMode }) {
       showSuccessToast(editingProduct ? 'Item updated!' : 'New item added to inventory!');
       fetchAllData();
     } catch (err) {
-      alert(err.message);
+      setProductError(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -1711,7 +1727,11 @@ function AppShell({ darkMode, setDarkMode }) {
 
   const openAddProduct = () => {
     setEditingProduct(null);
-    setProductForm(INITIAL_PRODUCT_FORM);
+    setProductForm({
+      ...INITIAL_PRODUCT_FORM,
+      category: businessProfile.categories[0],
+      unit: businessProfile.units[0],
+    });
     setShowProductModal(true);
   };
   const openCashEntry = () => {
@@ -4781,135 +4801,139 @@ function AppShell({ darkMode, setDarkMode }) {
             : `Add ${businessProfile.itemLabel}`
         }
         maxWidth="max-w-xl"
+        panelClassName="stock-product-panel"
       >
         <form onSubmit={handleSaveProduct} className="stock-product-form">
-          <div>
-            <label htmlFor="product-name" className="stock-product-label">Product name</label>
-            <input id="product-name"
-              required
-              placeholder={businessProfile.namePlaceholder}
-              value={productForm.name}
-              onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-              className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="stock-product-fields">
             <div>
-              <label htmlFor="product-category" className="stock-product-label">Category</label>
-              <select id="product-category"
-                value={
-                  businessProfile.categories.includes(productForm.category)
-                    ? productForm.category
-                    : productForm.category || businessProfile.categories[0]
-                }
-                onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
-              >
-                {Array.from(
-                  new Set([
-                    ...businessProfile.categories,
-                    ...(productForm.category ? [productForm.category] : []),
-                  ])
-                ).map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="product-unit" className="stock-product-label">Selling unit</label>
-              <select id="product-unit"
-                value={
-                  productForm.unit || businessProfile.units[0]
-                }
-                onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
-                className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
-              >
-                {Array.from(
-                  new Set([
-                    ...businessProfile.units,
-                    ...getAllCommonUnits(),
-                    ...(productForm.unit ? [productForm.unit] : []),
-                  ])
-                ).map((u) => (
-                  <option key={u} value={u}>
-                    {u}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <fieldset className="stock-product-group"><legend>Pricing</legend>
-            <div>
-              <label htmlFor="product-cost_price" className="stock-product-label">Unit cost ({currencySymbol})</label>
-              <input id="product-cost_price"
-                type="number"
+              <label htmlFor="product-name" className="stock-product-label">Product name</label>
+              <input id="product-name"
                 required
-                placeholder="e.g. 2600"
-                value={productForm.cost_price}
-                onChange={(e) => setProductForm({ ...productForm, cost_price: e.target.value })}
+                placeholder={businessProfile.namePlaceholder}
+                value={productForm.name}
+                onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
                 className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
               />
             </div>
-            <div>
-              <label htmlFor="product-selling_price" className="stock-product-label">Selling price ({currencySymbol})</label>
-              <input id="product-selling_price"
-                type="number"
-                required
-                placeholder="e.g. 3000"
-                value={productForm.selling_price}
-                onChange={(e) =>
-                  setProductForm({ ...productForm, selling_price: e.target.value })
-                }
-                className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
-              />
-            </div>
-          </fieldset>
 
-          <fieldset className="stock-product-group"><legend>Stock levels</legend>
-            {!editingProduct && (
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="product-stock_quantity" className="stock-product-label">Opening stock</label>
-                <input id="product-stock_quantity"
-                  type="number"
+                <label htmlFor="product-category" className="stock-product-label">Category</label>
+                <select id="product-category"
+                  value={
+                    businessProfile.categories.includes(productForm.category)
+                      ? productForm.category
+                      : productForm.category || businessProfile.categories[0]
+                  }
+                  onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                  className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
+                >
+                  {Array.from(
+                    new Set([
+                      ...businessProfile.categories,
+                      ...(productForm.category ? [productForm.category] : []),
+                    ])
+                  ).map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="product-unit" className="stock-product-label">Selling unit</label>
+                <select id="product-unit"
+                  value={
+                    productForm.unit || businessProfile.units[0]
+                  }
+                  onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
+                  className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
+                >
+                  {Array.from(
+                    new Set([
+                      ...businessProfile.units,
+                      ...getAllCommonUnits(),
+                      ...(productForm.unit ? [productForm.unit] : []),
+                    ])
+                  ).map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <fieldset className="stock-product-group"><legend>Pricing</legend>
+              <div>
+                <label htmlFor="product-cost_price" className="stock-product-label">Unit cost ({currencySymbol})</label>
+                <input id="product-cost_price"
+                  type="number" min="0" step="0.01"
                   required
-                  value={productForm.stock_quantity}
+                  placeholder="e.g. 2600"
+                  value={productForm.cost_price}
+                  onChange={(e) => setProductForm({ ...productForm, cost_price: e.target.value })}
+                  className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="product-selling_price" className="stock-product-label">Selling price ({currencySymbol})</label>
+                <input id="product-selling_price"
+                  type="number" min="0" step="0.01"
+                  required
+                  placeholder="e.g. 3000"
+                  value={productForm.selling_price}
                   onChange={(e) =>
-                    setProductForm({ ...productForm, stock_quantity: e.target.value })
+                    setProductForm({ ...productForm, selling_price: e.target.value })
                   }
                   className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
                 />
               </div>
-            )}
+            </fieldset>
+
+            <fieldset className="stock-product-group"><legend>Stock levels</legend>
+              {!editingProduct && (
+                <div>
+                  <label htmlFor="product-stock_quantity" className="stock-product-label">Opening stock</label>
+                  <input id="product-stock_quantity"
+                    type="number" min="0" step="0.01"
+                    required
+                    value={productForm.stock_quantity}
+                    onChange={(e) =>
+                      setProductForm({ ...productForm, stock_quantity: e.target.value })
+                    }
+                    className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
+                  />
+                </div>
+              )}
+              <div>
+                <label htmlFor="product-reorder_level" className="stock-product-label">Low-stock threshold</label>
+                <input id="product-reorder_level"
+                  type="number" min="0" step="0.01"
+                  required
+                  value={productForm.reorder_level}
+                  onChange={(e) =>
+                    setProductForm({ ...productForm, reorder_level: e.target.value })
+                  }
+                  className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
+                />
+              </div>
+            </fieldset>
+
             <div>
-              <label htmlFor="product-reorder_level" className="stock-product-label">Low-stock threshold</label>
-              <input id="product-reorder_level"
-                type="number"
-                required
-                value={productForm.reorder_level}
+              <label htmlFor="product-supplier_name" className="stock-product-label">Supplier (optional)</label>
+              <input id="product-supplier_name"
+                placeholder="e.g. Oke-Arin, Mushin, Trade Fair, Distributor"
+                value={productForm.supplier_name}
                 onChange={(e) =>
-                  setProductForm({ ...productForm, reorder_level: e.target.value })
+                  setProductForm({ ...productForm, supplier_name: e.target.value })
                 }
                 className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
               />
             </div>
-          </fieldset>
 
-          <div>
-            <label htmlFor="product-supplier_name" className="stock-product-label">Supplier (optional)</label>
-            <input id="product-supplier_name"
-              placeholder="e.g. Oke-Arin, Mushin, Trade Fair, Distributor"
-              value={productForm.supplier_name}
-              onChange={(e) =>
-                setProductForm({ ...productForm, supplier_name: e.target.value })
-              }
-              className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
-            />
           </div>
-
+          {productError && <p className="stock-product-error workspace-negative" role="alert">{productError}</p>}
           <div className="stock-product-footer">
             {editingProduct ? (
               <button
@@ -4917,7 +4941,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 onClick={() => handleDeleteProduct(editingProduct)}
                 className="px-3 py-2 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-500/10 flex items-center gap-1 cursor-pointer"
               >
-                <Trash2 className="w-3.5 h-3.5" /> Delete Item
+                <Trash2 className="w-3.5 h-3.5" /> Delete product
               </button>
             ) : (
               <div />
@@ -4936,7 +4960,7 @@ function AppShell({ darkMode, setDarkMode }) {
                 disabled={submitting}
                 className="workspace-primary"
               >
-                {submitting ? 'Saving...' : 'Save product'}
+                {submitting ? 'Saving...' : editingProduct ? 'Save changes' : 'Add product'}
               </button>
             </div>
           </div>
