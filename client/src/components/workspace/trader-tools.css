@@ -443,7 +443,6 @@
   color: var(--workspace-muted);
   font-size: 12px;
 }
-.money-register-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .money-totals {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

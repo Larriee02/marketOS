@@ -2715,16 +2715,17 @@ function AppShell({ darkMode, setDarkMode }) {
                   <h2>Daily cash register</h2>
                   <p>{cashbookSession?.targetDate || 'Today'}{cashbookSession ? (cashbookSession.todaySession?.status === 'CLOSED' ? ' · Closed' : ' · Open') : ''}</p>
                 </div>
-                <div className="money-register-actions">
-                  <button type="button" className="workspace-chip" onClick={() => {
+                <button
+                  type="button"
+                  className="workspace-chip"
+                  aria-haspopup="dialog"
+                  onClick={() => {
                     setSessionModalMode('OPEN');
                     setShowSessionModal(true);
-                  }}>Opening balance</button>
-                  <button type="button" className="workspace-chip" onClick={() => {
-                    setSessionModalMode('CLOSE');
-                    setShowSessionModal(true);
-                  }}>Reconcile &amp; close</button>
-                </div>
+                  }}
+                >
+                  Manage register
+                </button>
               </header>
               <dl className="money-totals">
                 <div className="money-key-total"><dt>Expected closing cash</dt><dd>{cashbookSession ? formatNaira(cashbookSession.expectedClosingBalance ?? 0) : '—'}</dd></div>
