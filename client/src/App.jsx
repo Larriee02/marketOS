@@ -2373,28 +2373,25 @@ function AppShell({ darkMode, setDarkMode }) {
             )}
             <div className="workspace-stock-cards md:hidden">
               {productPage.rows.map((p) => {
-                const isLow = Number(p.stock_quantity) <= Number(p.reorder_level);
+                const quantity = Number(p.stock_quantity);
+                const stockStatusLabel = quantity <= 0 ? 'Out of stock' : quantity <= Number(p.reorder_level) ? 'Low stock' : 'In stock';
                 const gain = Number(p.selling_price) - Number(p.cost_price);
                 return (
                   <div key={p.id} className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="font-extrabold font-luxury text-sm text-theme-primary">
+                        <div className="stock-item-name">
                           {p.name}
                         </div>
                         <div className="text-xs mt-0.5 text-theme-secondary">
-                          {p.category} • {p.supplier_name || 'Local Market'}
+                          {p.category}{p.supplier_name && ` · ${p.supplier_name}`}
+                          {p.sku && <span className="stock-row-meta">{p.sku}</span>}
                         </div>
                       </div>
-                      <Badge
-                        variant={Number(p.stock_quantity) <= 0 ? 'danger' : isLow ? 'warning' : 'success'}
-                        icon={isLow ? AlertTriangle : undefined}
-                      >
-                        {Number(p.stock_quantity) <= 0 ? 'Out of stock' : isLow ? 'Low stock' : 'In stock'}
-                      </Badge>
+                      <span className={quantity <= 0 ? 'stock-status-out' : 'stock-row-meta'}>{stockStatusLabel}</span>
                     </div>
 
-                    <div className="liquid-glass-subtle grid grid-cols-2 gap-2 text-xs p-2.5 rounded-xl tabular-nums">
+                    <div className="stock-mobile-facts">
                       <div><span className="block text-theme-secondary">Remaining count</span><strong>{Number(p.stock_quantity)} {p.unit}</strong></div>
                       <div>
                         <span className="block text-theme-secondary">Cost</span>
@@ -2410,13 +2407,13 @@ function AppShell({ darkMode, setDarkMode }) {
                       </div>
                       <div>
                         <span className="block text-theme-secondary">Gain/{p.unit}</span>
-                        <strong className="text-theme-inflow">
-                          +{formatNaira(gain)}
+                        <strong className={gain < 0 ? "workspace-negative" : gain > 0 ? "workspace-positive" : undefined}>
+                          {gain > 0 ? "+" : ""}{formatNaira(gain)}
                         </strong>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-end gap-2">
+                    <div className="stock-row-actions">
                       <button
                         onClick={() => {
                           setHistorySearch(p.name);
@@ -2424,7 +2421,7 @@ function AppShell({ darkMode, setDarkMode }) {
                           setHistoryDateRange('ALL');
                           handleSelectTab('history');
                         }}
-                        className="liquid-glass-subtle px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
+                        className="stock-row-action"
                       >
                         <History className="w-3.5 h-3.5" /> History
                       </button>
@@ -2444,7 +2441,7 @@ function AppShell({ darkMode, setDarkMode }) {
                           });
                           setShowProductModal(true);
                         }}
-                        className="liquid-glass-subtle px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
+                        className="stock-row-action"
                       >
                         <Edit3 className="w-3.5 h-3.5" /> Edit
                       </button>
@@ -2467,7 +2464,7 @@ function AppShell({ darkMode, setDarkMode }) {
                             ? 'Out of stock — Restock first to sell'
                             : `Sell ${p.name} and record in History`
                         }
-                        className="px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1 cursor-pointer bg-emerald-500/15 text-emerald-400 border border-emerald-500/35 hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="stock-row-action"
                       >
                         <ShoppingCart className="w-3.5 h-3.5" /> Sell
                       </button>
@@ -2484,9 +2481,9 @@ function AppShell({ darkMode, setDarkMode }) {
                             note: '',
                           });
                         }}
-                        className="liquid-btn-primary px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
+                        className="stock-row-action stock-row-adjust"
                       >
-                        Restock / Count
+                        Adjust stock
                       </button>
                     </div>
                   </div>
@@ -2496,7 +2493,7 @@ function AppShell({ darkMode, setDarkMode }) {
 
             {/* Tablet & Desktop Table View (>= 768px) */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="stock-catalog-table w-full text-left text-sm">
                 <thead
                   style={{
                     backgroundColor: 'var(--bg-subtle)',
@@ -2510,54 +2507,39 @@ function AppShell({ darkMode, setDarkMode }) {
                     <th className="py-3.5 px-4 text-right">Cost</th>
                     <th className="py-3.5 px-4 text-right">Selling Price</th>
                     <th className="py-3.5 px-4 text-right">Gain / Unit</th>
-                    <th className="py-3.5 px-4 text-center">Remaining</th>
+                    <th className="py-3.5 px-4 text-center">Stock on hand</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y theme-divider">
                   {productPage.rows.map((p) => {
-                    const isLow = Number(p.stock_quantity) <= Number(p.reorder_level);
+                    const quantity = Number(p.stock_quantity);
+                    const stockStatusLabel = quantity <= 0 ? 'Out of stock' : quantity <= Number(p.reorder_level) ? 'Low stock' : 'In stock';
                     const gain = Number(p.selling_price) - Number(p.cost_price);
                     return (
                       <tr
                         key={p.id}
                         className="hover:bg-white/30 dark:hover:bg-white/5"
                       >
-                        <td className="py-3.5 px-4">
-                          <div className="font-extrabold font-luxury text-theme-primary">
-                            {p.name}
-                          </div>
-                          <div className="text-xs text-theme-secondary">
-                            Unit: {p.unit} • {p.sku}
-                          </div>
+                        <th scope="row" className="stock-item">
+                          <span className="stock-item-name">{p.name}</span>
+                          <span className="stock-row-meta">{[p.sku, p.unit].filter(Boolean).join(' · ')}</span>
+                        </th>
+                        <td>
+                          <span className="stock-category">{p.category}</span>
+                          {p.supplier_name && <span className="stock-row-meta">{p.supplier_name}</span>}
                         </td>
-                        <td className="py-3.5 px-4">
-                          <Badge variant="neutral">{p.category}</Badge>
-                          {p.supplier_name && (
-                            <div className="text-xs mt-1 text-theme-secondary">
-                              {p.supplier_name}
-                            </div>
-                          )}
+                        <td className="stock-money stock-cost">{formatNaira(p.cost_price)}</td>
+                        <td className="stock-money stock-selling">{formatNaira(p.selling_price)}</td>
+                        <td className={`stock-money ${gain < 0 ? 'workspace-negative' : gain > 0 ? 'workspace-positive' : ''}`}>
+                          {gain > 0 ? '+' : ''}{formatNaira(gain)}
                         </td>
-                        <td className="py-3.5 px-4 text-right tabular-nums text-theme-secondary">
-                          {formatNaira(p.cost_price)}
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-extrabold tabular-nums text-theme-primary">
-                          {formatNaira(p.selling_price)}
-                        </td>
-                        <td className="py-3.5 px-4 text-right text-xs font-extrabold tabular-nums text-theme-inflow">
-                          +{formatNaira(gain)}
-                        </td>
-                        <td className="py-3.5 px-4 text-center tabular-nums">
-                          <Badge
-                            variant={isLow ? 'warning' : 'success'}
-                            icon={isLow ? AlertTriangle : undefined}
-                          >
-                            {Number(p.stock_quantity)} {p.unit}
-                          </Badge>
+                        <td className="stock-on-hand">
+                          <strong>{quantity} {p.unit}</strong>
+                          <span className={`stock-row-meta ${quantity <= 0 ? 'stock-status-out' : ''}`}>{stockStatusLabel}</span>
                         </td>
                         <td className="py-3.5 px-4 text-right">
-                          <div className="inline-flex items-center gap-1.5">
+                          <div className="stock-row-actions">
                             <button
                               onClick={() => {
                                 setHistorySearch(p.name);
@@ -2565,7 +2547,8 @@ function AppShell({ darkMode, setDarkMode }) {
                                 setHistoryDateRange('ALL');
                                 handleSelectTab('history');
                               }}
-                              className="liquid-glass-subtle p-1.5 hover:opacity-80 rounded-xl cursor-pointer text-theme-secondary"
+                              className="stock-row-action"
+                              aria-label={`View history for ${p.name}`}
                               title={`Check history for ${p.name}`}
                             >
                               <History className="w-4 h-4" />
@@ -2586,7 +2569,8 @@ function AppShell({ darkMode, setDarkMode }) {
                                 });
                                 setShowProductModal(true);
                               }}
-                              className="liquid-glass-subtle p-1.5 hover:opacity-80 rounded-xl cursor-pointer text-theme-secondary"
+                              className="stock-row-action"
+                              aria-label={`Edit ${p.name}`}
                               title="Edit price or details"
                             >
                               <Edit3 className="w-4 h-4" />
@@ -2610,7 +2594,7 @@ function AppShell({ darkMode, setDarkMode }) {
                                   ? 'Out of stock — Restock first to sell'
                                   : `Sell ${p.name} and record in History`
                               }
-                              className="px-3 py-1.5 rounded-xl text-xs font-extrabold inline-flex items-center gap-1 cursor-pointer bg-emerald-500/15 text-emerald-400 border border-emerald-500/35 hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="stock-row-action"
                             >
                               <ShoppingCart className="w-3.5 h-3.5" /> Sell
                             </button>
@@ -2627,9 +2611,9 @@ function AppShell({ darkMode, setDarkMode }) {
                                   note: '',
                                 });
                               }}
-                              className="liquid-btn-primary px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
+                              className="stock-row-action stock-row-adjust"
                             >
-                              Restock / Count
+                              Adjust stock
                             </button>
                           </div>
                         </td>
@@ -4764,16 +4748,14 @@ function AppShell({ darkMode, setDarkMode }) {
         title={
           editingProduct
             ? `Update ${businessProfile.itemLabel}: ${editingProduct.name}`
-            : `Add New ${businessProfile.itemLabel}`
+            : `Add ${businessProfile.itemLabel}`
         }
-        subtitle={`Enter your buying cost and selling price (${currentUser?.business_type || 'Trade Business'})`}
+        maxWidth="max-w-xl"
       >
-        <form onSubmit={handleSaveProduct} className="space-y-3">
+        <form onSubmit={handleSaveProduct} className="stock-product-form">
           <div>
-            <label className="block text-xs font-bold mb-1 text-theme-primary">
-              Item / Product Name ({businessProfile.namePlaceholder})
-            </label>
-            <input
+            <label htmlFor="product-name" className="stock-product-label">Product name</label>
+            <input id="product-name"
               required
               placeholder={businessProfile.namePlaceholder}
               value={productForm.name}
@@ -4784,10 +4766,8 @@ function AppShell({ darkMode, setDarkMode }) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold mb-1 text-theme-primary">
-                Category
-              </label>
-              <select
+              <label htmlFor="product-category" className="stock-product-label">Category</label>
+              <select id="product-category"
                 value={
                   businessProfile.categories.includes(productForm.category)
                     ? productForm.category
@@ -4809,10 +4789,8 @@ function AppShell({ darkMode, setDarkMode }) {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1 text-theme-primary">
-                Selling Unit (How do you sell it?)
-              </label>
-              <select
+              <label htmlFor="product-unit" className="stock-product-label">Selling unit</label>
+              <select id="product-unit"
                 value={
                   productForm.unit || businessProfile.units[0]
                 }
@@ -4834,12 +4812,10 @@ function AppShell({ darkMode, setDarkMode }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <fieldset className="stock-product-group"><legend>Pricing</legend>
             <div>
-              <label className="block text-xs font-bold mb-1 text-theme-primary">
-                Cost Price ({currencySymbol})
-              </label>
-              <input
+              <label htmlFor="product-cost_price" className="stock-product-label">Unit cost ({currencySymbol})</label>
+              <input id="product-cost_price"
                 type="number"
                 required
                 placeholder="e.g. 2600"
@@ -4849,10 +4825,8 @@ function AppShell({ darkMode, setDarkMode }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1 text-theme-primary">
-                Selling Price ({currencySymbol})
-              </label>
-              <input
+              <label htmlFor="product-selling_price" className="stock-product-label">Selling price ({currencySymbol})</label>
+              <input id="product-selling_price"
                 type="number"
                 required
                 placeholder="e.g. 3000"
@@ -4863,15 +4837,13 @@ function AppShell({ darkMode, setDarkMode }) {
                 className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
               />
             </div>
-          </div>
+          </fieldset>
 
-          <div className="grid grid-cols-2 gap-3">
+          <fieldset className="stock-product-group"><legend>Stock levels</legend>
             {!editingProduct && (
               <div>
-                <label className="block text-xs font-bold mb-1 text-theme-primary">
-                  How many on shelf now?
-                </label>
-                <input
+                <label htmlFor="product-stock_quantity" className="stock-product-label">Opening stock</label>
+                <input id="product-stock_quantity"
                   type="number"
                   required
                   value={productForm.stock_quantity}
@@ -4883,10 +4855,8 @@ function AppShell({ darkMode, setDarkMode }) {
               </div>
             )}
             <div>
-              <label className="block text-xs font-bold mb-1 text-theme-primary">
-                Warn me when remaining reaches:
-              </label>
-              <input
+              <label htmlFor="product-reorder_level" className="stock-product-label">Low-stock threshold</label>
+              <input id="product-reorder_level"
                 type="number"
                 required
                 value={productForm.reorder_level}
@@ -4896,13 +4866,11 @@ function AppShell({ darkMode, setDarkMode }) {
                 className="liquid-input w-full rounded-xl px-3 py-2 text-sm"
               />
             </div>
-          </div>
+          </fieldset>
 
           <div>
-            <label className="block text-xs font-bold mb-1 text-theme-primary">
-              Market / Supplier (Optional)
-            </label>
-            <input
+            <label htmlFor="product-supplier_name" className="stock-product-label">Supplier (optional)</label>
+            <input id="product-supplier_name"
               placeholder="e.g. Oke-Arin, Mushin, Trade Fair, Distributor"
               value={productForm.supplier_name}
               onChange={(e) =>
@@ -4912,7 +4880,7 @@ function AppShell({ darkMode, setDarkMode }) {
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2 pt-3">
+          <div className="stock-product-footer">
             {editingProduct ? (
               <button
                 type="button"
@@ -4936,9 +4904,9 @@ function AppShell({ darkMode, setDarkMode }) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="liquid-btn-primary px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+                className="workspace-primary"
               >
-                {submitting ? 'Saving...' : 'Save Goods'}
+                {submitting ? 'Saving...' : 'Save product'}
               </button>
             </div>
           </div>
