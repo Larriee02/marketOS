@@ -2278,15 +2278,15 @@ function AppShell({ darkMode, setDarkMode }) {
 
         {/* TAB 2: MY SHELF STOCK & STOCK-TAKING */}
         {activeTab === 'inventory' && (
-          <section className="shop-tool space-y-4">
-            <div className="workspace-page-heading shop-tool-heading">
-              <div className="shop-tool-title"><span className="shop-tool-sign"><Package aria-hidden="true" /></span><h1 className="workspace-title">Your stock</h1></div>
+          <section className="shop-tool inventory-screen space-y-4">
+            <div className="workspace-page-heading sell-heading">
+              <h1 className="workspace-title">Your stock</h1>
               <div className="flex flex-wrap gap-2">
                 <button className="workspace-chip" onClick={() => setShowAuditModal(true)}><ClipboardCheck size={16} />Count stock</button>
-                <button className="workspace-primary" onClick={openAddProduct}><Plus size={16} />Add Product</button>
+                <button className="workspace-primary" onClick={openAddProduct}><Plus size={16} />Add product</button>
               </div>
             </div>
-            <details className="workspace-panel shop-details"><summary>See stock totals</summary>
+            <details className="workspace-panel inventory-totals"><summary>Stock totals</summary>
             <div className="workspace-metrics">
               <WorkspaceMetric label="Total products" value={products.length} detail="Active catalog" icon={Package} />
               <WorkspaceMetric label="Total cost value" value={formatNaira(dashboard.inventory_cost_value)} detail="Acquisition cost" icon={Wallet} />
@@ -2298,9 +2298,9 @@ function AppShell({ darkMode, setDarkMode }) {
             <div id="inventory-results" className="workspace-panel workspace-catalog overflow-hidden !p-0">
             <div
               style={{ borderColor: 'var(--border-outer)' }}
-              className="p-3.5 sm:p-4 border-b flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
+              className="inventory-toolbar"
             >
-              <div className="relative flex-1 max-w-md">
+              <div className="relative min-w-0">
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
                 <input
                   type="text"
@@ -2311,41 +2311,36 @@ function AppShell({ darkMode, setDarkMode }) {
                 />
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label="Product category" className="workspace-chip">
+                {categories.map((category) => <option key={category} value={category}>{category === 'ALL' ? 'All categories' : category}</option>)}
+              </select>
+              <div className="inventory-tools">
                 <button
                   type="button"
                   onClick={() => setShowBulkImportModal(true)}
-                  className="liquid-glass-subtle flex items-center justify-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/30 cursor-pointer"
+                  className="inventory-tool"
                   title="Import goods in bulk via CSV or Excel paste"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   <span>Import</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAuditModal(true)}
-                  className="liquid-glass-subtle flex items-center justify-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold text-sky-400 hover:bg-sky-500/10 border border-sky-500/30 cursor-pointer"
-                  title="Physical shelf stock count audit comparing expected vs physical count"
-                >
-                  <ClipboardCheck className="w-3.5 h-3.5" />
-                  <span>Audit</span>
-                </button>
+
                 <button
                   type="button"
                   onClick={() => setShowBatchAdjustModal(true)}
-                  className="liquid-glass-subtle flex items-center justify-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold text-indigo-400 hover:bg-indigo-500/10 border border-indigo-500/30 cursor-pointer"
+                  className="inventory-tool"
                   title="Fast multi-product stock adjust (restock, damage, expired, missing)"
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5" />
-                  <span>Batch</span>
+                  <span>Batch adjust</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowRestockModal(true)}
-                  className="liquid-btn-primary flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold cursor-pointer"
+                  className="inventory-tool"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  Restock ({lowStockRestockPlan.length})
+                  Restock plan ({lowStockRestockPlan.length})
                 </button>
                 <button
                   onClick={() =>
@@ -2354,17 +2349,15 @@ function AppShell({ darkMode, setDarkMode }) {
                       `shop-stock-${new Date().toISOString().slice(0, 10)}.csv`
                     )
                   }
-                  className="liquid-glass-subtle flex items-center justify-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-2xl hover:opacity-85 cursor-pointer"
+                  className="inventory-tool"
                 >
-                  <Download className="w-3.5 h-3.5" /> CSV
+                  <Download className="w-3.5 h-3.5" /> Export CSV
                 </button>
               </div>
             </div>
 
-            <div className="workspace-stock-filters">
-              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label="Product category" className="workspace-chip">
-                {categories.map((category) => <option key={category} value={category}>{category === 'ALL' ? 'All categories' : category}</option>)}
-              </select>
+            <div className="workspace-stock-filters inventory-status" role="group" aria-label="Stock status">
+
               {[['ALL', 'All'], ['HEALTHY', 'In stock'], ['LOW', 'Low stock'], ['OUT', 'Out of stock']].map(([id, label]) => (
                 <button key={id} className="workspace-chip" aria-pressed={stockStatus === id} onClick={() => setStockStatus(id)}>
                   {label} ({id === 'ALL' ? products.length : stockCounts[id]})
