@@ -341,7 +341,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
             </button>
           </form>
 
-          <div className="signup-alternative">
+          <div className="auth-alternative">
             <span>Or</span>
             <OAuthButtons actionLabel="Sign up" onAuthenticated={onAuthenticated} onError={setError} />
           </div>

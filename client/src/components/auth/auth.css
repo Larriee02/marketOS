@@ -1,9 +1,9 @@
 .auth-layout {
   --auth-edge: clamp(12px, 1.4vw, 24px);
   display: grid;
-  grid-template-columns: minmax(0, 1.03fr) minmax(0, 1fr);
+  grid-template-columns: minmax(280px, .72fr) minmax(0, 1fr);
   min-height: 100svh;
-  padding: var(--auth-edge);
+  padding: 0;
   color: var(--text-primary);
   background-color: var(--bg-input);
 }
@@ -34,29 +34,6 @@
 }
 .auth-brand .font-luxury { font-size: 25px; }
 .auth-brand .font-luxury span { color: #fff; }
-.auth-signboard {
-  margin: 0 clamp(18px, 3vw, 46px) clamp(18px, 3vw, 46px);
-  max-width: calc(100% - 36px);
-  padding: .37em .62em .48em .39em;
-  border-left: 5px solid #97c6ff;
-  background: #103586;
-  box-shadow: 7px 7px 0 #09224f;
-  color: #fff;
-  font-size: clamp(40px, 4.9vw, 82px);
-}
-.auth-signboard p {
-  margin: 0;
-  font-family: "Plus Jakarta Sans", Inter, sans-serif;
-  font-weight: 700;
-  letter-spacing: -.075em;
-  line-height: 1.03;
-}
-.auth-signboard em {
-  color: #c3deff;
-  font-family: Georgia, serif;
-  font-weight: 400;
-  letter-spacing: -.055em;
-}
 .auth-paper {
   min-width: 0;
   display: flex;
@@ -109,7 +86,6 @@
 .auth-sheet .liquid-btn-primary { border: 0; border-radius: 8px; background: #2057d0; color: white; box-shadow: none; }
 .auth-sheet button[type="submit"], .auth-sheet button.liquid-glass-subtle { min-height: 46px; font-size: .9rem; }
 .auth-sheet button[type="submit"]:hover:enabled { background: #1646b0; }
-.auth-separator { display: flex; align-items: center; }
 .auth-methods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 4px; gap: 4px; background: var(--bg-subtle); border-radius: 10px; }
 .auth-methods button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; color: var(--text-secondary); font-weight: 650; cursor: pointer; min-height: 40px; font-size: .83rem; border-radius: 7px; }
 .auth-methods button[aria-pressed="true"] { background: var(--bg-card-elevated); color: var(--brand-blue); box-shadow: 0 1px 4px #0c25532c; }
@@ -119,96 +95,68 @@
   .auth-shopfront { position: relative; top: auto; height: clamp(118px, 24vw, 175px); min-height: 0; border-radius: 0; background-position: center 54%; }
   .auth-shopfront::before { background: linear-gradient(90deg, #061b43dc 0%, #061b4350 48%, transparent 75%); }
   .auth-brand { padding: 12px 20px; }
-  .auth-signboard { margin: 0 0 14px 24px; padding: 0; border: 0; box-shadow: none; background: none; font-size: clamp(24px, 5vw, 34px); }
-  .auth-signboard br { display: none; }
-  .auth-signboard em::before { content: ' '; }
   .auth-paper { padding: 0 clamp(20px, 6vw, 46px) 36px; }
   .auth-toolbar { gap: 10px; padding: 4px 0; max-width: 580px; }
   .auth-sheet { margin-top: 16px; }
 }
 
-.auth-layout--signup {
-  --signup-paper: #f5f1e8;
-  --signup-field: #fcf9f2;
-  --signup-ink: #202b39;
-  --signup-muted: #586270;
-  --signup-line: #ccc7bb;
-  --signup-accent: #21498b;
-  --text-primary: var(--signup-ink);
-  --text-secondary: var(--signup-muted);
-  grid-template-columns: minmax(280px, .72fr) minmax(0, 1fr);
-  padding: 0;
-  background: var(--signup-paper);
-  color-scheme: light;
-}
-.dark .auth-layout--signup {
-  --signup-paper: #181e27;
-  --signup-field: #202834;
-  --signup-ink: #f3efe6;
-  --signup-muted: #b4bcc8;
-  --signup-line: #424d5e;
-  --signup-accent: #b7ceff;
-  color-scheme: dark;
-}
-.auth-layout--signup .auth-shopfront {
+.auth-layout .auth-shopfront {
   top: 0;
   height: 100svh;
   max-height: none;
   border-radius: 0;
   background-position: center;
 }
-.auth-layout--signup .auth-paper {
+.auth-layout .auth-paper {
   align-items: stretch;
   padding: 12px clamp(24px, 6vw, 108px) 40px;
 }
-.auth-layout--signup .auth-sheet {
+.auth-layout .auth-sheet {
   margin: 12px auto 0;
 }
-.auth-layout--signup .auth-toolbar {
-  max-width: 580px;
+.auth-layout .auth-toolbar {
+  max-width: 450px;
   margin-inline: auto;
   padding-block: 0 14px;
 }
-.auth-layout--signup .auth-toolbar button:first-child { color: var(--signup-accent); }
-.auth-layout--signup .auth-toolbar .auth-theme {
-  background: var(--signup-field);
-  border: 1px solid var(--signup-line);
+.auth-layout .auth-toolbar .auth-theme {
+  background: var(--bg-input);
+  border: 1px solid var(--border-outer);
 }
-.auth-layout--signup .auth-intro {
-  border-top: 1px solid var(--signup-line);
+.auth-layout .auth-intro {
+  border-top: 1px solid var(--border-outer);
   padding-top: 22px;
   margin-bottom: 20px;
 }
-.auth-layout--signup .auth-intro h1 {
-  color: var(--signup-ink);
+.auth-layout .auth-intro h1 {
+  color: var(--heading-color);
   font: 400 clamp(38px, 4.3vw, 64px) / 1.04 Georgia, serif;
   letter-spacing: -.055em;
 }
-.auth-layout--signup .auth-intro p { color: var(--signup-muted); }
-.auth-layout--signup .liquid-input,
-.auth-layout--signup .liquid-glass-subtle {
-  border-color: var(--signup-line);
-  background: var(--signup-field);
-  color: var(--signup-ink);
+.auth-layout .liquid-input,
+.auth-layout .liquid-glass-subtle {
+  border-color: var(--border-outer);
+  background: var(--bg-input);
+  color: var(--heading-color);
   border-radius: 5px;
 }
-.auth-layout--signup .liquid-input { font-size: .94rem; }
-.auth-layout--signup .liquid-input:focus-visible { outline-color: var(--signup-accent); }
-.auth-layout--signup .liquid-btn-primary { background: #204488; border-radius: 5px; }
-.auth-layout--signup .liquid-btn-primary:hover:enabled { background: #18366d; }
-.signup-alternative {
+.auth-layout .liquid-input { font-size: .94rem; }
+.auth-layout .liquid-btn-primary { border-radius: 5px; }
+.auth-alternative {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 14px;
-  color: var(--signup-muted);
+  color: var(--text-secondary);
   font-size: .875rem;
 }
 @media (max-width: 800px) {
-  .auth-layout--signup .auth-shopfront {
+  .auth-layout .auth-shopfront {
     height: 108px;
     background-position: center 28%;
   }
-  .auth-layout--signup .auth-paper { padding-inline: clamp(18px, 5vw, 40px); }
-  .auth-layout--signup .auth-sheet { margin-top: 0; }
+  .auth-layout .auth-paper { padding-inline: clamp(18px, 5vw, 40px); }
+  .auth-layout .auth-sheet { margin-top: 0; }
 }
+
+.auth-layout--signup .auth-toolbar { max-width: 580px; }

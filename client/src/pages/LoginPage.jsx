@@ -159,21 +159,6 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
             <p>Use Google, email or your phone number to sign in.</p>
           </div>
 
-          {/* Google OAuth Button */}
-          <OAuthButtons
-            actionLabel="Sign in"
-            onAuthenticated={onAuthenticated}
-            onError={setError}
-          />
-
-          <div className="auth-separator">
-            <div className="border-t w-full theme-divider" />
-            <span className="px-3 text-[11px] font-bold uppercase tracking-wider text-theme-muted whitespace-nowrap">
-              or
-            </span>
-            <div className="border-t w-full theme-divider" />
-          </div>
-
           {error && (
             <div
               role="alert"
@@ -279,6 +264,11 @@ export function LoginPage({ darkMode, setDarkMode, onAuthenticated, onNavigate }
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
+
+          <div className="auth-alternative">
+            <span>Or</span>
+            <OAuthButtons actionLabel="Sign in" onAuthenticated={onAuthenticated} onError={setError} />
+          </div>
 
         </>
       )}
