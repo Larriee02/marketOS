@@ -1,29 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import {
-  ClipboardCheck,
-  Search,
-  Filter,
-  AlertTriangle,
-  CheckCircle2,
-  AlertCircle,
-  HelpCircle,
-  Sparkles,
-  RefreshCw,
-  ArrowRight,
-  TrendingUp,
-  TrendingDown,
-} from 'lucide-react';
+import { Search, CheckCircle2 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
-import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
-
-const REASON_OPTIONS = [
-  { id: 'DAMAGED', label: 'Damaged / Broken / Spilled' },
-  { id: 'EXPIRED', label: 'Expired (Past Date)' },
-  { id: 'MISSING', label: 'Missing / Untracked Loss' },
-  { id: 'SURPLUS', label: 'Surplus (Found Extra)' },
-  { id: 'ADJUSTMENT', label: 'General Recount / Adjustment' },
-];
+import './stock-count.css';
 
 /**
  * Physical Stock Count / Audit Workflow Modal
@@ -55,7 +33,7 @@ export function PhysicalStockAuditModal({
 
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      if (category !== 'ALL' && p.category !== category) return false;
+      if (category !== 'ALL' && (p.category || 'Provisions') !== category) return false;
       if (search) {
         const q = search.toLowerCase();
         const matchName = (p.name || '').toLowerCase().includes(q);
@@ -94,15 +72,15 @@ export function PhysicalStockAuditModal({
 
   // Prefill all physical counts with current expected stock for rapid audits
   const handlePrefillExpected = () => {
-    const next = {};
-    for (const p of products) {
-      next[p.id] = {
-        actual_count: Number(p.stock_quantity),
-        reason: 'ADJUSTMENT',
-        note: '',
-      };
-    }
-    setCounts(next);
+    setCounts((previous) => {
+      const next = { ...previous };
+      for (const product of products) {
+        if (next[product.id]?.actual_count == null || next[product.id].actual_count === '') {
+          next[product.id] = { actual_count: Number(product.stock_quantity) };
+        }
+      }
+      return next;
+    });
   };
 
   const handleClearAll = () => {
@@ -122,7 +100,7 @@ export function PhysicalStockAuditModal({
         auditedCount++;
         const actual = Number(item.actual_count);
         const expected = Number(p.stock_quantity);
-        const diff = actual - expected;
+        const diff = Number((actual - expected).toFixed(2));
         const valDiff = diff * Number(p.cost_price || 0);
         netVarianceValue += valDiff;
 
@@ -143,6 +121,7 @@ export function PhysicalStockAuditModal({
   }, [products, counts]);
 
   const handleSaveAudit = async () => {
+    if (isSubmitting) return;
     const payloadCounts = [];
 
     for (const p of products) {
@@ -150,8 +129,12 @@ export function PhysicalStockAuditModal({
       if (item && item.actual_count !== '' && !Number.isNaN(Number(item.actual_count))) {
         const actual = Number(item.actual_count);
         const expected = Number(p.stock_quantity);
-        const diff = actual - expected;
+        const diff = Number((actual - expected).toFixed(2));
 
+        if (!Number.isFinite(actual) || actual < 0) {
+          toastError?.('Counts must be zero or greater.');
+          return;
+        }
         let autoReason = item.reason || (diff > 0 ? 'SURPLUS' : 'MISSING');
         if (diff === 0) autoReason = 'ADJUSTMENT';
 
@@ -182,6 +165,7 @@ export function PhysicalStockAuditModal({
       toastSuccess?.(
         `Audit saved! Reconciled ${res.totalAudited} items (${res.discrepancyCount} discrepancy movements logged).`
       );
+      setCounts({});
       onReconcileSuccess?.();
       onClose();
     } catch (err) {
@@ -197,64 +181,28 @@ export function PhysicalStockAuditModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Physical Stock Count & Shelf Audit"
-      subtitle="Compare system expected stock against actual physical counts on shelves and log variances"
+      title="Count stock"
+      subtitle="Enter shelf counts to review differences before saving."
+      maxWidth="max-w-5xl"
+      panelClassName="stock-count-panel"
     >
-      <div className="space-y-4">
-        {/* Audit Controls & Summary Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <div className="liquid-glass p-3 rounded-2xl">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-theme-secondary">
-              Items Audited
-            </p>
-            <p className="text-base font-extrabold font-luxury text-theme-primary mt-0.5">
-              {auditSummary.auditedCount} / {products.length}
-            </p>
-          </div>
-
-          <div className="liquid-glass p-3 rounded-2xl">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-theme-inflow">
-              In Balance (0 Diff)
-            </p>
-            <p className="text-base font-extrabold font-luxury text-theme-inflow mt-0.5">
-              {auditSummary.balancedCount}
-            </p>
-          </div>
-
-          <div className="liquid-glass p-3 rounded-2xl">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-theme-outflow">
-              Discrepancies
-            </p>
-            <p className="text-base font-extrabold font-luxury text-theme-outflow mt-0.5">
-              {auditSummary.discrepancyCount}
-            </p>
-          </div>
-
-          <div className="liquid-glass p-3 rounded-2xl">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-theme-secondary">
-              Net Value Variance
-            </p>
-            <p
-              className={`text-base font-extrabold font-luxury mt-0.5 tabular-nums ${
-                auditSummary.netVarianceValue >= 0
-                  ? 'text-theme-inflow'
-                  : 'text-theme-outflow'
-              }`}
-            >
-              {auditSummary.netVarianceValue >= 0 ? '+' : ''}
-              {formatCurrency(auditSummary.netVarianceValue)}
-            </p>
-          </div>
-        </div>
+      <div className="stock-count-layout">
+        <dl className="stock-count-summary">
+          <div><dt>Counted</dt><dd>{auditSummary.auditedCount} / {products.length}</dd></div>
+          <div><dt>Matched</dt><dd>{auditSummary.balancedCount}</dd></div>
+          <div><dt>Differences</dt><dd>{auditSummary.discrepancyCount}</dd></div>
+          <div><dt>Net cost difference</dt><dd>{formatCurrency(auditSummary.netVarianceValue)}</dd></div>
+        </dl>
 
         {/* Filters & Rapid Tools */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pb-2 border-b theme-divider">
-          <div className="flex items-center gap-2 flex-1">
-            <div className="relative flex-1 max-w-xs">
+        <div className="stock-count-toolbar">
+          <div className="stock-count-filters">
+            <div className="relative min-w-0">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-theme-secondary" />
               <input
                 type="text"
-                placeholder="Search goods..."
+                placeholder="Search product or SKU"
+                aria-label="Search product or SKU"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="liquid-input w-full pl-8 pr-3 py-1.5 text-xs rounded-xl"
@@ -262,6 +210,7 @@ export function PhysicalStockAuditModal({
             </div>
 
             <select
+              aria-label="Product category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="liquid-input text-xs rounded-xl px-2.5 py-1.5"
@@ -280,40 +229,40 @@ export function PhysicalStockAuditModal({
               onClick={handlePrefillExpected}
               className="liquid-glass-subtle px-2.5 py-1.5 rounded-xl text-xs font-bold text-theme-brand hover:opacity-80 flex items-center gap-1 cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Prefill Expected</span>
+              <span>Fill blanks with expected</span>
             </button>
             {Object.keys(counts).length > 0 && (
               <button
                 type="button"
                 onClick={handleClearAll}
-                className="text-xs font-bold text-theme-outflow hover:underline cursor-pointer"
+                className="text-xs font-bold text-theme-outflow hover:bg-white/10 rounded-lg px-2 cursor-pointer"
               >
-                Clear
+                Clear counts
               </button>
             )}
           </div>
         </div>
 
         {/* Audit Sheet Table */}
-        <div className="liquid-glass-subtle rounded-2xl border overflow-hidden max-h-[50vh] overflow-y-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="border-b theme-divider text-[10px] uppercase font-bold text-theme-secondary bg-white/20 dark:bg-black/20 sticky top-0 backdrop-blur-md z-10">
+        <div className="stock-count-sheet">
+          <table className="stock-count-table w-full text-left text-sm">
+            <thead className="stock-count-table-header">
               <tr>
                 <th className="py-2.5 px-3">Product / SKU</th>
                 <th className="py-2.5 px-3 text-right">Expected Stock</th>
                 <th className="py-2.5 px-3 text-center w-28">Actual Count</th>
-                <th className="py-2.5 px-3 text-right">Discrepancy</th>
-                <th className="py-2.5 px-3">Reason if Short</th>
+                <th className="py-2.5 px-3 text-right">Difference</th>
+                <th className="py-2.5 px-3">Reason</th>
               </tr>
             </thead>
             <tbody className="divide-y theme-divider">
+              {filteredProducts.length === 0 && <tr><td colSpan={5} className="p-5 text-theme-secondary">{products.length ? "No products match your filters." : "Add products before starting a stock count."}</td></tr>}
               {filteredProducts.map((p) => {
                 const item = counts[p.id] || {};
                 const hasInput = item.actual_count !== '' && item.actual_count !== undefined;
                 const actual = hasInput ? Number(item.actual_count) : null;
                 const expected = Number(p.stock_quantity);
-                const diff = hasInput ? actual - expected : null;
+                const diff = hasInput ? Number((actual - expected).toFixed(2)) : null;
                 const costPrice = Number(p.cost_price || 0);
 
                 return (
@@ -342,6 +291,8 @@ export function PhysicalStockAuditModal({
                       <input
                         type="number"
                         min="0"
+                        step="0.01"
+                        aria-label={`Actual count for ${p.name}`}
                         placeholder="Count"
                         value={item.actual_count ?? ''}
                         onChange={(e) => handleSetActualCount(p.id, e.target.value)}
@@ -389,6 +340,7 @@ export function PhysicalStockAuditModal({
                       {hasInput && diff !== 0 ? (
                         diff < 0 ? (
                           <select
+                            aria-label={`Reason for ${p.name}`}
                             value={item.reason || 'MISSING'}
                             onChange={(e) => handleSetReason(p.id, e.target.value)}
                             className="liquid-input text-[11px] py-1 px-2 rounded-xl font-bold w-full"
@@ -400,6 +352,7 @@ export function PhysicalStockAuditModal({
                           </select>
                         ) : (
                           <select
+                            aria-label={`Reason for ${p.name}`}
                             value={item.reason || 'SURPLUS'}
                             onChange={(e) => handleSetReason(p.id, e.target.value)}
                             className="liquid-input text-[11px] py-1 px-2 rounded-xl font-bold w-full"
@@ -421,36 +374,19 @@ export function PhysicalStockAuditModal({
           </table>
         </div>
 
-        {/* Audit Note */}
-        <div>
-          <label className="block text-[11px] font-bold text-theme-secondary mb-1">
-            Audit Ledger Note
+        <div className="stock-count-footer">
+          <label className="stock-count-note">
+            Audit note
+            <input type="text" value={auditNote} onChange={(event) => setAuditNote(event.target.value)}
+              className="liquid-input w-full px-3 py-2 rounded-lg text-sm" />
           </label>
-          <input
-            type="text"
-            value={auditNote}
-            onChange={(e) => setAuditNote(e.target.value)}
-            placeholder="e.g. End of Month Shelf Count, Alaba warehouse check..."
-            className="liquid-input w-full px-3 py-2 rounded-xl text-xs"
-          />
-        </div>
-
-        {/* Modal Actions */}
-        <div className="flex items-center justify-end gap-2 pt-2 border-t theme-divider">
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            Cancel
-          </Button>
-
-          <Button
-            variant="primary"
-            size="md"
-            isLoading={isSubmitting}
-            disabled={auditSummary.auditedCount === 0}
-            onClick={handleSaveAudit}
-            className="!px-6"
-          >
-            Reconcile Stock & Save Audit
-          </Button>
+          <div className="stock-count-actions">
+            <button type="button" className="workspace-chip" onClick={onClose} disabled={isSubmitting}>Cancel</button>
+            <button type="button" className="workspace-primary" disabled={isSubmitting || auditSummary.auditedCount === 0}
+              onClick={handleSaveAudit}>
+              {isSubmitting ? 'Saving…' : 'Save stock count'}
+            </button>
+          </div>
         </div>
       </div>
     </Modal>
