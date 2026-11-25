@@ -288,6 +288,19 @@ function AppShell({ darkMode, setDarkMode }) {
   const [cashSearch, setCashSearch] = useState('');
   const debouncedCashSearch = useDebounce(cashSearch, 150);
   const [showAuditTrail, setShowAuditTrail] = useState(true);
+  const hasCashFilters = cashFilter !== 'ALL' || channelFilter !== 'ALL' ||
+    cashDateRange !== 'ALL' || cashCategoryFilter !== 'ALL' || Boolean(cashSearch.trim()) || !showAuditTrail;
+  const clearCashFilters = () => {
+    setCashFilter('ALL');
+    setChannelFilter('ALL');
+    setCashDateRange('ALL');
+    setCashStartDate('');
+    setCashEndDate('');
+    setCashCategoryFilter('ALL');
+    setCashSearch('');
+    setShowAuditTrail(true);
+  };
+
 
   // Check History Filters
   const [historyTypeFilter, setHistoryTypeFilter] = useState('ALL');
@@ -2760,9 +2773,10 @@ function AppShell({ darkMode, setDarkMode }) {
                       <button type="button" key={channel} aria-pressed={selected}
                         onClick={() => setChannelFilter(selected ? 'ALL' : channel)}>
                         <span className="money-channel-label"><Icon size={16} aria-hidden="true" />{label}</span>
-                        <strong>{formatNaira(stats.net)}</strong>
-                        <span className="money-channel-detail">In {formatNaira(stats.inflow)} · Out {formatNaira(stats.outflow)}</span>
-                        <span className="money-channel-detail">{stats.count} {stats.count === 1 ? 'entry' : 'entries'}</span>
+                        <span className="money-channel-detail">In <b>{formatNaira(stats.inflow)}</b></span>
+                        <span className="money-channel-detail">Out <b>{formatNaira(stats.outflow)}</b></span>
+                        <span className="money-channel-detail">Net <b>{formatNaira(stats.net)}</b></span>
+                        <span className="money-channel-detail money-channel-count">{stats.count} {stats.count === 1 ? 'entry' : 'entries'}</span>
                       </button>
                     );
                   })}
@@ -2810,182 +2824,87 @@ function AppShell({ darkMode, setDarkMode }) {
               </div>
             )}
 
-            {/* 5. MAIN CASHBOOK LEDGER & FILTERS */}
-            <div className="liquid-glass rounded-3xl overflow-hidden">
-              <div
-                style={{ borderColor: 'var(--border-outer)' }}
-                className="p-3.5 sm:p-4 border-b space-y-3"
-              >
-                {/* Row 1: Date Range Report Presets (Daily, Weekly, Monthly, Custom, All) & Type Filter */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-theme-secondary mr-1">
-                      Report Period:
-                    </span>
-                    {[
-                      { id: 'ALL', label: 'All Time' },
-                      { id: 'DAILY', label: 'Daily (Today)' },
-                      { id: 'WEEKLY', label: 'Weekly (7d)' },
-                      { id: 'MONTHLY', label: 'Monthly (30d)' },
-                      { id: 'CUSTOM', label: 'Custom Range' },
-                    ].map((p) => (
-                      <button
-                        type="button"
-                        key={p.id}
-                        onClick={() => {
-                          setCashDateRange(p.id);
-                          if (p.id !== 'CUSTOM') {
-                            setCashStartDate('');
-                            setCashEndDate('');
-                          }
-                        }}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
-                          cashDateRange === p.id ? 'liquid-btn-primary' : 'liquid-glass-subtle'
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-
-                    {cashDateRange === 'CUSTOM' && (
-                      <div className="flex items-center gap-1.5 bg-slate-900/60 p-1 rounded-xl border border-slate-800 text-xs">
-                        <span className="text-[11px] text-theme-secondary">From:</span>
-                        <input
-                          type="date"
-                          value={cashStartDate}
-                          onChange={(e) => setCashStartDate(e.target.value)}
-                          className="liquid-input text-xs rounded-lg px-2 py-1"
-                        />
-                        <span className="text-[11px] text-theme-secondary">To:</span>
-                        <input
-                          type="date"
-                          value={cashEndDate}
-                          onChange={(e) => setCashEndDate(e.target.value)}
-                          className="liquid-input text-xs rounded-lg px-2 py-1"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {[
-                      { id: 'ALL', label: 'All Money' },
-                      { id: 'INFLOW', label: 'Money In (+)' },
-                      { id: 'OUTFLOW', label: 'Expenses Out (-)' },
-                    ].map((t) => (
-                      <button
-                        type="button"
-                        key={t.id}
-                        onClick={() => setCashFilter(t.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${
-                          cashFilter === t.id ? 'liquid-btn-primary' : 'liquid-glass-subtle'
-                        }`}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
+            <section className="workspace-panel money-ledger" aria-labelledby="cash-entries-title">
+              <header className="money-section-header">
+                <h2 id="cash-entries-title">Cashbook entries</h2>
+                <div className="money-ledger-actions">
+                  <button type="button" className="workspace-chip" aria-pressed={showAuditTrail}
+                    onClick={() => setShowAuditTrail(!showAuditTrail)}
+                    title="Show corrected and voided entries">
+                    <History size={15} aria-hidden="true" /> Audit trail
+                  </button>
+                  <button type="button" className="workspace-chip" onClick={() =>
+                    exportToCSV(filteredTransactions, `cashbook-${cashDateRange.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`)
+                  }>
+                    <Download size={15} aria-hidden="true" /> Export CSV
+                  </button>
                 </div>
+              </header>
 
-                {/* Row 2: Payment Channel Pills, Category Select, Search, Audit Trail Toggle & Export */}
-                <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t theme-divider">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {[
-                      { id: 'ALL', label: 'All Channels' },
-                      { id: 'CASH', label: 'Cash' },
-                      { id: 'POS', label: 'POS' },
-                      { id: 'BANK_TRANSFER', label: 'Bank Transfer' },
-                      { id: 'MOBILE_MONEY', label: 'Mobile Wallet' },
-                    ].map((ch) => (
-                      <button
-                        type="button"
-                        key={ch.id}
-                        onClick={() => setChannelFilter(ch.id)}
-                        className={`px-2.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${
-                          channelFilter === ch.id
-                            ? 'liquid-btn-primary'
-                            : 'liquid-glass-subtle'
-                        }`}
-                      >
-                        {ch.label}
-                      </button>
+              <div className="money-ledger-filters">
+                <label>Report period
+                  <select value={cashDateRange} onChange={(e) => {
+                    setCashDateRange(e.target.value);
+                    if (e.target.value !== 'CUSTOM') {
+                      setCashStartDate('');
+                      setCashEndDate('');
+                    }
+                  }}>
+                    <option value="ALL">All time</option>
+                    <option value="DAILY">Today</option>
+                    <option value="WEEKLY">Last 7 days</option>
+                    <option value="MONTHLY">Last 30 days</option>
+                    <option value="CUSTOM">Custom range</option>
+                  </select>
+                </label>
+                <label>Entry type
+                  <select value={cashFilter} onChange={(e) => setCashFilter(e.target.value)}>
+                    <option value="ALL">All entries</option>
+                    <option value="INFLOW">Money in</option>
+                    <option value="OUTFLOW">Money out</option>
+                  </select>
+                </label>
+                <label>Payment channel
+                  <select value={channelFilter} onChange={(e) => setChannelFilter(e.target.value)}>
+                    <option value="ALL">All channels</option>
+                    {['CASH', 'POS', 'BANK_TRANSFER', 'MOBILE_MONEY'].map((channel) => (
+                      <option key={channel} value={channel}>{getChannelBadgeMeta(channel).label}</option>
                     ))}
-
-                    <select
-                      value={cashCategoryFilter}
-                      onChange={(e) => setCashCategoryFilter(e.target.value)}
-                      className="liquid-input text-xs rounded-xl px-2.5 py-1.5 font-bold max-w-[175px]"
-                    >
-                      {cashbookCategories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat === 'ALL' ? 'All Categories' : cat}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 flex-1 justify-end">
-                    <div className="relative flex-1 min-w-[180px] max-w-xs">
-                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                      <input
-                        type="text"
-                        placeholder="Search reason, category, payer..."
-                        value={cashSearch}
-                        onChange={(e) => setCashSearch(e.target.value)}
-                        className="liquid-input w-full pl-8 pr-3 py-1.5 text-xs rounded-xl"
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowAuditTrail(!showAuditTrail)}
-                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer ${
-                        showAuditTrail
-                          ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                          : 'liquid-glass-subtle text-theme-secondary'
-                      }`}
-                      title="Toggle visibility of corrected and voided audit trail entries"
-                    >
-                      <History className="w-3.5 h-3.5" />
-                      <span>Audit Trail</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        exportToCSV(
-                          filteredTransactions,
-                          `cashbook-${cashDateRange.toLowerCase()}-${new Date()
-                            .toISOString()
-                            .slice(0, 10)}.csv`
-                        )
-                      }
-                      className="liquid-glass-subtle flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl hover:opacity-80 cursor-pointer"
-                    >
-                      <Download className="w-3.5 h-3.5" /> CSV
-                    </button>
-                  </div>
-                </div>
+                  </select>
+                </label>
+                <label>Category
+                  <select value={cashCategoryFilter} onChange={(e) => setCashCategoryFilter(e.target.value)}>
+                    {cashbookCategories.map((cat) => (
+                      <option key={cat} value={cat}>{cat === 'ALL' ? 'All categories' : cat}</option>
+                    ))}
+                  </select>
+                </label>
+                {cashDateRange === 'CUSTOM' && (
+                  <>
+                    <label>From<input type="date" value={cashStartDate} onChange={(e) => setCashStartDate(e.target.value)} /></label>
+                    <label>To<input type="date" value={cashEndDate} onChange={(e) => setCashEndDate(e.target.value)} /></label>
+                  </>
+                )}
+                <label className="money-ledger-search">Search entries
+                  <input type="search" placeholder="Reason, category or payer" value={cashSearch}
+                    onChange={(e) => setCashSearch(e.target.value)} />
+                </label>
               </div>
 
               <div id="cash-results" />
               {filteredTransactions.length === 0 ? (
-                <EmptyState
-                  icon={Wallet}
-                  title="No cashbook entries match your current filter"
-                  description="Try switching to 'All Time' or 'All Channels', or record a new shop expense or sale."
-                  actionLabel="Reset Cashbook Filters"
-                  onAction={() => {
-                    setCashFilter('ALL');
-                    setChannelFilter('ALL');
-                    setCashDateRange('ALL');
-                    setCashStartDate('');
-                    setCashEndDate('');
-                    setCashCategoryFilter('ALL');
-                    setCashSearch('');
-                    setShowAuditTrail(true);
-                  }}
-                />
+                <div className="money-ledger-empty">
+                  <div role="status">
+                    <h3>{hasCashFilters ? 'No matching entries' : 'No cashbook entries yet'}</h3>
+                    <p>{hasCashFilters
+                      ? 'Clear the filters to see all entries.'
+                      : 'Record money received or spent to start your cashbook.'}</p>
+                  </div>
+                  <button type="button" className={hasCashFilters ? 'workspace-chip' : 'workspace-primary'}
+                    onClick={hasCashFilters ? clearCashFilters : openCashEntry}>
+                    {hasCashFilters ? 'Clear filters' : 'Record money'}
+                  </button>
+                </div>
               ) : (
                 <>
                   {/* Mobile Card View (< 768px) */}
@@ -3239,7 +3158,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   <ListPagination list={transactionPage} label="Cash entries" targetId="cash-results" />
                 </>
               )}
-            </div>
+            </section>
           </div>
         )}
 
