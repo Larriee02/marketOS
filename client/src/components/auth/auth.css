@@ -160,3 +160,80 @@
 }
 
 .auth-layout--signup .auth-toolbar { max-width: 580px; }
+
+.auth-layout--signup .auth-sheet .liquid-input,
+.auth-layout--signup .auth-sheet button[type="submit"],
+.auth-layout--signup .signup-google button.liquid-glass-subtle {
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.auth-layout--signup .auth-sheet .liquid-input,
+.signup-currency {
+  background: var(--bg-card-elevated);
+  border: 1px solid var(--border-outer);
+}
+
+.signup-currency {
+  position: relative;
+  border-radius: 12px;
+}
+
+.signup-currency-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: .94rem;
+}
+
+.signup-currency-symbol {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  padding-inline: 5px;
+  border-radius: 8px;
+  background: var(--bg-subtle);
+  color: var(--brand-blue);
+  font-weight: 700;
+}
+
+.signup-currency-code {
+  color: var(--text-secondary);
+  font: 600 .75rem "JetBrains Mono", monospace;
+}
+
+.signup-currency select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.signup-currency:focus-within {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: 2px;
+}
+
+.auth-layout--signup .auth-sheet button[type="submit"],
+.auth-layout--signup .signup-google button.liquid-glass-subtle {
+  min-height: 50px;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.auth-layout--signup .auth-sheet form button[type="submit"] {
+  display: grid;
+  grid-template-columns: 1rem 1fr 1rem;
+  padding-inline: 16px;
+}
+
+.auth-layout--signup .auth-sheet form button[type="submit"] span { grid-column: 2; }
+
+.auth-layout--signup .signup-google button.liquid-glass-subtle:hover:enabled {
+  background: var(--bg-subtle);
+  border-color: var(--brand-blue);
+}

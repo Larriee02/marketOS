@@ -9,7 +9,7 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  Globe,
+  ChevronDown,
 } from 'lucide-react';
 import { apiFetch } from '../services/api';
 import { CURRENCY_OPTIONS } from '../utils/currency';
@@ -101,6 +101,8 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
     setOtpInfo(data);
   };
 
+  const currency = CURRENCY_OPTIONS.find(option => option.code === signupForm.currency);
+
   return (
     <AuthLayout signup darkMode={darkMode} setDarkMode={setDarkMode} onNavigate={onNavigate}>
       {step === 'OTP' ? (
@@ -120,7 +122,6 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
         <>
           <div className="auth-intro">
             <h1>Set up your shop</h1>
-            <p>We’ll send a verification code to your email.</p>
           </div>
 
           {error && (
@@ -217,19 +218,21 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
                 <label htmlFor="signup-currency" className="block text-xs font-bold mb-1 text-theme-primary">
                   Default Currency
                 </label>
-                <div className="relative">
-                  <Globe className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
+                <div className="signup-currency">
+                  <div className="signup-currency-summary" aria-hidden="true">
+                    <span className="signup-currency-symbol">{currency.symbol}</span>
+                    <span>{currency.name.split(' (')[0]}</span>
+                    <span className="signup-currency-code">{currency.code}</span>
+                    <ChevronDown size={16} />
+                  </div>
                   <select id="signup-currency"
                     value={signupForm.currency}
-                    onChange={(e) =>
-                      setSignupForm({ ...signupForm, currency: e.target.value })
+                    onChange={(event) =>
+                      setSignupForm({ ...signupForm, currency: event.target.value })
                     }
-                    className="liquid-input w-full pl-10 pr-3 py-2.5 rounded-xl text-xs"
                   >
-                    {CURRENCY_OPTIONS.map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.symbol} — {c.code} ({c.name})
-                      </option>
+                    {CURRENCY_OPTIONS.map(({ code, name }) => (
+                      <option key={code} value={code}>{name.split(' (')[0]} · {code}</option>
                     ))}
                   </select>
                 </div>
@@ -341,8 +344,7 @@ export function SignupPage({ darkMode, setDarkMode, onAuthenticated, onNavigate 
             </button>
           </form>
 
-          <div className="auth-alternative">
-            <span>Or</span>
+          <div className="signup-google">
             <OAuthButtons actionLabel="Sign up" onAuthenticated={onAuthenticated} onError={setError} />
           </div>
 
