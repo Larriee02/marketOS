@@ -201,6 +201,18 @@ async function executeQuery(text, params = []) {
   const upper = sql.toUpperCase();
   const state = loadState();
 
+  if (upper.includes(' PRIVACY_REQUESTS')) {
+    const requests = state.privacy_requests ||= [];
+    if (upper.startsWith('SELECT')) return { rows: requests.slice(0, 50) };
+    if (upper.startsWith('INSERT')) {
+      const [reference, email, shop, kind] = params;
+      requests.push({ reference, email, shop, kind, created_at: new Date().toISOString() });
+    } else if (upper.startsWith('DELETE')) {
+      state.privacy_requests = requests.filter((item) => item.reference !== params[0]);
+    }
+    saveState(state);
+    return { rows: [] };
+  }
   if (sql.startsWith('/* shop export */')) {
     const [, columns, table] = sql.match(/SELECT ([a-z_, ]+) FROM ([a-z_]+) WHERE/);
     const [owner, after, limit] = params;

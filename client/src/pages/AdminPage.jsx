@@ -1,6 +1,7 @@
 import { ArrowLeft, LogOut, Settings } from 'lucide-react';
 import { MarketOSLogo } from '../components/ui/MarketOSLogo';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
+import { PrivacyRequests } from '../components/admin/PrivacyRequests';
 import { AdminConsole } from '../components/admin/AdminConsole';
 import './admin-page.css';
 
@@ -30,6 +31,7 @@ export function AdminPage({ currentUser, darkMode, setDarkMode, onNavigate, onLo
       <main className="admin-wrap admin-main">
         <h1>Admin console</h1>
         <AdminConsole currentUser={currentUser} onToast={onToast} />
+        <PrivacyRequests />
       </main>
     </div>
   );

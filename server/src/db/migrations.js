@@ -350,4 +350,17 @@ module.exports = [
       ALTER TABLE cashbook_sessions ADD COLUMN time_zone TEXT NOT NULL DEFAULT 'UTC';
     `,
   },
+  {
+    id: '014_privacy_requests',
+    sql: `
+      CREATE TABLE privacy_requests (
+        reference UUID PRIMARY KEY,
+        email VARCHAR(254) NOT NULL,
+        shop VARCHAR(150) NOT NULL,
+        kind VARCHAR(20) NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX privacy_requests_oldest ON privacy_requests (created_at, reference);
+    `,
+  },
 ];

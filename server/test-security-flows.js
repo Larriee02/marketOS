@@ -86,6 +86,25 @@ async function run() {
     assert.equal((await call('/auth/me', null, secondSession)).status, 200);
 
     const owner = await repo.findAuthByEmail(OWNER_EMAIL);
+    const privacyPath = '/privacy/requests';
+    const queuePath = '/admin/privacy-requests';
+    const intake = { email: 'customer@example.test', shop: 'Local market', kind: 'Deletion' };
+    assert.equal((await call(privacyPath, { ...intake, email: 'invalid' })).status, 400);
+    const submitted = await call(privacyPath, intake);
+    assert.equal(submitted.status, 201);
+    assert.deepEqual(Object.keys(submitted.data), ['reference']);
+    assert.equal((await call(queuePath)).status, 401);
+    assert.equal((await call(queuePath, null, secondSession)).status, 403);
+    const { signSession } = require('./src/utils/session');
+    const ownerSession = 'mos_session=' + await signSession(owner);
+    const queue = await call(queuePath, null, ownerSession);
+    assert.equal(queue.status, 200);
+    assert.equal(queue.data.find(item => item.reference === submitted.data.reference).email, intake.email);
+    const closePath = base + '/api/v1' + queuePath + '/' + submitted.data.reference;
+    assert.equal((await fetch(closePath, { method: 'DELETE', headers: { cookie: secondSession } })).status, 403);
+    assert.equal((await fetch(closePath, { method: 'DELETE', headers: { cookie: ownerSession } })).status, 204);
+    assert.ok(!(await call(queuePath, null, ownerSession)).data.some(item => item.reference === submitted.data.reference));
+
     const temporary = await admin.resetUserPassword(owner.id, signup.data.user.id);
     assert.equal((await call('/auth/me', null, secondSession)).status, 401);
     const restricted = await login(temporary.temporaryPassword);

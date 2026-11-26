@@ -19,6 +19,7 @@ export function AuthLayout({ signup = false, darkMode, setDarkMode, onNavigate, 
         </header>
         <main id="main-content" tabIndex={-1} className="auth-sheet">
           {children}
+          <a href="/privacy">Privacy and data requests</a>
         </main>
       </div>
     </div>

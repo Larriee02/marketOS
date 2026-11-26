@@ -230,6 +230,7 @@ export function SettingsPage({
         <h1>Shop settings</h1>
         <div className="settings-layout">
           <aside className="settings-account">
+            <a href="/privacy" className="settings-button">Privacy and data requests</a>
             <h2>Signed-in account</h2>
             <strong>{currentUser.full_name}</strong>
             <p>{currentUser.email}</p>

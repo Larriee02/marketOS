@@ -176,6 +176,26 @@ const requireAdmin = [
   },
 ];
 
+const privacy = require('./services/privacy.service');
+const privacyLimiter = createRateLimiter({
+  scope: 'privacy-intake', windowMs: 60 * 60 * 1000, max: 10,
+  message: 'Too many privacy requests. Try again in an hour.',
+});
+
+app.post('/api/v1/privacy/requests', privacyLimiter, asyncHandler(async (req, res) => {
+  const result = await privacy.submit(req.body || {});
+  res.set('Cache-Control', 'no-store').status(201).json(result);
+}));
+
+app.get('/api/v1/admin/privacy-requests', requireAdmin, asyncHandler(async (req, res) => {
+  res.set('Cache-Control', 'no-store').json(await privacy.list());
+}));
+
+app.delete('/api/v1/admin/privacy-requests/:reference', requireAdmin, asyncHandler(async (req, res) => {
+  await privacy.complete(req.params.reference);
+  res.set('Cache-Control', 'no-store').sendStatus(204);
+}));
+
 /* ---------------------------------- Health & Config ---------------------------------- */
 
 app.get(
