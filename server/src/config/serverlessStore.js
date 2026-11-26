@@ -201,6 +201,15 @@ async function executeQuery(text, params = []) {
   const upper = sql.toUpperCase();
   const state = loadState();
 
+  if (sql.startsWith('/* shop export */')) {
+    const [, columns, table] = sql.match(/SELECT ([a-z_, ]+) FROM ([a-z_]+) WHERE/);
+    const [owner, after, limit] = params;
+    const rows = (state[table] || []).filter((row) => Number(row.user_id) === Number(owner) && row.id > after)
+      .sort((a, b) => a.id - b.id).slice(0, limit)
+      .map((row) => Object.fromEntries(columns.split(', ').map((key) => [key, row[key] ?? null])));
+    return { rows };
+  }
+
   if (upper === 'BEGIN' || upper === 'COMMIT' || upper === 'ROLLBACK') {
     return { rows: [], rowCount: 0 };
   }

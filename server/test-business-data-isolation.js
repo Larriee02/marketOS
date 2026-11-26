@@ -310,6 +310,24 @@ async function runTests() {
   assert.ok(movementsB.length > 0, 'Merchant B must have recorded movements');
   assert.ok(!movementsB.some((m) => m.product_id === prodA.id), 'Merchant B must not see Merchant A movements');
 
+  const { collections, exportShopPage } = require('./src/services/shopExport');
+  for (const table of collections) {
+    const page = await exportShopPage(userA, table);
+    const own = await db.query(`SELECT id FROM ${table} WHERE user_id = $1 ORDER BY id`, [userA]);
+    assert.deepStrictEqual(page.records.map(row => row.id), own.rows.map(row => row.id));
+    assert.equal(page.next, null);
+  }
+  await db.query(`INSERT INTO products (user_id, sku, name, cost_price, selling_price)
+    SELECT $1, 'export-' || i, 'Export item', 1, 2 FROM generate_series(1, 105) AS i`, [userA]);
+  const first = await exportShopPage(userA, 'products');
+  const second = await exportShopPage(userA, 'products', String(first.next));
+  assert.equal(first.records.length, 100);
+  assert.equal(second.next, null);
+  assert.ok(second.records.every(row => row.id > first.next));
+  assert.equal(new Set([...first.records, ...second.records].map(row => row.id)).size, productsA.length + 105);
+  await assert.rejects(exportShopPage(userA, 'users'));
+  await assert.rejects(exportShopPage(userA, 'products', '-1'));
+
   console.log('✅ Stock movement audit records completely isolated');
 
   console.log('\n🎉 ALL MULTI-TENANT BUSINESS DATA ISOLATION TESTS PASSED 100% GREEN!\n');

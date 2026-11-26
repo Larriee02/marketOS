@@ -11,6 +11,7 @@ const { isOwnerEmail } = require('./config/owner');
 const { verifySession, issueSessionCookie, clearSessionCookie, readToken, revokeSession, isSessionRevoked } = require('./utils/session');
 const userRepo = require('./repositories/user.repository');
 const authService = require('./services/auth.service');
+const shopExport = require('./services/shopExport');
 const adminService = require('./services/admin.service');
 const inventoryService = require('./services/inventory.service');
 const cashbookService = require('./services/cashbook.service');
@@ -308,6 +309,15 @@ app.post('/api/v1/auth/logout', requireAuth, asyncHandler(async (req, res) => {
 app.get('/api/v1/auth/me', requireAuth, (req, res) => {
   res.json({ user: req.user });
 });
+
+app.get('/api/v1/shop-export', requireApprovedUser, (req, res) => {
+  res.set('Cache-Control', 'private, no-store').json({ profile: req.user, collections: shopExport.collections });
+});
+
+app.get('/api/v1/shop-export/:collection', requireApprovedUser, asyncHandler(async (req, res) => {
+  const page = await shopExport.exportShopPage(req.user.id, req.params.collection, req.query.after);
+  res.set('Cache-Control', 'private, no-store').json(page);
+}));
 
 app.put(
   '/api/v1/auth/profile',

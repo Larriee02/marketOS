@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowUpRight, LogOut } from 'lucide-react';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { MarketOSLogo } from '../components/ui/MarketOSLogo';
+import { downloadShopExport } from '../services/shopExport';
 import { apiFetch } from '../services/api';
 import { CURRENCY_OPTIONS } from '../utils/currency';
 import { BUSINESS_TYPES, LAGOS_LOCATIONS } from '../components/auth/OAuthButtons';
@@ -45,6 +46,27 @@ export function SettingsPage({
   const [passwordError, setPasswordError] = useState('');
   const [currencyLocked, setCurrencyLocked] = useState(Boolean(currentUser.currency_locked));
   const passwordRequired = currentUser.must_change_password;
+
+  const activeDownload = useRef(null);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportError, setExportError] = useState('');
+  useEffect(() => () => activeDownload.current?.abort(), [currentUser.id]);
+
+  async function exportRecords() {
+    if (activeDownload.current) return;
+    const controller = new AbortController();
+    activeDownload.current = controller;
+    setExportBusy(true);
+    setExportError('');
+    try {
+      await downloadShopExport(currentUser.id, controller.signal);
+    } catch (error) {
+      if (!controller.signal.aborted) setExportError(error.message);
+    } finally {
+      activeDownload.current = null;
+      setExportBusy(false);
+    }
+  }
 
   const editProfile = (event) => {
     const { name, value } = event.target;
@@ -224,6 +246,20 @@ export function SettingsPage({
           </aside>
           <div className="settings-panels">
             {passwordRequired ? <>{security}{details}</> : <>{details}{security}</>}
+            {!passwordRequired && currentUser.status === 'APPROVED' && (
+              <section className="settings-panel" aria-labelledby="shop-data-title">
+                <header>
+                  <h2 id="shop-data-title">Download shop data</h2>
+                  <p>Get your shop profile, products, stock movements, cashbook, credit records and repayments in one JSON file. It includes customer contact details, so store it securely.</p>
+                </header>
+                <div className="settings-save">
+                  {exportError && <p role="alert">{exportError}</p>}
+                  <button type="button" className="settings-button" disabled={exportBusy} onClick={exportRecords}>
+                    {exportBusy ? 'Preparing download…' : 'Download JSON'}
+                  </button>
+                </div>
+              </section>
+            )}
           </div>
         </div>
       </main>
