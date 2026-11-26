@@ -1,469 +1,205 @@
-import './account-pages.css';
+import { useState } from 'react';
+import { ArrowLeft, ArrowUpRight, LogOut } from 'lucide-react';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
-import React, { useState } from 'react';
-import {
-  User,
-  Store,
-  Phone,
-  MapPin,
-  Lock,
-  Globe,
-  ArrowLeft,
-  CheckCircle2,
-  ShieldCheck,
-  LogOut,
-} from 'lucide-react';
+import { MarketOSLogo } from '../components/ui/MarketOSLogo';
 import { apiFetch } from '../services/api';
 import { CURRENCY_OPTIONS } from '../utils/currency';
 import { BUSINESS_TYPES, LAGOS_LOCATIONS } from '../components/auth/OAuthButtons';
-import { MarketOSLogo } from '../components/ui/MarketOSLogo';
-import { Badge } from '../components/ui/Badge';
+import './shop-settings.css';
+
+const emptyPassword = { current_password: '', new_password: '', confirm_password: '' };
+const currencyChoices = CURRENCY_OPTIONS.map(({ code, name }) => [code, `${code} · ${name}`]);
+
+function shopDetails(user) {
+  return {
+    full_name: user.full_name || '',
+    business_name: user.business_name || '',
+    phone: user.phone || '',
+    business_type: user.business_type || BUSINESS_TYPES[0],
+    city: user.city || LAGOS_LOCATIONS[0],
+    currency: user.currency || 'NGN',
+  };
+}
 
 export function SettingsPage({
-  currentUser,
-  darkMode,
-  setDarkMode,
-  onUserUpdated,
-  onNavigate,
-  onLogout,
-  toast,
-  onToast,
+  currentUser, darkMode, setDarkMode, onUserUpdated, onNavigate, onLogout, onToast,
 }) {
+  const [profile, setProfile] = useState(() => shopDetails(currentUser));
+  const [password, setPassword] = useState(emptyPassword);
   const [submittingProfile, setSubmittingProfile] = useState(false);
   const [submittingPassword, setSubmittingPassword] = useState(false);
-  const [localToast, setLocalToast] = useState('');
+  const [profileError, setProfileError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const passwordRequired = currentUser.must_change_password;
 
-  const notifyToast = (msg) => {
-    if (typeof onToast === 'function') {
-      onToast(msg);
-    } else {
-      setLocalToast(msg);
-      setTimeout(() => setLocalToast(''), 3500);
-    }
+  const editProfile = (event) => {
+    const { name, value } = event.target;
+    setProfile((previous) => ({ ...previous, [name]: value }));
+    setProfileError('');
   };
 
-  const [profileForm, setProfileForm] = useState({
-    full_name: currentUser?.full_name || '',
-    business_name: currentUser?.business_name || '',
-    phone: currentUser?.phone || '',
-    business_type: currentUser?.business_type || BUSINESS_TYPES[0],
-    city: currentUser?.city || LAGOS_LOCATIONS[0],
-    currency: currentUser?.currency || 'NGN',
-  });
-
-  const [passwordForm, setPasswordForm] = useState({
-    current_password: '',
-    new_password: '',
-    confirm_password: '',
-  });
-
-  const handleSaveProfile = async (e) => {
-    if (e) e.preventDefault();
+  async function saveProfile(event) {
+    event.preventDefault();
+    if (submittingProfile) return;
     setSubmittingProfile(true);
+    setProfileError('');
     try {
-      const data = await apiFetch('/api/v1/auth/profile', {
+      const { user } = await apiFetch('/api/v1/auth/profile', {
         method: 'PUT',
-        body: JSON.stringify(profileForm),
+        body: JSON.stringify(profile),
       });
-      if (data?.user) {
-        onUserUpdated(data.user);
-      }
-      notifyToast('Account & currency preferences saved.');
+      setProfile(shopDetails(user));
+      onUserUpdated(user);
+      onToast('Shop details saved.');
     } catch (err) {
-      alert(err.message);
+      setProfileError(err.message);
     } finally {
       setSubmittingProfile(false);
     }
-  };
+  }
 
-  const handleSelectCurrency = async (code) => {
-    const nextForm = { ...profileForm, currency: code };
-    setProfileForm(nextForm);
-    try {
-      const data = await apiFetch('/api/v1/auth/profile', {
-        method: 'PUT',
-        body: JSON.stringify(nextForm),
-      });
-      if (data?.user) {
-        onUserUpdated(data.user);
-      }
-      notifyToast(`Display currency updated to ${code}.`);
-    } catch (err) {
-      alert(err.message);
+  async function changePassword(event) {
+    event.preventDefault();
+    if (submittingPassword) return;
+    if (password.new_password !== password.confirm_password) {
+      setPasswordError('The new passwords don’t match.');
+      return;
     }
-  };
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    if (passwordForm.new_password !== passwordForm.confirm_password) {
-      return alert('New password and confirmation do not match.');
-    }
+    setPasswordError('');
     setSubmittingPassword(true);
     try {
-      const data = await apiFetch('/api/v1/auth/change-password', {
+      const { user } = await apiFetch('/api/v1/auth/change-password', {
         method: 'POST',
         body: JSON.stringify({
-          current_password: passwordForm.current_password,
-          new_password: passwordForm.new_password,
+          current_password: password.current_password,
+          new_password: password.new_password,
         }),
       });
-      onUserUpdated(data.user);
-      setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
-      notifyToast('Password updated successfully.');
+      onUserUpdated(user);
+      setPassword(emptyPassword);
+      onToast('Password updated.');
     } catch (err) {
-      alert(err.message);
+      setPasswordError(err.message);
     } finally {
       setSubmittingPassword(false);
     }
-  };
+  }
 
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const profileChoices = [
+    ['business_type', 'Business category', BUSINESS_TYPES.map((type) => [type, type])],
+    ['city', 'Location', LAGOS_LOCATIONS.map((location) => [location, location])],
+    ['currency', 'Shop currency', currencyChoices],
+  ];
+
+  const details = (
+    <section id="shop-details" className="settings-panel" aria-labelledby="shop-details-title">
+      <header>
+        <h2 id="shop-details-title">Shop details</h2>
+        <p>Shop name and contact details are used on receipts.</p>
+      </header>
+      <form onSubmit={saveProfile}>
+        <fieldset disabled={submittingProfile} className="settings-fields">
+          <label htmlFor="shop-business_name">Shop name
+            <input id="shop-business_name" name="business_name" value={profile.business_name} onChange={editProfile} autoComplete="organization" required />
+          </label>
+          <label htmlFor="shop-full_name">Full name
+            <input id="shop-full_name" name="full_name" value={profile.full_name} onChange={editProfile} autoComplete="name" required />
+          </label>
+          <label htmlFor="shop-phone"><span>Phone number <small>(optional)</small></span>
+            <input id="shop-phone" name="phone" type="tel" value={profile.phone} onChange={editProfile} autoComplete="tel" />
+          </label>
+          {profileChoices.map(([name, label, options]) => (
+            <label key={name} htmlFor={'shop-' + name}>{label}
+              <select id={'shop-' + name} name={name} value={profile[name]} onChange={editProfile}
+                aria-describedby={name === 'currency' ? 'settings-currency-help' : undefined}>
+                {!options.some(([code]) => code === profile[name]) && <option value={profile[name]}>{profile[name]}</option>}
+                {options.map(([code, text]) => <option key={code} value={code}>{text}</option>)}
+              </select>
+              {name === 'currency' && <small id="settings-currency-help">Sets the currency shown on prices, sales, and reports.</small>}
+            </label>
+          ))}
+        </fieldset>
+        <footer className="settings-save">
+          {profileError && <p role="alert">{profileError}</p>}
+          <button type="submit" className="settings-primary" disabled={submittingProfile}>
+            {submittingProfile ? 'Saving…' : 'Save shop details'}
+          </button>
+        </footer>
+      </form>
+    </section>
+  );
+
+  const security = (
+    <section id="shop-security" className="settings-panel" aria-labelledby="shop-security-title">
+      <header>
+        <h2 id="shop-security-title">Password &amp; security</h2>
+        <p>{passwordRequired ? 'Change your temporary password to open your workspace.'
+          : 'Use at least 12 characters for your new password.'}</p>
+      </header>
+      <form onSubmit={changePassword}>
+        <fieldset disabled={submittingPassword} className="settings-fields settings-password-fields">
+          {[
+            ['current_password', 'Current password'],
+            ['new_password', 'New password'],
+            ['confirm_password', 'Confirm new password'],
+          ].map(([name, label]) => (
+            <label key={name} htmlFor={'shop-' + name}>{label}
+              <input id={'shop-' + name} type="password" value={password[name]}
+                autoComplete={name === 'current_password' ? 'current-password' : 'new-password'}
+                required={name !== 'current_password' || passwordRequired || currentUser.auth_provider === 'EMAIL'}
+                minLength={name === 'current_password' ? undefined : 12}
+                onChange={(event) => {
+                  setPassword({ ...password, [name]: event.target.value });
+                  setPasswordError('');
+                }} />
+            </label>
+          ))}
+        </fieldset>
+        <footer className="settings-save">
+          {passwordError && <p role="alert">{passwordError}</p>}
+          <button type="submit" className="settings-primary" disabled={submittingPassword}>
+            {submittingPassword ? 'Updating…' : 'Update password'}
+          </button>
+        </footer>
+      </form>
+    </section>
+  );
 
   return (
-    <div className="account-page account-settings min-h-screen pb-16">
-      {currentUser.must_change_password && <p role="status" className="p-4">Change your temporary password below to open your workspace.</p>}
-      {/* Top Header */}
-      <header className="account-masthead text-slate-100">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <MarketOSLogo variant="icon" size="sm" />
-            <div className="min-w-0">
-              <h1>
-                Shop settings
-              </h1>
-              <p className="truncate text-xs text-slate-300">
-                {currentUser.full_name} • {currentUser.email}
-              </p>
-            </div>
-          </div>
-
-          <div className="account-toolbar">
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={() => onNavigate('/admin')}
-                className="flex items-center gap-1.5 bg-white/12 hover:bg-white/20 text-white border border-white/20 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer"
-              >
-                <ShieldCheck className="w-4 h-4 text-sky-300" />
-                <span>Admin Console</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => onNavigate('/store/sell')}
-              className="liquid-btn-primary px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to shop</span>
-            </button>
-
-            <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((current) => !current)}
-              className="flex items-center gap-1.5 bg-white/12 hover:bg-white/20 text-white border border-white/20 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer" />
+    <div className="shop-settings">
+      <header className="settings-top">
+        <div className="settings-wrap">
+          <MarketOSLogo variant="icon" size="sm" />
+          <div className="settings-top-actions">
+            <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode((value) => !value)} className="settings-button settings-theme" />
+            {!passwordRequired && <button type="button" className="settings-button" onClick={() => onNavigate('/store/sell')}>
+              <ArrowLeft size={16} aria-hidden="true" /> Back to shop
+            </button>}
           </div>
         </div>
       </header>
-
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {(toast || localToast) && (
-          <div className="liquid-btn-primary px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>{toast || localToast}</span>
-          </div>
-        )}
-
-        {/* Section 1: Currency & Regional Format */}
-        <section className="liquid-glass rounded-3xl p-5 sm:p-6 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3.5 theme-divider">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl liquid-glass-subtle text-theme-brand">
-                <Globe className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-base font-extrabold font-luxury text-theme-primary">
-                  Shop currency
-                </h2>
-                <p className="text-xs text-theme-secondary">
-                  Prices, sales and reports use this currency.
-                </p>
-              </div>
-            </div>
-
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {CURRENCY_OPTIONS.map((curr) => {
-              const active = profileForm.currency === curr.code;
-              return (
-                <button
-                  key={curr.code}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => handleSelectCurrency(curr.code)}
-                  className={`p-3.5 rounded-2xl text-left transition-all cursor-pointer ${
-                    active
-                      ? 'liquid-btn-primary'
-                      : 'liquid-glass-subtle hover:opacity-90'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-base font-extrabold font-luxury">{curr.symbol}</span>
-                    <span className="text-[11px] font-bold opacity-85">{curr.code}</span>
-                  </div>
-                  <div className="text-xs font-semibold mt-1 truncate">{curr.name}</div>
+      <main className="settings-wrap settings-main">
+        <h1>Shop settings</h1>
+        <div className="settings-layout">
+          <aside className="settings-account">
+            <h2>Signed-in account</h2>
+            <strong>{currentUser.full_name}</strong>
+            <p>{currentUser.email}</p>
+            <div className="settings-account-actions">
+              {currentUser.role === 'ADMIN' && !passwordRequired && (
+                <button type="button" className="settings-button" onClick={() => onNavigate('/admin')}>
+                  Admin console <ArrowUpRight size={15} aria-hidden="true" />
                 </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Section 2: Store & Account Profile */}
-        <section className="liquid-glass rounded-3xl p-5 sm:p-6 space-y-4">
-          <div className="flex items-center justify-between border-b pb-3.5 theme-divider">
-            <div>
-              <h2 className="text-base font-extrabold font-luxury text-theme-primary">
-                Shop details
-              </h2>
-              <p className="text-xs text-theme-secondary">
-                These details appear on customer receipts.
-              </p>
-            </div>
-            <Badge variant={isAdmin ? 'info' : 'success'}>
-              {isAdmin ? 'Administrator' : 'Verified Merchant'}
-            </Badge>
-          </div>
-
-          <form onSubmit={handleSaveProfile} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="shop-full_name" className="block text-xs font-bold mb-1.5 text-theme-primary">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                  <input
-                    id="shop-full_name"
-                    type="text"
-                    required
-                    value={profileForm.full_name}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, full_name: e.target.value })
-                    }
-                    className="liquid-input w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="shop-business_name" className="block text-xs font-bold mb-1.5 text-theme-primary">
-                  Business / Store Name
-                </label>
-                <div className="relative">
-                  <Store className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                  <input
-                    id="shop-business_name"
-                    type="text"
-                    required
-                    value={profileForm.business_name}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, business_name: e.target.value })
-                    }
-                    className="liquid-input w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="shop-phone" className="block text-xs font-bold mb-1.5 text-theme-primary">
-                  Phone Number
-                </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                  <input
-                    id="shop-phone"
-                    type="tel"
-                    value={profileForm.phone}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, phone: e.target.value })
-                    }
-                    className="liquid-input w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="shop-business_type" className="block text-xs font-bold mb-1.5 text-theme-primary">
-                  Business Category
-                </label>
-                <select
-                  id="shop-business_type"
-                  value={profileForm.business_type}
-                  onChange={(e) =>
-                    setProfileForm({ ...profileForm, business_type: e.target.value })
-                  }
-                  className="liquid-input w-full px-3.5 py-2.5 rounded-xl text-sm"
-                >
-                  {BUSINESS_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="shop-city" className="block text-xs font-bold mb-1.5 text-theme-primary">
-                  Location / Region
-                </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                  <select
-                    id="shop-city"
-                    value={profileForm.city}
-                    onChange={(e) =>
-                      setProfileForm({ ...profileForm, city: e.target.value })
-                    }
-                    className="liquid-input w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm"
-                  >
-                    {LAGOS_LOCATIONS.map((loc) => (
-                      <option key={loc} value={loc}>
-                        {loc}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="shop-currency" className="block text-xs font-bold mb-1.5 text-theme-primary">
-                  Default Currency
-                </label>
-                <select
-                  id="shop-currency"
-                  value={profileForm.currency}
-                  onChange={(e) =>
-                    setProfileForm({ ...profileForm, currency: e.target.value })
-                  }
-                  className="liquid-input w-full px-3.5 py-2.5 rounded-xl text-sm font-bold"
-                >
-                  {CURRENCY_OPTIONS.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.name} ({c.code})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                type="submit"
-                disabled={submittingProfile}
-                className="liquid-btn-primary px-5 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer disabled:opacity-50"
-              >
-                {submittingProfile ? 'Saving Changes...' : 'Save shop details'}
+              )}
+              <button type="button" className="settings-button" onClick={onLogout}>
+                <LogOut size={15} aria-hidden="true" /> Sign out
               </button>
             </div>
-          </form>
-        </section>
-
-        {/* Section 3: Password & Security */}
-        <section className="liquid-glass rounded-3xl p-5 sm:p-6 space-y-4">
-          <div className="flex items-center justify-between border-b pb-3.5 theme-divider">
-            <div>
-              <h2 className="text-base font-extrabold font-luxury text-theme-primary">
-                Password and security
-              </h2>
-              <p className="text-xs text-theme-secondary">
-                Signed in with <strong>{currentUser.auth_provider || 'EMAIL'}</strong>
-              </p>
-            </div>
+          </aside>
+          <div className="settings-panels">
+            {passwordRequired ? <>{security}{details}</> : <>{details}{security}</>}
           </div>
-
-          <form onSubmit={handleChangePassword} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label htmlFor="shop-current_password" className="block text-xs font-bold mb-1.5 text-theme-primary">
-                  Current Password
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                  <input
-                    id="shop-current_password"
-                    type="password"
-                    placeholder="Leave blank if OAuth account"
-                    value={passwordForm.current_password}
-                    onChange={(e) =>
-                      setPasswordForm({ ...passwordForm, current_password: e.target.value })
-                    }
-                    className="liquid-input w-full pl-10 pr-3 py-2.5 rounded-xl text-xs"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="shop-new_password" className="block text-xs font-bold mb-1.5 text-theme-primary">
-                  New Password
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                  <input
-                    id="shop-new_password"
-                    type="password"
-                    required
-                    minLength={12}
-                    placeholder="Minimum 12 characters"
-                    value={passwordForm.new_password}
-                    onChange={(e) =>
-                      setPasswordForm({ ...passwordForm, new_password: e.target.value })
-                    }
-                    className="liquid-input w-full pl-10 pr-3 py-2.5 rounded-xl text-xs"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="shop-confirm_password" className="block text-xs font-bold mb-1.5 text-theme-primary">
-                  Confirm New Password
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                  <input
-                    id="shop-confirm_password"
-                    type="password"
-                    required
-                    minLength={12}
-                    placeholder="Repeat new password"
-                    value={passwordForm.confirm_password}
-                    onChange={(e) =>
-                      setPasswordForm({ ...passwordForm, confirm_password: e.target.value })
-                    }
-                    className="liquid-input w-full pl-10 pr-3 py-2.5 rounded-xl text-xs"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <button
-                type="button"
-                onClick={onLogout}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-500/10 flex items-center gap-1.5 cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sign Out of Account</span>
-              </button>
-
-              <button
-                type="submit"
-                disabled={submittingPassword}
-                className="liquid-glass-subtle px-5 py-2.5 rounded-xl text-xs font-extrabold text-theme-primary cursor-pointer disabled:opacity-50"
-              >
-                {submittingPassword ? 'Updating...' : 'Update Password'}
-              </button>
-            </div>
-          </form>
-        </section>
+        </div>
       </main>
     </div>
   );

@@ -1,0 +1,68 @@
+.shop-settings {
+  --settings-surface: color-mix(in srgb, var(--bg-card-elevated) 80%, var(--bg-app));
+  min-height: 100dvh;
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
+.settings-wrap { width: min(calc(100% - 32px), 1056px); margin-inline: auto; }
+.settings-top { border-bottom: 1px solid var(--border-outer); background: var(--settings-surface); }
+.settings-top .settings-wrap { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.settings-top-actions, .settings-account-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.settings-main { padding-block: clamp(24px, 4vw, 52px); }
+.settings-main h1 {
+  font: 800 clamp(30px, 4vw, 46px)/1.15 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -.055em;
+  margin-bottom: 24px;
+}
+.settings-layout { display: grid; grid-template-columns: minmax(0, .36fr) minmax(0, 1fr); gap: clamp(14px, 3vw, 28px); align-items: start; }
+.settings-panels { display: grid; min-width: 0; gap: 16px; }
+.settings-panel, .settings-account {
+  background: var(--settings-surface);
+  border: 1px solid var(--border-outer);
+  border-radius: 12px;
+}
+.settings-account { padding: 18px; overflow-wrap: anywhere; }
+.settings-account h2 { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+.settings-account strong { font-size: 16px; }
+.settings-account p { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.settings-account-actions { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-outer); }
+.settings-panel header, .settings-fields, .settings-save { padding: clamp(14px, 2.5vw, 24px); }
+.settings-panel header { border-bottom: 1px solid var(--border-outer); }
+.settings-panel h2 { font-size: 20px; font-weight: 730; letter-spacing: -.035em; }
+.settings-panel header p, .settings-panel small { font-size: 13px; color: var(--text-secondary); }
+.settings-fields { display: grid; min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.settings-fields label { display: grid; min-width: 0; align-content: start; gap: 5px; font-size: 13px; font-weight: 650; }
+.settings-fields small { font-weight: 400; }
+.settings-fields :is(input, select) {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-outer);
+  border-radius: 7px;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 400;
+}
+.settings-save { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 10px; border-top: 1px solid var(--border-outer); }
+.settings-save [role="alert"] { margin-right: auto; color: var(--badge-danger-text); font-size: 13px; }
+.settings-button, .settings-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 40px; padding: 8px 12px; border-radius: 7px; font-size: 13px; font-weight: 650; cursor: pointer;
+}
+.settings-button { border: 1px solid var(--border-outer); }
+.settings-theme { min-width: 42px; }
+.settings-button:hover { background: var(--brand-blue-soft); }
+.settings-primary { background: #2457d6; color: #f8fafc; }
+.settings-primary:hover { background: #1946b8; }
+.settings-primary:disabled { opacity: .65; cursor: wait; }
+.shop-settings :is(button, input, select):focus-visible { outline: 2px solid var(--brand-blue); outline-offset: 2px; }
+
+@media (max-width: 700px) {
+  .settings-layout { grid-template-columns: minmax(0, 1fr); }
+  .settings-account { order: 1; }
+}
+@media (max-width: 530px) {
+  .settings-fields { grid-template-columns: minmax(0, 1fr); }
+}
