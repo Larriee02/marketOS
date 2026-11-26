@@ -297,6 +297,7 @@ class CashbookService {
     let dayCashOutflow = 0;
     let dayBankPosInflow = 0;
     let dayBankPosOutflow = 0;
+    let dayPosNet = 0;
 
     for (const t of totals) {
       const amt = Number(t.amount || 0);
@@ -311,6 +312,7 @@ class CashbookService {
           else priorBankPosNet -= amt;
         }
       } else {
+        if (t.payment_method === 'POS') dayPosNet += t.type === 'INFLOW' ? amt : -amt;
         if (t.type === 'INFLOW') {
           dayInflow += amt;
           if (isCash) dayCashInflow += amt;
@@ -365,6 +367,7 @@ class CashbookService {
       expectedClosingBalance,
       expectedClosingCash,
       expectedClosingBankPos,
+      dayPosNet: Number(dayPosNet.toFixed(2)),
       sessions,
     };
   }

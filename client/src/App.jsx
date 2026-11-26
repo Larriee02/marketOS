@@ -3958,11 +3958,10 @@ function AppShell({ darkMode, setDarkMode }) {
       />
 
       {/* DAILY POS, CASH & BANK RECONCILIATION MODAL */}
-      <DailyChannelReconciliationModal
+      {showReconcileModal && <DailyChannelReconciliationModal
         isOpen={showReconcileModal}
         onClose={() => setShowReconcileModal(false)}
         sessionState={cashbookSession}
-        transactions={transactions}
         apiFetch={apiFetch}
         formatNaira={formatNaira}
         storeName={currentUser?.business_name || 'MarketOS Store'}
@@ -3970,7 +3969,7 @@ function AppShell({ darkMode, setDarkMode }) {
           showSuccessToast('Daily channel reconciliation recorded!');
           fetchAllData();
         }}
-      />
+      />}
 
       {/* INSTANT DIGITAL SALE RECEIPT (PRINTABLE THERMAL SLIP & WHATSAPP / SHARE) */}
       <ReceiptModal
