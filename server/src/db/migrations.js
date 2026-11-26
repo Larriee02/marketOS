@@ -307,4 +307,47 @@ module.exports = [
       CREATE INDEX revoked_sessions_expiry ON revoked_sessions (expires_at);
     `,
   },
+  {
+    id: '012_lock_shop_currency',
+    sql: `
+      LOCK TABLE products, stock_movements, cash_transactions, credit_records, cashbook_sessions
+        IN SHARE ROW EXCLUSIVE MODE;
+      ALTER TABLE users ADD COLUMN currency_locked BOOLEAN NOT NULL DEFAULT FALSE;
+
+      UPDATE users SET currency_locked = TRUE WHERE id IN (
+        SELECT user_id FROM products
+        UNION SELECT user_id FROM stock_movements
+        UNION SELECT user_id FROM cash_transactions
+        UNION SELECT user_id FROM credit_records
+        UNION SELECT user_id FROM cashbook_sessions
+      );
+
+      CREATE FUNCTION lock_shop_currency() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+      BEGIN
+        UPDATE users SET currency_locked = TRUE WHERE id = NEW.user_id AND NOT currency_locked;
+        RETURN NEW;
+      END;
+      $$;
+
+      CREATE TRIGGER lock_currency_on_product AFTER INSERT ON products
+        FOR EACH ROW EXECUTE FUNCTION lock_shop_currency();
+      CREATE TRIGGER lock_currency_on_movement AFTER INSERT ON stock_movements
+        FOR EACH ROW EXECUTE FUNCTION lock_shop_currency();
+      CREATE TRIGGER lock_currency_on_transaction AFTER INSERT ON cash_transactions
+        FOR EACH ROW EXECUTE FUNCTION lock_shop_currency();
+      CREATE TRIGGER lock_currency_on_credit AFTER INSERT ON credit_records
+        FOR EACH ROW EXECUTE FUNCTION lock_shop_currency();
+      CREATE TRIGGER lock_currency_on_session AFTER INSERT ON cashbook_sessions
+        FOR EACH ROW EXECUTE FUNCTION lock_shop_currency();
+    `,
+  },
+  {
+    id: '013_shop_regional_settings',
+    sql: `
+      ALTER TABLE users ADD COLUMN time_zone TEXT NOT NULL DEFAULT 'UTC';
+      ALTER TABLE users ALTER COLUMN time_zone SET DEFAULT 'Africa/Lagos';
+      ALTER TABLE users ADD COLUMN locale TEXT NOT NULL DEFAULT 'en-NG';
+      ALTER TABLE cashbook_sessions ADD COLUMN time_zone TEXT NOT NULL DEFAULT 'UTC';
+    `,
+  },
 ];

@@ -15,7 +15,7 @@ export function WorkspaceMetric({ label, value, detail, icon: Icon }) {
   );
 }
 
-export function WorkspaceLedger({ entries, formatMoney, onViewAll, title = 'Today’s Live Ledger' }) {
+export function WorkspaceLedger({ entries, formatMoney, locale, timeZone, onViewAll, title = 'Today’s Live Ledger' }) {
   const [kind, setKind] = useState('ALL');
   const filtered = entries.filter((entry) => kind === 'ALL' || entry.type === kind);
   return (
@@ -39,7 +39,7 @@ export function WorkspaceLedger({ entries, formatMoney, onViewAll, title = 'Toda
               <span className={`workspace-glyph ${outgoing ? 'workspace-negative' : 'workspace-positive'}`}><Icon size={17} /></span>
               <div className="min-w-0">
                 <p className="break-words font-semibold">{entry.description || entry.category || 'Cash entry'}</p>
-                <p className="workspace-muted text-xs">{new Date(entry.transaction_date || entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · {paymentLabels[entry.payment_method] || entry.payment_method || 'Cash'}</p>
+                <p className="workspace-muted text-xs">{new Date(entry.transaction_date || entry.created_at).toLocaleTimeString(locale, { timeZone, hour: '2-digit', minute: '2-digit' })} · {paymentLabels[entry.payment_method] || entry.payment_method || 'Cash'}</p>
               </div>
               <b className={outgoing ? 'workspace-negative' : 'workspace-positive'}>{outgoing ? '−' : '+'}{formatMoney(entry.amount)}</b>
             </li>
@@ -54,7 +54,9 @@ export function TraderHome({ user, dashboard, products, session, report, loading
   const stockWarnings = products.filter((product) => Number(product.stock_quantity) <= Number(product.reorder_level));
   const metrics = report?.data?.metrics;
   const firstName = user.full_name?.trim().split(/\s+/)[0];
-  const hour = new Date().getHours();
+  const timeZone = user.time_zone || 'UTC';
+  const locale = user.locale || 'en-NG';
+  const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', hourCycle: 'h23' }).format(new Date()));
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const label = period === 'TODAY' ? 'Today’s' : period === 'WEEK' ? 'This week’s' : 'This month’s';
   const hasCatalog = products.length > 0 || loading;
@@ -64,8 +66,8 @@ export function TraderHome({ user, dashboard, products, session, report, loading
       <header className="trader-heading">
         <div className="trader-shop-name"><Store size={17} aria-hidden="true" />{user.business_name || 'Your shop'}</div>
         <h1>{greeting}{firstName && <>, <em>{firstName}</em></>}</h1>
-        <time className="trader-date" dateTime={today.toLocaleDateString('en-CA')}>
-          {today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+        <time className="trader-date" dateTime={today.toLocaleDateString('en-CA', { timeZone })}>
+          {today.toLocaleDateString(locale, { timeZone, weekday: 'long', month: 'long', day: 'numeric' })}
         </time>
       </header>
 
@@ -129,7 +131,7 @@ export function TraderHome({ user, dashboard, products, session, report, loading
               ))}
             </ul>
           </section>
-          <WorkspaceLedger entries={entries} formatMoney={formatMoney} onViewAll={() => onSelect('cashbook')} title={`${label} money in and out`} />
+          <WorkspaceLedger locale={locale} timeZone={timeZone} entries={entries} formatMoney={formatMoney} onViewAll={() => onSelect('cashbook')} title={`${label} money in and out`} />
         </div>
         <div className="space-y-4 min-w-0">
           <section className="workspace-panel space-y-3">

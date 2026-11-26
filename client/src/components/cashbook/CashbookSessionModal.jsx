@@ -7,7 +7,7 @@ export function CashbookSessionModal({
   isOpen,
   onClose,
   initialMode = 'OPEN', // 'OPEN' | 'CLOSE'
-  sessionState,
+  tradingDate,
   apiFetch,
   formatCurrency,
   currencySymbol = '₦',
@@ -16,9 +16,10 @@ export function CashbookSessionModal({
   onSuccess,
 }) {
   const [mode, setMode] = useState(initialMode);
-  const [sessionDate, setSessionDate] = useState(
-    sessionState?.targetDate || new Date().toISOString().slice(0, 10)
-  );
+  const [sessionDate, setSessionDate] = useState(tradingDate);
+  const [sessionState, setSessionState] = useState(null);
+  const [loadError, setLoadError] = useState('');
+  const ready = sessionState?.targetDate === sessionDate;
   const [openingCash, setOpeningCash] = useState('');
   const [openingBankPos, setOpeningBankPos] = useState('');
   const [openingNote, setOpeningNote] = useState('');
@@ -29,11 +30,19 @@ export function CashbookSessionModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setMode(initialMode);
-      const target = sessionState?.targetDate || new Date().toISOString().slice(0, 10);
-      setSessionDate(target);
+    if (!sessionDate) return;
+    const controller = new AbortController();
+    const { signal } = controller;
+    setSessionState(null);
+    setLoadError('');
+    apiFetch('/api/v1/cashbook/sessions?' + new URLSearchParams({ date: sessionDate }), { signal })
+      .then((data) => { if (!signal.aborted) setSessionState(data); })
+      .catch(() => { if (!signal.aborted) setLoadError('Could not load this register. Reopen it to retry.'); });
+    return () => controller.abort();
+  }, [apiFetch, sessionDate]);
 
+  useEffect(() => {
+    if (sessionState) {
       const curSess = sessionState?.todaySession;
       const initOpenCash =
         curSess?.opening_cash !== undefined && curSess?.opening_cash !== null
@@ -61,7 +70,7 @@ export function CashbookSessionModal({
       setActualClosingBankPos(initCloseBank);
       setClosingNote(curSess?.closing_note || '');
     }
-  }, [isOpen, initialMode, sessionState]);
+  }, [sessionState]);
 
   const totalOpeningInput = useMemo(() => {
     const c = Number(openingCash || 0);
@@ -100,6 +109,7 @@ export function CashbookSessionModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!ready || isSubmitting) return;
     setIsSubmitting(true);
     try {
       if (mode === 'OPEN') {
@@ -181,6 +191,8 @@ export function CashbookSessionModal({
             )}
           </div>
 
+          {!ready && <p role="status">{loadError || (sessionDate ? 'Loading register…' : 'Choose a register date.')}</p>}
+          {ready && <>
           {!opening && (
             <dl className="register-ledger">
               {[
@@ -251,16 +263,17 @@ export function CashbookSessionModal({
               </ul>
             </details>
           )}
+          </>}
         </div>
 
         <div className="register-footer">
           <div className="register-total" aria-live="polite">
             <span>{opening ? 'Total opening balance' : 'Total counted'}</span>
-            <strong>{formatCurrency(opening ? totalOpeningInput : totalActualClosingInput)}</strong>
+            <strong>{ready ? formatCurrency(opening ? totalOpeningInput : totalActualClosingInput) : '—'}</strong>
           </div>
           <div className="register-actions">
             <button type="button" onClick={onClose} disabled={isSubmitting}>Cancel</button>
-            <button type="submit" disabled={isSubmitting}>
+            <button type="submit" disabled={!ready || isSubmitting}>
               {isSubmitting ? 'Saving…' : opening ? 'Save opening balance' : 'Save and close day'}
               {isSubmitting
                 ? <RefreshCw aria-hidden="true" size={16} className="animate-spin" />

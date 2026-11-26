@@ -71,10 +71,25 @@ async function run() {
   assert.equal(concurrent.filter((result) => result.status === 'fulfilled').length, 1);
   await assert.rejects(verify(), { code: 'OTP_NOT_FOUND' });
 
+  await assert.rejects(auth.updateProfile(user.id, { currency: 'XXX' }), { code: 'INVALID_CURRENCY' });
+  const configured = await auth.updateProfile(user.id, { currency: 'usd' });
+  assert.equal(configured.currency, 'USD');
+  assert.equal(configured.currency_locked, false);
+
   const product = await inventory.createProduct(user.id, {
     name: 'Tea', sku: 'TEA', category: 'Drinks', unit: 'box',
     cost_price: 1000, selling_price: 1500, stock_quantity: 0, reorder_level: 0,
   });
+  await assert.rejects(
+    auth.updateProfile(user.id, { currency: 'GBP', business_name: 'Must not be saved' }),
+    { code: 'CURRENCY_LOCKED' }
+  );
+  const renamed = await auth.updateProfile(user.id, { full_name: 'Updated Merchant' });
+  assert.equal(renamed.currency, 'USD');
+  assert.equal(renamed.currency_locked, true);
+  assert.equal(renamed.business_name, details.business_name);
+  assert.equal(renamed.full_name, 'Updated Merchant');
+
   await inventory.recordMovement(user.id, {
     product_id: product.id, movement_type: 'RESTOCK', quantity: 1, record_cash: true,
   });
@@ -103,6 +118,31 @@ async function run() {
   const close = await cashbook.closeCashbookSession(user.id, { session_date: '2001-01-01', actual_closing_cash: 2001 });
   assert.equal(Number(close.expected_closing_balance), 2001);
   assert.equal(Number(close.variance), 0);
+
+  await assert.rejects(auth.updateProfile(user.id, { time_zone: 'Mars/Olympus' }), { code: 'INVALID_TIME_ZONE' });
+  await assert.rejects(auth.updateProfile(user.id, { locale: 'bogus!!' }), { code: 'INVALID_LOCALE' });
+  const regional = await auth.updateProfile(user.id, { time_zone: 'America/New_York', locale: 'fr-CA' });
+  assert.equal(regional.time_zone, 'America/New_York');
+  assert.equal(regional.locale, 'fr-CA');
+  await assert.rejects(cashbook.getCashbookSessions(user.id, { date: '2024-02-30' }), { code: 'INVALID_REGISTER_DATE' });
+  // New York's 25-hour fall-back day includes both local 01:30 sales.
+  for (const [instant, amount] of [
+    ['2024-11-03T03:59:59Z', 1], ['2024-11-03T04:00:00Z', 2],
+    ['2024-11-03T05:30:00Z', 4], ['2024-11-03T06:30:00Z', 8],
+    ['2024-11-04T04:59:59Z', 16], ['2024-11-04T05:00:00Z', 32],
+  ]) {
+    await db.query(`INSERT INTO cash_transactions (user_id, type, category, amount, description, transaction_date)
+      VALUES ($1, 'INFLOW', 'Sale', $2, 'Boundary test', $3)`, [user.id, amount, instant]);
+  }
+  const selected = await cashbook.getCashbookSessions(user.id, { date: '2024-11-03' });
+  assert.equal(selected.dayInflow, 30);
+  await cashbook.closeCashbookSession(user.id, { session_date: selected.targetDate });
+  await auth.updateProfile(user.id, { time_zone: 'Africa/Lagos' });
+  const historical = await cashbook.getCashbookSessions(user.id, { date: selected.targetDate });
+  assert.equal(historical.timeZone, 'America/New_York');
+  assert.equal(historical.dayInflow, 30);
+  const following = await cashbook.getCashbookSessions(user.id, { date: '2024-11-04' });
+  assert.equal(following.dayInflow, 32);
 }
 
 run().then(() => console.log('Auth and cashbook regressions passed.')).catch((error) => {

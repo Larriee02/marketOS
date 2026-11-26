@@ -18,7 +18,7 @@ class CashbookRepository {
     return rows;
   }
 
-  async getDashboardMetrics(userId) {
+  async getDashboardMetrics(userId, start, end) {
     const { rows } = await db.query(
       `
       WITH inv AS (
@@ -35,8 +35,8 @@ class CashbookRepository {
         SELECT
           COALESCE(SUM(amount) FILTER (WHERE type = 'INFLOW' AND COALESCE(status, 'ACTIVE') = 'ACTIVE'), 0)::numeric(14,2) AS total_inflow,
           COALESCE(SUM(amount) FILTER (WHERE type = 'OUTFLOW' AND COALESCE(status, 'ACTIVE') = 'ACTIVE'), 0)::numeric(14,2) AS total_outflow,
-          COALESCE(SUM(amount) FILTER (WHERE type = 'INFLOW' AND COALESCE(status, 'ACTIVE') = 'ACTIVE' AND transaction_date >= CURRENT_DATE), 0)::numeric(14,2) AS today_inflow,
-          COALESCE(SUM(amount) FILTER (WHERE type = 'OUTFLOW' AND COALESCE(status, 'ACTIVE') = 'ACTIVE' AND transaction_date >= CURRENT_DATE), 0)::numeric(14,2) AS today_outflow
+          COALESCE(SUM(amount) FILTER (WHERE type = 'INFLOW' AND COALESCE(status, 'ACTIVE') = 'ACTIVE' AND transaction_date >= $2 AND transaction_date < $3), 0)::numeric(14,2) AS today_inflow,
+          COALESCE(SUM(amount) FILTER (WHERE type = 'OUTFLOW' AND COALESCE(status, 'ACTIVE') = 'ACTIVE' AND transaction_date >= $2 AND transaction_date < $3), 0)::numeric(14,2) AS today_outflow
         FROM cash_transactions
         WHERE user_id = $1
       ),
@@ -54,7 +54,7 @@ class CashbookRepository {
         (cash.total_inflow - cash.total_outflow)::numeric(14,2) AS net_cash_balance
       FROM inv, cash, cred;
     `,
-      [userId]
+      [userId, start, end]
     );
 
     const categoryBreakdown = await db.query(
@@ -198,8 +198,8 @@ class CashbookRepository {
 
   async findPreviousClose(userId, date) {
     const { rows } = await db.query(
-      `SELECT * FROM cashbook_sessions WHERE user_id = $1 AND session_date < $2
-       AND status = 'CLOSED' ORDER BY session_date DESC LIMIT 1`, [userId, date]
+      `SELECT *, session_date::text AS session_date FROM cashbook_sessions WHERE user_id = $1 AND session_date < $2
+       AND status = 'CLOSED' ORDER BY cashbook_sessions.session_date DESC LIMIT 1`, [userId, date]
     );
     return rows[0] || null;
   }
@@ -217,9 +217,9 @@ class CashbookRepository {
 
   async findSessions(userId, limit = 30) {
     const { rows } = await db.query(
-      `SELECT * FROM cashbook_sessions
+      `SELECT *, session_date::text AS session_date FROM cashbook_sessions
        WHERE user_id = $1
-       ORDER BY session_date DESC
+       ORDER BY cashbook_sessions.session_date DESC
        LIMIT $2`,
       [userId, Number(limit) || 30]
     );
@@ -228,7 +228,7 @@ class CashbookRepository {
 
   async findSessionByDate(userId, dateStr, client = db) {
     const { rows } = await client.query(
-      `SELECT * FROM cashbook_sessions WHERE user_id = $1 AND session_date = $2`,
+      `SELECT *, session_date::text AS session_date FROM cashbook_sessions WHERE user_id = $1 AND session_date = $2`,
       [userId, dateStr]
     );
     return rows[0] || null;
@@ -245,8 +245,8 @@ class CashbookRepository {
 
     const { rows } = await client.query(
       `INSERT INTO cashbook_sessions (
-        user_id, session_date, opening_balance, opening_cash, opening_bank_pos, opening_note, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, 'OPEN')
+        user_id, session_date, opening_balance, opening_cash, opening_bank_pos, opening_note, status, time_zone
+      ) VALUES ($1, $2, $3, $4, $5, $6, 'OPEN', $7)
       ON CONFLICT (user_id, session_date)
       DO UPDATE SET
         opening_balance = EXCLUDED.opening_balance,
@@ -262,6 +262,7 @@ class CashbookRepository {
         Number(opening_cash),
         Number(opening_bank_pos),
         opening_note,
+        data.time_zone,
       ]
     );
     return rows[0];
@@ -285,8 +286,8 @@ class CashbookRepository {
       `INSERT INTO cashbook_sessions (
         user_id, session_date, opening_balance, opening_cash, opening_bank_pos,
         expected_closing_balance, actual_closing_balance, actual_closing_cash,
-        actual_closing_bank_pos, variance, closing_note, status, closed_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'CLOSED', CURRENT_TIMESTAMP)
+        actual_closing_bank_pos, variance, closing_note, status, closed_at, time_zone
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'CLOSED', CURRENT_TIMESTAMP, $12)
       ON CONFLICT (user_id, session_date)
       DO UPDATE SET
         opening_balance = EXCLUDED.opening_balance,
@@ -311,6 +312,7 @@ class CashbookRepository {
         Number(actual_closing_bank_pos),
         Number(variance),
         closing_note,
+        data.time_zone,
       ]
     );
     return rows[0];

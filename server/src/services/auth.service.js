@@ -20,6 +20,16 @@ const LOCK_MINUTES = 15;
 // Match the password-check cost for unknown accounts.
 const dummyPasswordHash = "$2a$10$KXK0PiGFZK9D57PsycuQheccyfRxtW138tS6U3Kzhigy2vbcbJOUS";
 
+const supportedCurrencies = new Set(['NGN', 'USD', 'GBP', 'EUR', 'GHS', 'KES', 'ZAR', 'CAD']);
+
+function normalizeCurrency(value) {
+  const code = String(value).trim().toUpperCase();
+  if (!supportedCurrencies.has(code)) {
+    throw new AppError('Select a supported shop currency.', 400, 'INVALID_CURRENCY');
+  }
+  return code;
+}
+
 class AuthService {
   getPublicConfig() {
     return {
@@ -123,7 +133,7 @@ class AuthService {
     // The sole admin (platform owner) is provisioned server-side at boot.
     const role = 'USER';
     const status = env.AUTO_APPROVE_USERS ? 'APPROVED' : 'PENDING';
-    const currency = String(payload.currency || 'NGN').trim().toUpperCase();
+    const currency = normalizeCurrency(payload.currency ?? 'NGN');
 
     const userId = await db.withTransaction(async (tx) => {
       const id = await userRepo.create(
@@ -307,7 +317,7 @@ class AuthService {
       const status = env.AUTO_APPROVE_USERS ? 'APPROVED' : 'PENDING';
       const businessName =
         String(payload.business_name || '').trim() || `${profile.fullName}'s Store`;
-      const currency = String(payload.currency || 'NGN').trim().toUpperCase();
+      const currency = normalizeCurrency(payload.currency ?? 'NGN');
 
       const newId = await db.withTransaction(async (tx) => {
         const id = await userRepo.create(
@@ -380,11 +390,32 @@ class AuthService {
       throw new AppError('Full name and business name cannot be empty.', 400);
     }
 
-    const currency = payload.currency
-      ? String(payload.currency).trim().toUpperCase()
-      : current.currency || 'NGN';
+    const requestedCurrency = payload.currency == null ? null : String(payload.currency).trim().toUpperCase();
+    // Keep legacy currency codes readable and allow profile edits without changing them.
+    const currency = requestedCurrency === current.currency || requestedCurrency === null
+      ? null
+      : normalizeCurrency(requestedCurrency);
 
-    await userRepo.updateProfile(userId, {
+    let timeZone = null;
+    let locale = null;
+    if (payload.time_zone !== undefined) {
+      try {
+        if (typeof payload.time_zone !== 'string' || /^[+-]/.test(payload.time_zone)) throw new RangeError();
+        timeZone = new Intl.DateTimeFormat('en', { timeZone: payload.time_zone }).resolvedOptions().timeZone;
+      } catch {
+        throw new AppError('Select a valid shop time zone.', 400, 'INVALID_TIME_ZONE');
+      }
+    }
+    if (payload.locale !== undefined) {
+      try {
+        if (typeof payload.locale !== 'string') throw new RangeError();
+        [locale] = Intl.DateTimeFormat.supportedLocalesOf(payload.locale);
+        if (!locale) throw new RangeError();
+      } catch {
+        throw new AppError('Select a supported date and number format.', 400, 'INVALID_LOCALE');
+      }
+    }
+    const updated = await userRepo.updateProfile(userId, {
       full_name: fullName,
       business_name: businessName,
       phone: payload.phone !== undefined ? String(payload.phone || '').trim() || null : current.phone,
@@ -396,7 +427,13 @@ class AuthService {
       address:
         payload.address !== undefined ? String(payload.address || '').trim() || null : current.address,
       currency,
+      time_zone: timeZone,
+      locale,
     });
+    if (!updated) {
+      throw new AppError('Shop currency is locked after stock or financial records have been created.', 409, 'CURRENCY_LOCKED');
+    }
+
 
     return userRepo.findPublicById(userId);
   }

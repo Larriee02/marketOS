@@ -1,3 +1,4 @@
+import { whatsappPhone } from '../../utils/whatsappPhone';
 import React, { useState, useEffect } from 'react';
 import {
   FileText,
@@ -63,16 +64,6 @@ export function CustomerStatementModal({
     window.print();
   };
 
-  const sanitizePhone = (raw) => {
-    if (!raw) return '';
-    let digits = String(raw).replace(/\D/g, '');
-    if (digits.startsWith('0') && digits.length === 11) {
-      digits = '234' + digits.slice(1);
-    } else if (digits.length === 10) {
-      digits = '234' + digits;
-    }
-    return digits;
-  };
 
   const buildStatementText = () => {
     if (!statement) return '';
@@ -126,7 +117,7 @@ export function CustomerStatementModal({
     }
   };
 
-  const cleanPhone = statement?.customer?.phone ? sanitizePhone(statement.customer.phone) : '';
+  const cleanPhone = statement?.customer?.phone ? whatsappPhone(statement.customer.phone) : '';
   const shareWhatsAppUrl = cleanPhone
     ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(buildStatementText())}`
     : `https://wa.me/?text=${encodeURIComponent(buildStatementText())}`;

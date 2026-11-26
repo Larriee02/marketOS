@@ -88,6 +88,11 @@ function ensureOwner(state) {
   return changed;
 }
 
+function lockShopCurrency(state, userId) {
+  const owner = state.users.find((user) => Number(user.id) === Number(userId));
+  if (owner) owner.currency_locked = true;
+}
+
 function loadState() {
   if (transactionState) return transactionState;
   if (memoryState) return memoryState;
@@ -108,6 +113,13 @@ function loadState() {
             movement.unit_cost = products.get(movement.product_id)?.cost_price ?? null;
           }
         }
+        saveState(memoryState);
+      }
+      if (!memoryState.currencyLocksBackfilled) {
+        for (const table of ['products', 'stock_movements', 'cash_transactions', 'credit_records', 'cashbook_sessions']) {
+          for (const record of memoryState[table]) lockShopCurrency(memoryState, record.user_id);
+        }
+        memoryState.currencyLocksBackfilled = true;
         saveState(memoryState);
       }
       if (!memoryState.correctionLinksRestored) {
@@ -159,6 +171,9 @@ function toPublicUser(u, includeAdmin = false) {
     city: u.city,
     address: u.address,
     currency: u.currency || 'NGN',
+    time_zone: u.time_zone || 'UTC',
+    locale: u.locale || 'en-NG',
+    currency_locked: Boolean(u.currency_locked),
     role: u.role,
     status: u.status,
     auth_provider: u.auth_provider,
@@ -353,6 +368,7 @@ async function executeQuery(text, params = []) {
       city: city || 'Lagos',
       address: null,
       currency: currency || 'NGN',
+      time_zone: 'Africa/Lagos',
       role: role || 'USER',
       status: status || 'PENDING',
       auth_provider: auth_provider || 'EMAIL',
@@ -424,8 +440,11 @@ async function executeQuery(text, params = []) {
   }
 
   if (upper.startsWith('UPDATE USERS SET FULL_NAME = $1')) {
-    const [full_name, business_name, phone, business_type, city, address, currency, id] = params;
+    const [full_name, business_name, phone, business_type, city, address, currency, id, timeZone, locale] = params;
     const u = state.users.find((x) => Number(x.id) === Number(id));
+    if (u?.currency_locked && currency != null && currency !== u.currency) {
+      return { rows: [], rowCount: 0 };
+    }
     if (u) {
       u.full_name = full_name;
       u.business_name = business_name;
@@ -434,10 +453,12 @@ async function executeQuery(text, params = []) {
       u.city = city;
       u.address = address;
       if (currency) u.currency = currency;
+      if (timeZone) u.time_zone = timeZone;
+      if (locale) u.locale = locale;
       u.updated_at = new Date().toISOString();
       saveState(state);
     }
-    return { rows: [], rowCount: u ? 1 : 0 };
+    return { rows: u ? [{ id: u.id }] : [], rowCount: u ? 1 : 0 };
   }
 
   if (upper.startsWith('UPDATE USERS SET PASSWORD_HASH = $1')) {
@@ -742,7 +763,7 @@ async function executeQuery(text, params = []) {
 
   if (upper.startsWith('WITH INV AS')) {
     const uid = Number(params[0]);
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const isToday = (tx) => Date.parse(tx.transaction_date) >= Date.parse(params[1]) && Date.parse(tx.transaction_date) < Date.parse(params[2]);
     const prods = state.products.filter((p) => Number(p.user_id) === uid);
     const txs = state.cash_transactions.filter(
       (t) => Number(t.user_id) === uid && (t.status || 'ACTIVE') === 'ACTIVE'
@@ -775,10 +796,10 @@ async function executeQuery(text, params = []) {
       .filter((t) => t.type === 'OUTFLOW')
       .reduce((s, t) => s + Number(t.amount), 0);
     const todayIn = txs
-      .filter((t) => t.type === 'INFLOW' && String(t.transaction_date).slice(0, 10) >= todayStr)
+      .filter((t) => t.type === 'INFLOW' && isToday(t))
       .reduce((s, t) => s + Number(t.amount), 0);
     const todayOut = txs
-      .filter((t) => t.type === 'OUTFLOW' && String(t.transaction_date).slice(0, 10) >= todayStr)
+      .filter((t) => t.type === 'OUTFLOW' && isToday(t))
       .reduce((s, t) => s + Number(t.amount), 0);
 
     return {
@@ -898,6 +919,7 @@ async function executeQuery(text, params = []) {
         updated_at: now,
       };
       state.products.push(created);
+      lockShopCurrency(state, created.user_id);
       saveState(state);
       return { rows: [created], rowCount: 1 };
     }
@@ -942,6 +964,7 @@ async function executeQuery(text, params = []) {
       updated_at: now,
     };
     state.products.push(created);
+    lockShopCurrency(state, created.user_id);
     saveState(state);
     return { rows: [created], rowCount: 1 };
   }
@@ -1145,6 +1168,7 @@ async function executeQuery(text, params = []) {
       };
     }
     state.stock_movements.push(record);
+    lockShopCurrency(state, record.user_id);
     saveState(state);
     return { rows: [record], rowCount: 1 };
   }
@@ -1366,6 +1390,7 @@ async function executeQuery(text, params = []) {
       };
     }
     state.cash_transactions.push(tx);
+    lockShopCurrency(state, tx.user_id);
     saveState(state);
     return { rows: [tx], rowCount: 1 };
   }
@@ -1398,7 +1423,7 @@ async function executeQuery(text, params = []) {
     }
   }
 
-  if (upper.startsWith('SELECT * FROM CASHBOOK_SESSIONS')) {
+  if (upper.startsWith('SELECT *, SESSION_DATE::TEXT AS SESSION_DATE FROM CASHBOOK_SESSIONS')) {
     const uid = Number(params[0]);
     if (!Array.isArray(state.cashbook_sessions)) state.cashbook_sessions = [];
     if (upper.includes('AND SESSION_DATE < $2')) {
@@ -1460,6 +1485,7 @@ async function executeQuery(text, params = []) {
           id: nextId(state.cashbook_sessions),
           user_id: Number(user_id),
           session_date: dateKey,
+          time_zone: params.at(-1),
           opening_balance: Number(opening_balance),
           opening_cash: Number(opening_cash),
           opening_bank_pos: Number(opening_bank_pos),
@@ -1475,6 +1501,7 @@ async function executeQuery(text, params = []) {
           closed_at: now,
         };
         state.cashbook_sessions.push(sess);
+        lockShopCurrency(state, sess.user_id);
       }
       saveState(state);
       return { rows: [sess], rowCount: 1 };
@@ -1497,6 +1524,7 @@ async function executeQuery(text, params = []) {
           id: nextId(state.cashbook_sessions),
           user_id: Number(user_id),
           session_date: dateKey,
+          time_zone: params.at(-1),
           opening_balance: Number(opening_balance),
           opening_cash: Number(opening_cash),
           opening_bank_pos: Number(opening_bank_pos),
@@ -1512,6 +1540,7 @@ async function executeQuery(text, params = []) {
           closed_at: null,
         };
         state.cashbook_sessions.push(sess);
+        lockShopCurrency(state, sess.user_id);
       }
       saveState(state);
       return { rows: [sess], rowCount: 1 };
@@ -1610,6 +1639,7 @@ async function executeQuery(text, params = []) {
       updated_at: now,
     };
     state.credit_records.push(rec);
+    lockShopCurrency(state, rec.user_id);
     saveState(state);
     return { rows: [rec], rowCount: 1 };
   }

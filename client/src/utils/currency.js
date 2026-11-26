@@ -15,13 +15,10 @@ export function getCurrencySymbol(code = 'NGN') {
   return CURRENCY_MAP[String(code || 'NGN').toUpperCase()]?.symbol || '₦';
 }
 
-export function formatCurrency(val, code = 'NGN') {
+export function formatCurrency(val, code = 'NGN', locale = 'en-NG') {
   const symbol = getCurrencySymbol(code);
   const num = Number(val || 0);
   if (Number.isNaN(num)) return `${symbol}0`;
-  const isWhole = num % 1 === 0;
-  const fixed = isWhole ? String(Math.round(num)) : num.toFixed(2);
-  const parts = fixed.split('.');
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return `${symbol}${parts.join('.')}`;
+  const digits = Number.isInteger(num) ? 0 : 2;
+  return symbol + num.toLocaleString(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }

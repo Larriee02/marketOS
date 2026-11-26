@@ -8,9 +8,9 @@ const channelLabels = ['Cash drawer', 'POS terminal', 'Bank & mobile wallet'];
 const roundMoney = (amount) => Number(amount.toFixed(2));
 
 export function DailyChannelReconciliationModal({
-  isOpen, onClose, sessionState, apiFetch, formatNaira, storeName, onSuccess,
+  isOpen, onClose, tradingDate, apiFetch, formatNaira, storeName, onSuccess,
 }) {
-  const [date, setDate] = useState(sessionState?.targetDate || new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(tradingDate);
   const [result, setResult] = useState(null);
   const [actuals, setActuals] = useState(['', '', '']);
   const [notes, setNotes] = useState('');

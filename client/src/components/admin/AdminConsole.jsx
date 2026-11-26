@@ -1,3 +1,4 @@
+import { whatsappPhone } from '../../utils/whatsappPhone';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users,
@@ -784,7 +785,7 @@ export function AdminConsole({ currentUser, onToast }) {
                     </button>
                     {inspectingUser.phone && (
                       <a
-                        href={`https://wa.me/${inspectingUser.phone.replace(/^0/, '234').replace(/\D/g, '')}?text=${encodeURIComponent(
+                        href={`https://wa.me/${whatsappPhone(inspectingUser.phone)}?text=${encodeURIComponent(
                           `Hello ${inspectingUser.full_name}, you can recover access to MarketOS using Forgot password on the sign-in page.`
                         )}`}
                         target="_blank"

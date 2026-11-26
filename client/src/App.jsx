@@ -63,6 +63,7 @@ import { MobileCartSheet } from './components/counter/MobileCartSheet';
 import { BulkImportModal } from './components/inventory/BulkImportModal';
 import { PhysicalStockAuditModal } from './components/inventory/PhysicalStockAuditModal';
 import { BatchAdjustModal } from './components/inventory/BatchAdjustModal';
+import { shopToday, shopMidnight } from './utils/shopDay';
 import { CashbookSessionModal } from './components/cashbook/CashbookSessionModal';
 import { TransactionCorrectionModal } from './components/cashbook/TransactionCorrectionModal';
 import { WhatsAppReminderModal } from './components/debtors/WhatsAppReminderModal';
@@ -233,11 +234,14 @@ function AppShell({ darkMode, setDarkMode }) {
   const [authChecking, setAuthChecking] = useState(true);
 
   const currencyCode = currentUser?.currency || 'NGN';
+  const timeZone = currentUser?.time_zone || 'UTC';
+  const locale = currentUser?.locale || 'en-NG';
+  const tradingDate = shopToday(timeZone);
   const currencySymbol = getCurrencySymbol(currencyCode);
   const businessProfile = getBusinessProfile(currentUser?.business_type);
   const formatNaira = useCallback(
-    (val) => formatCurrency(val, currencyCode),
-    [currencyCode]
+    (val) => formatCurrency(val, currencyCode, locale),
+    [currencyCode, locale]
   );
 
   const activeTab = ROUTE_TO_TAB[path] || 'counter';
@@ -458,7 +462,7 @@ function AppShell({ darkMode, setDarkMode }) {
         setDashboard(dashData || {});
         setProducts(Array.isArray(prodData) ? prodData : []);
         setTransactions(Array.isArray(txData) ? txData : []);
-        if (sessData) setCashbookSession(sessData);
+        setCashbookSession(sessData);
         setMovements(Array.isArray(movData) ? movData : []);
         setCredits(Array.isArray(credData) ? credData : []);
         setCustomerLedgers(Array.isArray(custData) ? custData : []);
@@ -499,7 +503,7 @@ function AppShell({ darkMode, setDarkMode }) {
     const controller = new AbortController();
     fetchAllData(controller.signal);
     return () => controller.abort();
-  }, [fetchAllData, isApprovedStoreAccess]);
+  }, [fetchAllData, isApprovedStoreAccess, timeZone, tradingDate]);
 
   // Categories & Filtered Products
   const categories = useMemo(() => {
@@ -551,8 +555,15 @@ function AppShell({ darkMode, setDarkMode }) {
   // Filtered History Movements + Period Summary
   const filteredMovements = useMemo(() => {
     const q = debouncedHistorySearch.toLowerCase().trim();
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfToday = shopMidnight(tradingDate, timeZone);
+
+    const historyStart = historyDateRange === 'CUSTOM' && historyStartDate ? shopMidnight(historyStartDate, timeZone)
+      : historyDateRange === 'TODAY' ? startOfToday
+      : historyDateRange === '7DAYS' ? shopMidnight(tradingDate, timeZone, -6)
+      : historyDateRange === '30DAYS' ? shopMidnight(tradingDate, timeZone, -29) : -Infinity;
+    const historyEnd = historyDateRange === 'CUSTOM'
+      ? (historyEndDate ? shopMidnight(historyEndDate, timeZone, 1) : Infinity)
+      : historyDateRange === 'ALL' ? Infinity : shopMidnight(tradingDate, timeZone, 1);
 
     return movements.filter((m) => {
       // Type Filter
@@ -574,25 +585,7 @@ function AppShell({ darkMode, setDarkMode }) {
 
       // Date Range Filter
       const itemTime = new Date(m.created_at).getTime();
-      if (historyDateRange === 'TODAY' && itemTime < startOfToday) {
-        return false;
-      }
-      if (historyDateRange === '7DAYS' && itemTime < now.getTime() - 7 * 86400000) {
-        return false;
-      }
-      if (historyDateRange === '30DAYS' && itemTime < now.getTime() - 30 * 86400000) {
-        return false;
-      }
-      if (historyDateRange === 'CUSTOM') {
-        if (historyStartDate) {
-          const startTime = new Date(historyStartDate + 'T00:00:00').getTime();
-          if (itemTime < startTime) return false;
-        }
-        if (historyEndDate) {
-          const endTime = new Date(historyEndDate + 'T23:59:59.999').getTime();
-          if (itemTime > endTime) return false;
-        }
-      }
+      if (itemTime < historyStart || itemTime >= historyEnd) return false;
 
       if (!q) return true;
       return (
@@ -609,7 +602,7 @@ function AppShell({ darkMode, setDarkMode }) {
     historyDateRange,
     historyStartDate,
     historyEndDate,
-    debouncedHistorySearch,
+    debouncedHistorySearch, timeZone, tradingDate,
   ]);
 
   const historySummary = useMemo(() => {
@@ -717,28 +710,27 @@ function AppShell({ darkMode, setDarkMode }) {
 
   // Cashbook Period Boundaries (Daily, Weekly, Monthly, Custom, All)
   const cashPeriodBounds = useMemo(() => {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfToday = shopMidnight(tradingDate, timeZone);
     if (cashDateRange === 'DAILY') {
-      return { startMs: startOfToday, endMs: Infinity, label: 'Daily Report (Today)' };
+      return { startMs: startOfToday, endMs: shopMidnight(tradingDate, timeZone, 1) - 1, label: 'Daily Report (Today)' };
     }
     if (cashDateRange === 'WEEKLY') {
       return {
-        startMs: startOfToday - 6 * 86400000,
-        endMs: Infinity,
+        startMs: shopMidnight(tradingDate, timeZone, -6),
+        endMs: shopMidnight(tradingDate, timeZone, 1) - 1,
         label: 'Weekly Report (Last 7 Days)',
       };
     }
     if (cashDateRange === 'MONTHLY') {
       return {
-        startMs: startOfToday - 29 * 86400000,
-        endMs: Infinity,
+        startMs: shopMidnight(tradingDate, timeZone, -29),
+        endMs: shopMidnight(tradingDate, timeZone, 1) - 1,
         label: 'Monthly Report (Last 30 Days)',
       };
     }
     if (cashDateRange === 'CUSTOM') {
-      const sMs = cashStartDate ? new Date(cashStartDate).setHours(0, 0, 0, 0) : -Infinity;
-      const eMs = cashEndDate ? new Date(cashEndDate).setHours(23, 59, 59, 999) : Infinity;
+      const sMs = cashStartDate ? shopMidnight(cashStartDate, timeZone) : -Infinity;
+      const eMs = cashEndDate ? shopMidnight(cashEndDate, timeZone, 1) - 1 : Infinity;
       return {
         startMs: sMs,
         endMs: eMs,
@@ -746,7 +738,7 @@ function AppShell({ darkMode, setDarkMode }) {
       };
     }
     return { startMs: -Infinity, endMs: Infinity, label: 'All-Time Cashbook Report' };
-  }, [cashDateRange, cashStartDate, cashEndDate]);
+  }, [cashDateRange, cashStartDate, cashEndDate, timeZone, tradingDate]);
 
   // Distinct Cashbook Categories for Filter Dropdown
   const cashbookCategories = useMemo(() => {
@@ -941,9 +933,8 @@ function AppShell({ darkMode, setDarkMode }) {
   const [homePeriod, setHomePeriod] = useState('TODAY');
   const selectedReportPeriod = activeTab === 'home' ? homePeriod : analyticsDateRange;
   const analyticsPeriodBounds = useMemo(() => {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const endOfTradingDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
+    const startOfToday = shopMidnight(tradingDate, timeZone);
+    const endOfTradingDay = shopMidnight(tradingDate, timeZone, 1);
 
     if (selectedReportPeriod === 'TODAY') {
       return {
@@ -954,22 +945,21 @@ function AppShell({ darkMode, setDarkMode }) {
     }
     if (selectedReportPeriod === 'WEEK') {
       return {
-        startMs: now.getTime() - 7 * 86400000,
+        startMs: shopMidnight(tradingDate, timeZone, -6),
         endMs: endOfTradingDay,
         label: 'Last 7 Days (This Week)',
       };
     }
     if (selectedReportPeriod === 'MONTH') {
       return {
-        startMs: now.getTime() - 30 * 86400000,
+        startMs: shopMidnight(tradingDate, timeZone, -29),
         endMs: endOfTradingDay,
         label: 'Last 30 Days (This Month)',
       };
     }
     if (selectedReportPeriod === 'CUSTOM') {
-      const s = analyticsStartDate ? new Date(`${analyticsStartDate}T00:00:00.000`).getTime() : 0;
-      const endDate = analyticsEndDate ? new Date(`${analyticsEndDate}T00:00:00`) : null;
-      const e = endDate ? endDate.setDate(endDate.getDate() + 1) : endOfTradingDay;
+      const s = analyticsStartDate ? shopMidnight(analyticsStartDate, timeZone) : 0;
+      const e = analyticsEndDate ? shopMidnight(analyticsEndDate, timeZone, 1) : endOfTradingDay;
       return {
         startMs: s,
         endMs: e,
@@ -981,7 +971,7 @@ function AppShell({ darkMode, setDarkMode }) {
       endMs: endOfTradingDay,
       label: "Today's Trading",
     };
-  }, [selectedReportPeriod, analyticsStartDate, analyticsEndDate]);
+  }, [selectedReportPeriod, analyticsStartDate, analyticsEndDate, timeZone, tradingDate]);
 
   const { startMs, endMs, label: analyticsLabel } = analyticsPeriodBounds;
   const activeTransactions = useMemo(
@@ -1200,9 +1190,9 @@ function AppShell({ darkMode, setDarkMode }) {
 
       setLastReceipt({
         receiptNo: `MOS-${String(firstMovement.id).padStart(6, '0')}`,
-        timestamp: new Date(firstMovement.created_at).toLocaleString(),
+        timestamp: new Date(firstMovement.created_at).toLocaleString(locale, { timeZone }),
         businessName: currentUser?.business_name || 'MarketOS Store',
-        location: currentUser?.location || 'Lagos, Nigeria',
+        location: currentUser?.address || currentUser?.city || '',
         cashierName: currentUser?.full_name || 'Store Owner',
         customerName: firstMovement.counterparty_name,
         customerPhone: customerPhone.trim() || '',
@@ -1248,9 +1238,9 @@ function AppShell({ darkMode, setDarkMode }) {
   const openReceiptForMovement = (m) => {
     setLastReceipt({
       receiptNo: `MOS-${String(m.id).padStart(6, '0')}`,
-      timestamp: new Date(m.created_at).toLocaleString(),
+      timestamp: new Date(m.created_at).toLocaleString(locale, { timeZone }),
       businessName: currentUser?.business_name || 'MarketOS Store',
-      location: currentUser?.location || 'Lagos, Nigeria',
+      location: currentUser?.address || currentUser?.city || '',
       cashierName: currentUser?.full_name || 'Store Owner',
       customerName: m.counterparty_name || 'Walk-in Customer',
       customerPhone: '',
@@ -1273,7 +1263,7 @@ function AppShell({ darkMode, setDarkMode }) {
   const openReceiptForTransaction = (tx) => {
     setLastReceipt({
       receiptNo: `MOS-${String(tx.id).padStart(6, '0')}`,
-      timestamp: new Date(tx.transaction_date).toLocaleString(),
+      timestamp: new Date(tx.transaction_date).toLocaleString(locale, { timeZone }),
       businessName: currentUser?.business_name || 'MarketOS Store',
       location: currentUser?.address || currentUser?.city || 'Lagos, Nigeria',
       cashierName: currentUser?.full_name || 'Store Owner',
@@ -1421,9 +1411,9 @@ function AppShell({ darkMode, setDarkMode }) {
       if (isSale && res?.movement) {
         setLastReceipt({
           receiptNo: `MOS-${String(res.movement.id).padStart(6, '0')}`,
-          timestamp: new Date().toLocaleString(),
+          timestamp: new Date().toLocaleString(locale, { timeZone }),
           businessName: currentUser?.business_name || 'MarketOS Store',
-          location: currentUser?.location || 'Lagos, Nigeria',
+          location: currentUser?.address || currentUser?.city || '',
           cashierName: currentUser?.full_name || 'Store Owner',
           customerName: movementForm.counterparty_name?.trim() || 'Walk-in Customer',
           customerPhone: '',
@@ -1574,10 +1564,11 @@ function AppShell({ darkMode, setDarkMode }) {
   // Export CSV (Cross-OS compatible with UTF-8 BOM)
   const exportToCSV = (rows, filename) => {
     if (!rows.length) return;
-    const headers = Object.keys(rows[0]).join(',');
+    const exportRows = rows.map((row) => ({ ...row, currency: row.currency || currencyCode }));
+    const headers = Object.keys(exportRows[0]).join(',');
     const csv = [
       headers,
-      ...rows.map((r) =>
+      ...exportRows.map((r) =>
         Object.values(r)
           .map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`)
           .join(',')
@@ -2280,7 +2271,7 @@ function AppShell({ darkMode, setDarkMode }) {
               )}
             </div>
             <aside className="shop-tool-notes">
-              <WorkspaceLedger title="Recent sales" entries={recentSales} formatMoney={formatNaira} onViewAll={() => handleSelectTab('history')} />
+              <WorkspaceLedger locale={locale} timeZone={timeZone} title="Recent sales" entries={recentSales} formatMoney={formatNaira} onViewAll={() => handleSelectTab('history')} />
               <section className="workspace-panel space-y-2">
                 <h2 className="font-bold">End of day</h2>
                 <p className="workspace-muted text-sm">Count your cash and check it against your sales.</p>
@@ -2361,7 +2352,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   onClick={() =>
                     exportToCSV(
                       filteredProducts,
-                      `shop-stock-${new Date().toISOString().slice(0, 10)}.csv`
+                      `shop-stock-${tradingDate}.csv`
                     )
                   }
                   className="inventory-tool"
@@ -2801,7 +2792,7 @@ function AppShell({ darkMode, setDarkMode }) {
                     <History size={15} aria-hidden="true" /> Audit trail
                   </button>
                   <button type="button" className="workspace-chip" onClick={() =>
-                    exportToCSV(filteredTransactions, `cashbook-${cashDateRange.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`)
+                    exportToCSV(filteredTransactions, `cashbook-${cashDateRange.toLowerCase()}-${tradingDate}.csv`)
                   }>
                     <Download size={15} aria-hidden="true" /> Export CSV
                   </button>
@@ -2957,7 +2948,7 @@ function AppShell({ darkMode, setDarkMode }) {
 
                           <div className="flex items-center justify-between pt-1 text-[11px]">
                             <span className="text-theme-secondary">
-                              {new Date(tx.transaction_date).toLocaleString()}
+                              {new Date(tx.transaction_date).toLocaleString(locale, { timeZone })}
                             </span>
                             <div className="flex items-center gap-1.5">
                               {tx.type === 'INFLOW' && (
@@ -3022,7 +3013,7 @@ function AppShell({ darkMode, setDarkMode }) {
                               }`}
                             >
                               <td className="py-3.5 px-4 text-xs tabular-nums text-theme-secondary whitespace-nowrap">
-                                <div>{new Date(tx.transaction_date).toLocaleString()}</div>
+                                <div>{new Date(tx.transaction_date).toLocaleString(locale, { timeZone })}</div>
                                 <div className="text-[10px] font-mono opacity-75">Entry #{tx.id}</div>
                               </td>
                               <td className="py-3.5 px-4">
@@ -3134,7 +3125,7 @@ function AppShell({ darkMode, setDarkMode }) {
             <header className="history-heading">
               <h1 id="history-title" className="workspace-title">Sales &amp; stock history</h1>
               <button type="button" className="history-export" disabled={!filteredMovements.length}
-                onClick={() => exportToCSV(filteredMovements, `shop-history-${new Date().toISOString().slice(0, 10)}.csv`)}>
+                onClick={() => exportToCSV(filteredMovements, `shop-history-${tradingDate}.csv`)}>
                 <Download size={16} aria-hidden="true" /> Export CSV
               </button>
             </header>
@@ -3217,7 +3208,7 @@ function AppShell({ darkMode, setDarkMode }) {
               <div id="history-results">
                 {filteredMovements.length > 0 ? (
                   <>
-                    <HistoryEntries rows={movementPage.rows} formatCurrency={formatNaira}
+                    <HistoryEntries locale={locale} timeZone={timeZone} rows={movementPage.rows} formatCurrency={formatNaira}
                       onReceipt={openReceiptForMovement} getMovementBadgeInfo={getMovementBadgeInfo} />
                     <ListPagination list={movementPage} label="Movements" targetId="history-results" />
                   </>
@@ -3959,7 +3950,7 @@ function AppShell({ darkMode, setDarkMode }) {
       {showReconcileModal && <DailyChannelReconciliationModal
         isOpen={showReconcileModal}
         onClose={() => setShowReconcileModal(false)}
-        sessionState={cashbookSession}
+        tradingDate={tradingDate}
         apiFetch={apiFetch}
         formatNaira={formatNaira}
         storeName={currentUser?.business_name || 'MarketOS Store'}
@@ -3974,6 +3965,7 @@ function AppShell({ darkMode, setDarkMode }) {
         isOpen={Boolean(lastReceipt)}
         onClose={() => setLastReceipt(null)}
         receipt={lastReceipt}
+        currencyCode={currencyCode}
         formatNaira={formatNaira}
       />
 
@@ -4083,18 +4075,18 @@ function AppShell({ darkMode, setDarkMode }) {
       />
 
       {/* DAILY CASHBOOK OPENING & CLOSING BALANCE REGISTER MODAL */}
-      <CashbookSessionModal
+      {showSessionModal && <CashbookSessionModal
         isOpen={showSessionModal}
         onClose={() => setShowSessionModal(false)}
         initialMode={sessionModalMode}
-        sessionState={cashbookSession}
+        tradingDate={tradingDate}
         apiFetch={apiFetch}
         formatCurrency={formatNaira}
         currencySymbol={currencySymbol}
         toastSuccess={(msg) => showSuccessToast(msg)}
         toastError={(msg) => toastError?.(msg) || alert(msg)}
         onSuccess={() => fetchAllData()}
-      />
+      />}
 
       {/* AUDIT-SAFE TRANSACTION CORRECTION & VOID MODAL */}
       <TransactionCorrectionModal
@@ -4170,7 +4162,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   onClick={() => {
                     const text = [
                       `*MARKET RESTOCK LIST — ${currentUser.business_name}*`,
-                      `Date: ${new Date().toLocaleDateString()}`,
+                      `Date: ${new Date().toLocaleDateString(locale, { timeZone })}`,
                       `---------------------------`,
                       ...lowStockRestockPlan.map(
                         (i) =>
@@ -4193,7 +4185,7 @@ function AppShell({ darkMode, setDarkMode }) {
                   onClick={() => {
                     const text = [
                       `*MARKET RESTOCK LIST — ${currentUser.business_name}*`,
-                      `Date: ${new Date().toLocaleDateString()}`,
+                      `Date: ${new Date().toLocaleDateString(locale, { timeZone })}`,
                       `---------------------------`,
                       ...lowStockRestockPlan.map(
                         (i) =>

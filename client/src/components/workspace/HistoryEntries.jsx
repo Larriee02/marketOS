@@ -2,19 +2,18 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 import './history-entries.css';
 
-const dayFormat = new Intl.DateTimeFormat(undefined, {
-  day: 'numeric', month: 'short', year: 'numeric',
-});
-const timeFormat = new Intl.DateTimeFormat(undefined, {
-  hour: 'numeric', minute: '2-digit',
-});
-
 function stockQuantity(value) {
   if (value === null || value === undefined || value === '') return '—';
   return Number.isFinite(Number(value)) ? String(Number(value)) : '—';
 }
 
-export function HistoryEntries({ rows, formatCurrency, onReceipt, getMovementBadgeInfo }) {
+export function HistoryEntries({ rows, formatCurrency, onReceipt, getMovementBadgeInfo, locale, timeZone }) {
+  const dayFormat = new Intl.DateTimeFormat(locale, {
+    timeZone, day: 'numeric', month: 'short', year: 'numeric',
+  });
+  const timeFormat = new Intl.DateTimeFormat(locale, {
+    timeZone, hour: 'numeric', minute: '2-digit',
+  });
   return (
     <table className="history-entries" aria-label="Stock movement records" role="table">
       <thead role="rowgroup">

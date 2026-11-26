@@ -4,13 +4,31 @@ const { toCents, fromCents } = require('../utils/money');
 const cacheService = require('./cache.service');
 const cashbookRepo = require('../repositories/cashbook.repository');
 
+const { Temporal } = require('@js-temporal/polyfill');
+const userRepo = require('../repositories/user.repository');
+
+function registerDate(value, zone) {
+  if (value == null) return Temporal.Now.plainDateISO(zone);
+  try {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new RangeError();
+    return Temporal.PlainDate.from(value);
+  } catch {
+    throw new AppError('Enter a valid register date.', 400, 'INVALID_REGISTER_DATE');
+  }
+}
+
 class CashbookService {
   async getDashboardSummary(userId) {
-    const cacheKey = `dashboard:${userId}:summary`;
+    const zone = (await userRepo.findPublicById(userId))?.time_zone || 'UTC';
+    const day = Temporal.Now.plainDateISO(zone);
+    const cacheKey = `dashboard:${userId}:summary:${zone}:${day.toString()}`;
     const cached = cacheService.get(cacheKey);
     if (cached) return { ...cached, cached: true };
 
-    const metrics = await cashbookRepo.getDashboardMetrics(userId);
+    const metrics = await cashbookRepo.getDashboardMetrics(userId,
+      day.toZonedDateTime(zone).toInstant().toString(),
+      day.add({ days: 1 }).toZonedDateTime(zone).toInstant().toString()
+    );
     cacheService.set(cacheKey, metrics, 20000);
     return { ...metrics, cached: false };
   }
@@ -273,7 +291,9 @@ class CashbookService {
       return new Date(val).toISOString().slice(0, 10);
     };
 
-    const targetDate = date ? toDateKey(date) : new Date().toISOString().slice(0, 10);
+    const shopZone = (await userRepo.findPublicById(userId))?.time_zone || 'UTC';
+    const day = registerDate(date, shopZone);
+    const targetDate = day.toString();
     const rawSessions = await cashbookRepo.findSessions(userId, 30);
     const sessions = rawSessions.map((s) => ({
       ...s,
@@ -282,11 +302,13 @@ class CashbookService {
     const todaySession = sessions.find((s) => s.session_date === targetDate)
       || await cashbookRepo.findSessionByDate(userId, targetDate);
     const previousClosed = await cashbookRepo.findPreviousClose(userId, targetDate);
-    const dayStart = (date) => new Date(`${toDateKey(date)}T00:00:00.000Z`);
-    const nextDay = (date) => new Date(dayStart(date).getTime() + 86400000).toISOString();
+    const timeZone = todaySession ? todaySession.time_zone || 'UTC' : shopZone;
+    const boundary = (day, zone) => day.toZonedDateTime(zone).toInstant().toString();
+    const previousEnd = previousClosed
+      ? boundary(registerDate(toDateKey(previousClosed.session_date)).add({ days: 1 }), previousClosed.time_zone || 'UTC')
+      : null;
     const totals = await cashbookRepo.getSessionTotals(
-      userId, dayStart(targetDate).toISOString(), nextDay(targetDate),
-      previousClosed ? nextDay(previousClosed.session_date) : null
+      userId, boundary(day, timeZone), boundary(day.add({ days: 1 }), timeZone), previousEnd
     );
 
     let priorCashNet = 0;
@@ -351,6 +373,7 @@ class CashbookService {
 
     return {
       targetDate,
+      timeZone,
       todaySession,
       suggestedOpeningBalance,
       suggestedOpeningCash,
@@ -373,7 +396,8 @@ class CashbookService {
   }
 
   async openCashbookSession(userId, payload = {}) {
-    const sessionDate = payload.session_date || new Date().toISOString().slice(0, 10);
+    const timeZone = (await userRepo.findPublicById(userId))?.time_zone || 'UTC';
+    const sessionDate = registerDate(payload.session_date, timeZone).toString();
     const openingCash = Number(payload.opening_cash || 0);
     const openingBankPos = Number(payload.opening_bank_pos || 0);
     const openingBalance =
@@ -387,6 +411,7 @@ class CashbookService {
 
     const session = await cashbookRepo.upsertOpeningSession(userId, {
       session_date: sessionDate,
+      time_zone: timeZone,
       opening_balance: openingBalance,
       opening_cash: openingCash,
       opening_bank_pos: openingBankPos,
@@ -398,8 +423,8 @@ class CashbookService {
   }
 
   async closeCashbookSession(userId, payload = {}) {
-    const sessionDate = payload.session_date || new Date().toISOString().slice(0, 10);
-    const stateInfo = await this.getCashbookSessions(userId, { date: sessionDate });
+    const stateInfo = await this.getCashbookSessions(userId, { date: payload.session_date });
+    const sessionDate = stateInfo.targetDate;
 
     const openingBalance =
       payload.opening_balance !== undefined && payload.opening_balance !== ''
@@ -439,6 +464,7 @@ class CashbookService {
     const variance = Number((actualClosingBalance - expectedClosingBalance).toFixed(2));
 
     const closedSession = await cashbookRepo.closeSession(userId, {
+      time_zone: stateInfo.timeZone,
       session_date: sessionDate,
       opening_balance: openingBalance,
       opening_cash: openingCash,

@@ -1,3 +1,4 @@
+import { whatsappPhone } from '../../utils/whatsappPhone';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   MessageCircle,
@@ -56,19 +57,6 @@ export function WhatsAppReminderModal({
     }
   }, [dueDate]);
 
-  // Clean phone number for WhatsApp wa.me link
-  const sanitizePhone = (raw) => {
-    if (!raw) return '';
-    let digits = String(raw).replace(/\D/g, '');
-    if (digits.startsWith('0') && digits.length === 11) {
-      digits = '234' + digits.slice(1);
-    } else if (digits.startsWith('234')) {
-      // Already good
-    } else if (digits.length === 10) {
-      digits = '234' + digits;
-    }
-    return digits;
-  };
 
   useEffect(() => {
     if (debtor) {
@@ -146,7 +134,7 @@ export function WhatsAppReminderModal({
     }
   }, [templateKey, templates]);
 
-  const cleanPhone = sanitizePhone(customPhone);
+  const cleanPhone = whatsappPhone(customPhone);
   const isValidPhone = cleanPhone.length >= 10;
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(customMessage)}`;
 

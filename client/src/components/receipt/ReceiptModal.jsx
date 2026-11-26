@@ -1,3 +1,4 @@
+import { whatsappPhone } from '../../utils/whatsappPhone';
 import React, { useState } from 'react';
 import {
   Printer,
@@ -34,7 +35,7 @@ const PAYMENT_LABELS = {
  * - Plain-text clipboard receipt copy
  * - Clear display of items purchased, amount paid, and balance due (debtor highlight)
  */
-export function ReceiptModal({ isOpen, onClose, receipt, formatNaira }) {
+export function ReceiptModal({ isOpen, onClose, receipt, formatNaira, currencyCode }) {
   const [copied, setCopied] = useState(false);
 
   if (!receipt) return null;
@@ -60,6 +61,7 @@ export function ReceiptModal({ isOpen, onClose, receipt, formatNaira }) {
       `==========================================`,
       `Receipt No: ${receipt.receiptNo || 'N/A'}`,
       `Date/Time:  ${receipt.timestamp || new Date().toLocaleString()}`,
+      `Currency:   ${currencyCode || 'NGN'}`,
       `Cashier:    ${receipt.cashierName || 'Attendant'}`,
       `Customer:   ${receipt.customerName || 'Walk-in Customer'}`,
       receipt.customerPhone ? `Phone:      ${receipt.customerPhone}` : null,
@@ -94,9 +96,7 @@ export function ReceiptModal({ isOpen, onClose, receipt, formatNaira }) {
 
   const handleWhatsAppShare = () => {
     const text = generateReceiptText();
-    const cleanPhone = (receipt.customerPhone || '')
-      .replace(/\D/g, '')
-      .replace(/^0/, '234');
+    const cleanPhone = whatsappPhone(receipt.customerPhone);
     const url = cleanPhone
       ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`
       : `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -161,6 +161,7 @@ export function ReceiptModal({ isOpen, onClose, receipt, formatNaira }) {
             <div className="text-right">
               <span className="font-bold text-slate-800 dark:text-slate-200">Date:</span>{' '}
               <span>{receipt.timestamp}</span>
+              {currencyCode && <span>Currency {currencyCode}</span>}
             </div>
             <div>
               <span className="font-bold text-slate-800 dark:text-slate-200">Customer:</span>{' '}

@@ -10,6 +10,17 @@ import './shop-settings.css';
 const emptyPassword = { current_password: '', new_password: '', confirm_password: '' };
 const currencyChoices = CURRENCY_OPTIONS.map(({ code, name }) => [code, `${code} · ${name}`]);
 
+const zones = Intl.supportedValuesOf?.('timeZone') || [
+  'Africa/Lagos', 'Africa/Accra', 'Africa/Nairobi', 'Africa/Johannesburg',
+  'Europe/London', 'Europe/Paris', 'America/Toronto', 'America/New_York',
+];
+const zoneChoices = ['UTC', ...zones.filter((zone) => zone !== 'UTC')].map((zone) => [zone, zone.replaceAll('_', ' ')]);
+const formatChoices = [
+  ['en-NG', 'English (Nigeria)'], ['en-GB', 'English (United Kingdom)'],
+  ['en-US', 'English (United States)'], ['en-CA', 'English (Canada)'],
+  ['fr-FR', 'French (France)'], ['de-DE', 'German (Germany)'], ['es-ES', 'Spanish (Spain)'],
+];
+
 function shopDetails(user) {
   return {
     full_name: user.full_name || '',
@@ -18,6 +29,8 @@ function shopDetails(user) {
     business_type: user.business_type || BUSINESS_TYPES[0],
     city: user.city || LAGOS_LOCATIONS[0],
     currency: user.currency || 'NGN',
+    time_zone: user.time_zone || 'UTC',
+    locale: user.locale || 'en-NG',
   };
 }
 
@@ -30,6 +43,7 @@ export function SettingsPage({
   const [submittingPassword, setSubmittingPassword] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [currencyLocked, setCurrencyLocked] = useState(Boolean(currentUser.currency_locked));
   const passwordRequired = currentUser.must_change_password;
 
   const editProfile = (event) => {
@@ -46,12 +60,17 @@ export function SettingsPage({
     try {
       const { user } = await apiFetch('/api/v1/auth/profile', {
         method: 'PUT',
-        body: JSON.stringify(profile),
+        body: JSON.stringify({ ...profile, currency: currencyLocked ? undefined : profile.currency }),
       });
       setProfile(shopDetails(user));
+      setCurrencyLocked(Boolean(user.currency_locked));
       onUserUpdated(user);
       onToast('Shop details saved.');
     } catch (err) {
+      if (err.code === 'CURRENCY_LOCKED') {
+        setCurrencyLocked(true);
+        setProfile((previous) => ({ ...previous, currency: currentUser.currency || 'NGN' }));
+      }
       setProfileError(err.message);
     } finally {
       setSubmittingProfile(false);
@@ -87,7 +106,8 @@ export function SettingsPage({
 
   const profileChoices = [
     ['business_type', 'Business category', BUSINESS_TYPES.map((type) => [type, type])],
-    ['city', 'Location', LAGOS_LOCATIONS.map((location) => [location, location])],
+    ['time_zone', 'Shop time zone', zoneChoices],
+    ['locale', 'Date and number format', formatChoices],
     ['currency', 'Shop currency', currencyChoices],
   ];
 
@@ -108,14 +128,20 @@ export function SettingsPage({
           <label htmlFor="shop-phone"><span>Phone number <small>(optional)</small></span>
             <input id="shop-phone" name="phone" type="tel" value={profile.phone} onChange={editProfile} autoComplete="tel" />
           </label>
+          <label htmlFor="shop-city">City or region
+            <input id="shop-city" name="city" autoComplete="address-level2" list="shop-locations" value={profile.city} onChange={editProfile} required />
+            <datalist id="shop-locations">{LAGOS_LOCATIONS.map((city) => <option key={city} value={city} />)}</datalist>
+          </label>
           {profileChoices.map(([name, label, options]) => (
             <label key={name} htmlFor={'shop-' + name}>{label}
-              <select id={'shop-' + name} name={name} value={profile[name]} onChange={editProfile}
+              <select id={'shop-' + name} name={name} value={profile[name]} onChange={editProfile} disabled={name === 'currency' && currencyLocked}
                 aria-describedby={name === 'currency' ? 'settings-currency-help' : undefined}>
                 {!options.some(([code]) => code === profile[name]) && <option value={profile[name]}>{profile[name]}</option>}
                 {options.map(([code, text]) => <option key={code} value={code}>{text}</option>)}
               </select>
-              {name === 'currency' && <small id="settings-currency-help">Sets the currency shown on prices, sales, and reports.</small>}
+              {name === 'currency' && <small id="settings-currency-help">{currencyLocked
+                ? 'Currency is locked to preserve existing stock and financial records.'
+                : 'Choose before adding stock or recording sales, expenses, or credit.'}</small>}
             </label>
           ))}
         </fieldset>
