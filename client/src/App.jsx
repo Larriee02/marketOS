@@ -21,7 +21,6 @@ import {
   CheckCircle2,
   MessageCircle,
   History,
-  Calendar,
   X,
   ShieldCheck,
   UserCheck,
@@ -73,7 +72,7 @@ import { DebtBook } from './components/debtors/DebtBook';
 import { CustomerCreditModal } from './components/debtors/CustomerCreditModal';
 import { FinancialMetricsOverview } from './components/analytics/FinancialMetricsOverview';
 import { DailyChannelReconciliationModal } from './components/analytics/DailyChannelReconciliationModal';
-import { ProfitAndLossStatement } from './components/analytics/ProfitAndLossStatement';
+import { OperatingExpenseBreakdown } from './components/analytics/OperatingExpenseBreakdown';
 import { OnboardingJourneyCard } from './components/onboarding/OnboardingJourneyCard';
 import { QuickStockModal } from './components/onboarding/QuickStockModal';
 import { BusinessSetupModal } from './components/onboarding/BusinessSetupModal';
@@ -3257,79 +3256,30 @@ function AppShell({ darkMode, setDarkMode }) {
 
         {/* TAB 6: POS VS CASH RECONCILIATION & PROFIT (P&L) */}
         {activeTab === 'analytics' && (
-          <div className="space-y-5">
-            {/* Control & Date Filter Bar */}
-            <div className="liquid-glass rounded-3xl p-4 sm:p-5 border theme-divider space-y-3">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div>
-                  <h3 className="font-extrabold font-luxury text-base sm:text-lg text-theme-primary flex items-center gap-2">
-                    <Scale className="w-5 h-5 text-theme-primary" />
-                    POS vs. Cash Reconciliation &amp; Retail Profit
-                  </h3>
-                  <p className="text-xs text-theme-secondary mt-0.5">
-                    Clear distinction between Sales Revenue, Gross Profit, Operating Expenses, Net Profit, Liquid Cash, and Inventory Capital.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowReconcileModal(true)}
-                    className="liquid-btn-primary px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md cursor-pointer whitespace-nowrap"
-                  >
-                    <Scale className="w-4 h-4" /> Reconcile Daily Cash &amp; POS
-                  </button>
-                </div>
-              </div>
-
-              {/* Date Filter Pills */}
-              <div className="pt-2 border-t theme-divider flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-xs font-bold text-theme-secondary flex items-center gap-1 mr-1">
-                    <Calendar className="w-3.5 h-3.5" /> Performance Period:
-                  </span>
-                  {[
-                    { id: 'TODAY', label: 'Today' },
-                    { id: 'WEEK', label: 'This Week (7 Days)' },
-                    { id: 'MONTH', label: 'This Month (30 Days)' },
-                    { id: 'CUSTOM', label: 'Custom Range' },
-                  ].map((p) => {
-                    const active = analyticsDateRange === p.id;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setAnalyticsDateRange(p.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer ${
-                          active
-                            ? 'bg-primary/20 border-primary text-theme-primary'
-                            : 'liquid-glass-subtle border-theme-border text-theme-secondary hover:text-theme-primary'
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {analyticsDateRange === 'CUSTOM' && (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="date"
-                      value={analyticsStartDate}
-                      onChange={(e) => setAnalyticsStartDate(e.target.value)}
-                      className="px-2.5 py-1 rounded-xl text-xs bg-theme-input border border-theme-border text-theme-primary focus:outline-none"
-                    />
-                    <span className="text-xs text-theme-secondary">to</span>
-                    <input
-                      type="date"
-                      value={analyticsEndDate}
-                      onChange={(e) => setAnalyticsEndDate(e.target.value)}
-                      className="px-2.5 py-1 rounded-xl text-xs bg-theme-input border border-theme-border text-theme-primary focus:outline-none"
-                    />
-                  </div>
-                )}
-              </div>
+          <div className="report-screen">
+            <header className="workspace-page-heading report-heading">
+              <h1 className="workspace-title">Shop reports</h1>
+              <button type="button" className="workspace-primary" onClick={() => setShowReconcileModal(true)}>
+                <Scale size={16} aria-hidden="true" /> Reconcile cash &amp; POS
+              </button>
+            </header>
+            <div className="report-controls">
+              <label>Reporting period
+                <select value={analyticsDateRange} onChange={(e) => setAnalyticsDateRange(e.target.value)}>
+                  <option value="TODAY">Today</option>
+                  <option value="WEEK">Last 7 days</option>
+                  <option value="MONTH">Last 30 days</option>
+                  <option value="CUSTOM">Custom range</option>
+                </select>
+              </label>
+              {analyticsDateRange === 'CUSTOM' && (
+                <>
+                  <label>From<input type="date" value={analyticsStartDate}
+                    onChange={(e) => setAnalyticsStartDate(e.target.value)} /></label>
+                  <label>To<input type="date" value={analyticsEndDate}
+                    onChange={(e) => setAnalyticsEndDate(e.target.value)} /></label>
+                </>
+              )}
             </div>
 
             {!analyticsFinancials ? (
@@ -3345,26 +3295,18 @@ function AppShell({ darkMode, setDarkMode }) {
                   metrics={analyticsFinancials.metrics}
                   formatNaira={formatNaira}
                   dateRangeLabel={analyticsFinancials.dateRangeLabel}
-                  onOpenReconcile={() => setShowReconcileModal(true)}
                 />
 
-                {/* Profit & Loss Statement (Itemized P&L Table) */}
-                <ProfitAndLossStatement
-                  metrics={analyticsFinancials.metrics}
-                  expenseBreakdown={analyticsFinancials.expenseBreakdown}
-                  channelBreakdown={analyticsFinancials.channelBreakdown}
-                  dateRangeLabel={analyticsFinancials.dateRangeLabel}
-                  formatNaira={formatNaira}
-                />
+                <OperatingExpenseBreakdown expenseBreakdown={analyticsFinancials.expenseBreakdown} formatNaira={formatNaira} />
 
                 {/* Payment Channels Inflow vs Outflow & Category Shelf Inventory */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="report-breakdowns">
                   {/* Cash vs POS vs Bank Transfers in Period */}
-                  <div className="liquid-glass rounded-3xl p-4 sm:p-5 space-y-4">
+                  <div className="report-panel report-breakdown">
                     <div>
                       <h3 className="text-base font-extrabold font-luxury text-theme-primary flex items-center gap-2">
                         <Wallet className="w-4 h-4 text-theme-primary" />
-                        Cash Drawer vs. POS Terminal &amp; Bank Transfers
+                        Payment channel activity
                       </h3>
                       <p className="text-xs text-theme-secondary mt-0.5">
                         How money moved through each channel during {analyticsFinancials.dateRangeLabel.toLowerCase()}
@@ -3417,14 +3359,14 @@ function AppShell({ darkMode, setDarkMode }) {
                   </div>
 
                   {/* Shelf Goods Value by Category */}
-                  <div className="liquid-glass rounded-3xl p-4 sm:p-5 space-y-4">
+                  <div className="report-panel report-breakdown">
                     <div>
                       <h3 className="text-base font-extrabold font-luxury text-theme-primary flex items-center gap-2">
                         <Package className="w-4 h-4 text-theme-primary" />
-                        Shelf Goods Capital by Category
+                        Inventory by category
                       </h3>
                       <p className="text-xs text-theme-secondary mt-0.5">
-                        Physical stock capital currently locked on shelves and expected retail returns
+                        Current stock at cost and at selling price
                       </p>
                     </div>
                     <div className="overflow-x-auto">
@@ -3439,8 +3381,8 @@ function AppShell({ darkMode, setDarkMode }) {
                           <tr>
                             <th className="py-2.5 px-3">Category</th>
                             <th className="py-2.5 px-3 text-center">SKUs</th>
-                            <th className="py-2.5 px-3 text-right">Cost Capital</th>
-                            <th className="py-2.5 px-3 text-right">Selling Value</th>
+                            <th className="py-2.5 px-3 text-right">At cost</th>
+                            <th className="py-2.5 px-3 text-right">At selling price</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y theme-divider">
