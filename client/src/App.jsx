@@ -1714,7 +1714,6 @@ function AppShell({ darkMode, setDarkMode }) {
         setDarkMode={setDarkMode}
         onNavigate={navigate}
         onLogout={handleLogout}
-        toast={toast}
         onToast={showSuccessToast}
       />
     );
