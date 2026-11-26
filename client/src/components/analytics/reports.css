@@ -12,7 +12,7 @@
   font-size: 14px;
 }
 .report-controls select { min-width: 160px; }
-.report-overview, .report-breakdowns { display: grid; gap: 16px; }
+.report-overview, .report-breakdowns { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .report-panel {
   min-width: 0;
   background: color-mix(in srgb, var(--workspace-surface) 80%, var(--workspace-bg));
@@ -26,14 +26,14 @@
 .report-panel header { margin-bottom: 14px; }
 .report-figures > div, .report-profit {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
   align-items: baseline;
   gap: 8px 14px;
 }
 .report-figures > div { padding-block: 10px; border-top: 1px solid var(--workspace-border); }
 .report-figures dt { font-size: 14px; }
 .report-figures small { display: block; }
-.report-figures dd, .report-profit strong { text-align: end; font-variant-numeric: tabular-nums; font-weight: 700; }
+.report-figures dd, .report-profit strong { text-align: end; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; font-weight: 700; }
 .report-profit {
   margin-top: 10px;
   align-items: center;
@@ -42,7 +42,7 @@
   border-radius: 8px;
   padding: 12px 14px;
 }
-.report-profit h3 { font-size: 14px; font-weight: 650; }
+.report-profit h3 { color: inherit; font-size: 14px; font-weight: 650; }
 .report-profit small { color: #d3e4fd; }
 .report-profit strong { font-size: clamp(20px, 2.6vw, 32px); letter-spacing: -.045em; }
 .report-position > .report-figures > div:first-child dd { font-size: 21px; }
@@ -56,4 +56,9 @@
 }
 @media (min-width: 1150px) {
   .report-breakdowns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .report-stock .report-figures > div { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  .report-stock .report-figures dd { text-align: start; }
 }
