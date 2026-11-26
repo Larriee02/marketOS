@@ -23,7 +23,6 @@ import {
   History,
   Calendar,
   X,
-  XCircle,
   ShieldCheck,
   UserCheck,
   LogOut,
@@ -50,6 +49,8 @@ import { WorkspaceMore, WorkspaceNavigation } from './components/workspace/Works
 import { TraderHome, WorkspaceLedger, WorkspaceMetric } from './components/workspace/TraderHome';
 import './components/workspace/workspace.css';
 import './components/workspace/trader-tools.css';
+import { HistoryEntries } from './components/workspace/HistoryEntries';
+import './components/workspace/history.css';
 import { useDebounce } from './hooks/useDebounce';
 import { Modal } from './components/ui/Modal';
 import { ListPagination, useListPage } from './components/ui/ListPagination';
@@ -308,7 +309,6 @@ function AppShell({ darkMode, setDarkMode }) {
   const [historyDateRange, setHistoryDateRange] = useState('ALL');
   const [historyStartDate, setHistoryStartDate] = useState('');
   const [historyEndDate, setHistoryEndDate] = useState('');
-  const [historyCustomDate, setHistoryCustomDate] = useState('');
   const [historySearch, setHistorySearch] = useState('');
   const debouncedHistorySearch = useDebounce(historySearch, 150);
 
@@ -585,16 +585,12 @@ function AppShell({ darkMode, setDarkMode }) {
       }
       if (historyDateRange === 'CUSTOM') {
         if (historyStartDate) {
-          const startTime = new Date(historyStartDate).setHours(0, 0, 0, 0);
+          const startTime = new Date(historyStartDate + 'T00:00:00').getTime();
           if (itemTime < startTime) return false;
         }
         if (historyEndDate) {
-          const endTime = new Date(historyEndDate).setHours(23, 59, 59, 999);
+          const endTime = new Date(historyEndDate + 'T23:59:59.999').getTime();
           if (itemTime > endTime) return false;
-        }
-        if (historyCustomDate && !historyStartDate && !historyEndDate) {
-          const itemDateStr = new Date(m.created_at).toISOString().slice(0, 10);
-          if (itemDateStr !== historyCustomDate) return false;
         }
       }
 
@@ -613,7 +609,6 @@ function AppShell({ darkMode, setDarkMode }) {
     historyDateRange,
     historyStartDate,
     historyEndDate,
-    historyCustomDate,
     debouncedHistorySearch,
   ]);
 
@@ -631,14 +626,24 @@ function AppShell({ darkMode, setDarkMode }) {
         } else if (['DAMAGED', 'DAMAGE', 'EXPIRED', 'MISSING'].includes(t)) {
           acc.lossCount += 1;
           acc.lossValue += val;
-        } else if (t === 'ADJUSTMENT' || t === 'SURPLUS') {
-          acc.auditCount += 1;
         }
         return acc;
       },
-      { salesCount: 0, salesValue: 0, restockCount: 0, restockValue: 0, lossCount: 0, lossValue: 0, auditCount: 0 }
+      { salesCount: 0, salesValue: 0, restockCount: 0, restockValue: 0, lossCount: 0, lossValue: 0 }
     );
   }, [filteredMovements]);
+
+  const historyFiltered = historyTypeFilter !== 'ALL' || historyProductFilter !== 'ALL' ||
+    historyDateRange !== 'ALL' || Boolean(historySearch.trim());
+
+  function resetHistoryFilters(productId = 'ALL') {
+    setHistoryTypeFilter('ALL');
+    setHistoryProductFilter(productId);
+    setHistoryDateRange('ALL');
+    setHistoryStartDate('');
+    setHistoryEndDate('');
+    setHistorySearch('');
+  }
 
   const getMovementBadgeInfo = (movementType) => {
     const norm = String(movementType || '').toUpperCase();
@@ -2460,9 +2465,7 @@ function AppShell({ darkMode, setDarkMode }) {
                     <div className="stock-row-actions">
                       <button
                         onClick={() => {
-                          setHistorySearch(p.name);
-                          setHistoryTypeFilter('ALL');
-                          setHistoryDateRange('ALL');
+                          resetHistoryFilters(String(p.id));
                           handleSelectTab('history');
                         }}
                         className="stock-row-action"
@@ -2586,9 +2589,7 @@ function AppShell({ darkMode, setDarkMode }) {
                           <div className="stock-row-actions">
                             <button
                               onClick={() => {
-                                setHistorySearch(p.name);
-                                setHistoryTypeFilter('ALL');
-                                setHistoryDateRange('ALL');
+                                resetHistoryFilters(String(p.id));
                                 handleSelectTab('history');
                               }}
                               className="stock-row-action"
@@ -3162,373 +3163,119 @@ function AppShell({ darkMode, setDarkMode }) {
           </div>
         )}
 
-        {/* TAB 4: CHECK HISTORY (SALES, RESTOCKS & SHELF COUNT LOG) */}
         {activeTab === 'history' && (
-          <div className="space-y-4">
-            {/* Period Summary Strip */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="liquid-glass p-4 rounded-2xl flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-theme-secondary">
-                    Sales in Selected History
-                  </p>
-                  <p className="text-xl font-extrabold font-luxury tabular-nums mt-1 text-theme-inflow">
-                    {formatNaira(historySummary.salesValue)}
-                  </p>
-                  <p className="text-xs mt-0.5 text-theme-secondary">
-                    Across {historySummary.salesCount} sale record(s)
-                  </p>
+          <section className="history-screen" aria-labelledby="history-title">
+            <header className="history-heading">
+              <h1 id="history-title" className="workspace-title">Sales &amp; stock history</h1>
+              <button type="button" className="history-export" disabled={!filteredMovements.length}
+                onClick={() => exportToCSV(filteredMovements, `shop-history-${new Date().toISOString().slice(0, 10)}.csv`)}>
+                <Download size={16} aria-hidden="true" /> Export CSV
+              </button>
+            </header>
+
+            <dl className="history-summary" aria-label="Value of movements in this view">
+              {[
+                ['Sales', historySummary.salesValue, historySummary.salesCount],
+                ['Restocks', historySummary.restockValue, historySummary.restockCount],
+                ['Stock losses', historySummary.lossValue, historySummary.lossCount],
+              ].map(([label, amount, count]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{loading || (error && !movements.length) ? '—' : formatNaira(amount)}</dd>
+                  <dd className="history-summary-count">{count} {count === 1 ? 'movement' : 'movements'}</dd>
                 </div>
-                <ShoppingCart className="w-6 h-6 opacity-80 text-theme-brand" />
-              </div>
+              ))}
+            </dl>
 
-              <div className="liquid-glass p-4 rounded-2xl flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-theme-secondary">
-                    Market Restocks in History
-                  </p>
-                  <p className="text-xl font-extrabold font-luxury tabular-nums mt-1 text-theme-primary">
-                    {formatNaira(historySummary.restockValue)}
-                  </p>
-                  <p className="text-xs mt-0.5 text-theme-secondary">
-                    Across {historySummary.restockCount} restock record(s)
-                  </p>
-                </div>
-                <Package className="w-6 h-6 opacity-80 text-theme-brand" />
-              </div>
-
-              <div className="liquid-glass p-4 rounded-2xl flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-theme-secondary">
-                    Losses, Damaged & Spoilage
-                  </p>
-                  <p className="text-xl font-extrabold font-luxury tabular-nums mt-1 text-theme-outflow">
-                    {formatNaira(historySummary.lossValue)}
-                  </p>
-                  <p className="text-xs mt-0.5 text-theme-secondary">
-                    Across {historySummary.lossCount} write-off(s) ({filteredMovements.length} total rows)
-                  </p>
-                </div>
-                <History className="w-6 h-6 opacity-80 text-theme-brand" />
-              </div>
-            </div>
-
-            {/* History Table & Filters Card */}
-            <div className="liquid-glass rounded-3xl overflow-hidden">
-              <div
-                style={{ borderColor: 'var(--border-outer)' }}
-                className="p-3.5 sm:p-4 border-b space-y-3"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                  {/* Movement Types Filter Buttons */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      { id: 'ALL', label: 'All Activity' },
-                      { id: 'SALE', label: 'Sales Out' },
-                      { id: 'RESTOCK', label: 'Restocks' },
-                      { id: 'DAMAGED', label: 'Damaged' },
-                      { id: 'EXPIRED', label: 'Expired' },
-                      { id: 'MISSING', label: 'Missing' },
-                      { id: 'ADJUSTMENT', label: 'Shelf Counts' },
-                    ].map((type) => (
-                      <button
-                        key={type.id}
-                        onClick={() => setHistoryTypeFilter(type.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
-                          historyTypeFilter === type.id
-                            ? 'liquid-btn-primary'
-                            : 'liquid-glass-subtle'
-                        }`}
-                      >
-                        {type.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Product Filter Dropdown */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs font-bold text-theme-secondary whitespace-nowrap">
-                      Product:
-                    </span>
-                    <select
-                      value={historyProductFilter}
-                      onChange={(e) => setHistoryProductFilter(e.target.value)}
-                      className="liquid-input text-xs rounded-xl px-2.5 py-1.5 max-w-[200px] truncate"
-                    >
-                      <option value="ALL">All Goods ({products.length})</option>
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Date Filter & Search Row */}
-                <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1 border-t theme-divider">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {[
-                      { id: 'ALL', label: 'All Dates' },
-                      { id: 'TODAY', label: 'Today' },
-                      { id: '7DAYS', label: '7 Days' },
-                      { id: '30DAYS', label: '30 Days' },
-                      { id: 'CUSTOM', label: 'Date Range' },
-                    ].map((d) => (
-                      <button
-                        key={d.id}
-                        onClick={() => {
-                          setHistoryDateRange(d.id);
-                          if (d.id !== 'CUSTOM') {
-                            setHistoryStartDate('');
-                            setHistoryEndDate('');
-                            setHistoryCustomDate('');
-                          }
-                        }}
-                        className={`px-2.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
-                          historyDateRange === d.id
-                            ? 'liquid-btn-primary'
-                            : 'liquid-glass-subtle'
-                        }`}
-                      >
-                        {d.label}
-                      </button>
-                    ))}
-
-                    {historyDateRange === 'CUSTOM' && (
-                      <div className="flex items-center gap-1.5 bg-slate-900/60 p-1 rounded-xl border border-slate-800 text-xs">
-                        <span className="text-[11px] text-theme-secondary">From:</span>
-                        <input
-                          type="date"
-                          value={historyStartDate}
-                          onChange={(e) => setHistoryStartDate(e.target.value)}
-                          className="liquid-input text-xs rounded-lg px-2 py-1"
-                        />
-                        <span className="text-[11px] text-theme-secondary">To:</span>
-                        <input
-                          type="date"
-                          value={historyEndDate}
-                          onChange={(e) => setHistoryEndDate(e.target.value)}
-                          className="liquid-input text-xs rounded-lg px-2 py-1"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="relative flex-1 max-w-sm flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-theme-secondary" />
-                      <input
-                        type="text"
-                        placeholder="Search item, note, supplier..."
-                        value={historySearch}
-                        onChange={(e) => setHistorySearch(e.target.value)}
-                        className="liquid-input w-full pl-9 pr-3 py-1.5 text-xs rounded-xl"
-                      />
-                    </div>
-                    {historySearch && (
-                      <button
-                        type="button"
-                        onClick={() => setHistorySearch('')}
-                        className="text-xs font-bold text-theme-outflow flex items-center gap-1 cursor-pointer shrink-0"
-                      >
-                        <XCircle className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() =>
-                      exportToCSV(
-                        filteredMovements,
-                        `shop-history-${new Date().toISOString().slice(0, 10)}.csv`
-                      )
+            <section className="history-log" aria-labelledby="history-log-title">
+              <header className="history-log-heading">
+                <h2 id="history-log-title">Movement log</h2>
+                {!loading && !error && (
+                  <span role="status">{historyFiltered ? `${filteredMovements.length} of ` : ''}{movements.length} {movements.length === 1 ? 'movement' : 'movements'}</span>
+                )}
+              </header>
+              <div className="history-filters">
+                <label className="history-search">Search movements
+                  <span>
+                    <Search size={16} aria-hidden="true" />
+                    <input type="search" value={historySearch} placeholder="Item, SKU, supplier or note"
+                      onChange={(e) => setHistorySearch(e.target.value)} />
+                  </span>
+                </label>
+                <label>Movement type
+                  <select value={historyTypeFilter} onChange={(e) => setHistoryTypeFilter(e.target.value)}>
+                    <option value="ALL">All activity</option>
+                    <option value="SALE">Sales</option>
+                    <option value="RESTOCK">Restocks</option>
+                    <option value="DAMAGED">Damaged</option>
+                    <option value="EXPIRED">Expired</option>
+                    <option value="MISSING">Missing</option>
+                    <option value="ADJUSTMENT">Shelf counts</option>
+                    <option value="SURPLUS">Surplus</option>
+                  </select>
+                </label>
+                <label>Product
+                  <select value={historyProductFilter} onChange={(e) => setHistoryProductFilter(e.target.value)}>
+                    <option value="ALL">All products</option>
+                    {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
+                  </select>
+                </label>
+                <label>Period
+                  <select value={historyDateRange} onChange={(e) => {
+                    setHistoryDateRange(e.target.value);
+                    if (e.target.value !== 'CUSTOM') {
+                      setHistoryStartDate('');
+                      setHistoryEndDate('');
                     }
-                    className="liquid-glass-subtle flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl hover:opacity-80 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" /> CSV
-                  </button>
-                </div>
+                  }}>
+                    <option value="ALL">All dates</option>
+                    <option value="TODAY">Today</option>
+                    <option value="7DAYS">Last 7 days</option>
+                    <option value="30DAYS">Last 30 days</option>
+                    <option value="CUSTOM">Custom range</option>
+                  </select>
+                </label>
+                {historyDateRange === 'CUSTOM' && (
+                  <div className="history-range">
+                    <label>From<input type="date" value={historyStartDate} max={historyEndDate || undefined}
+                      onChange={(e) => setHistoryStartDate(e.target.value)} /></label>
+                    <label>To<input type="date" value={historyEndDate} min={historyStartDate || undefined}
+                      onChange={(e) => setHistoryEndDate(e.target.value)} /></label>
+                  </div>
+                )}
+                {historyFiltered && filteredMovements.length > 0 && (
+                  <button type="button" className="history-clear" onClick={() => resetHistoryFilters()}>Clear filters</button>
+                )}
               </div>
 
-              <div id="history-results" />
-              {filteredMovements.length === 0 ? (
-                <EmptyState
-                  icon={History}
-                  title="No history records match your filter"
-                  description="Try resetting your movement type, product, or date filters."
-                  actionLabel="Reset All History Filters"
-                  onAction={() => {
-                    setHistoryTypeFilter('ALL');
-                    setHistoryProductFilter('ALL');
-                    setHistoryDateRange('ALL');
-                    setHistoryStartDate('');
-                    setHistoryEndDate('');
-                    setHistoryCustomDate('');
-                    setHistorySearch('');
-                  }}
-                />
-              ) : (
-                <>
-                  {/* Mobile History Cards (< 768px) */}
-                  <div className="md:hidden divide-y theme-divider">
-                    {movementPage.rows.map((m) => {
-                      const badgeInfo = getMovementBadgeInfo(m.movement_type);
-                      return (
-                        <div key={m.id} className="p-4 space-y-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <Badge variant={badgeInfo.variant}>
-                              {badgeInfo.label}
-                            </Badge>
-                            <span className="font-extrabold font-luxury tabular-nums text-sm text-theme-primary">
-                              {formatNaira(m.total_value)}
-                            </span>
-                          </div>
-                          <div className="font-extrabold font-luxury text-sm text-theme-primary">
-                            {m.product_name}
-                          </div>
-                          <div className="liquid-glass-subtle flex items-center justify-between text-xs p-2.5 rounded-2xl tabular-nums">
-                            <span className="text-theme-secondary">
-                              Before: {Number(m.previous_stock)}
-                            </span>
-                            <strong
-                              className={
-                                Number(m.quantity_change) >= 0
-                                  ? 'text-theme-inflow'
-                                  : 'text-theme-outflow'
-                              }
-                            >
-                              {Number(m.quantity_change) > 0
-                                ? `+${Number(m.quantity_change)}`
-                                : Number(m.quantity_change)}{' '}
-                              {m.unit}
-                            </strong>
-                            <span className="text-theme-primary font-bold">
-                              After: {Number(m.new_stock)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-[11px] text-theme-secondary pt-1 border-t theme-divider">
-                            <span>
-                              {m.counterparty_name || m.note || 'Walk-in / Shop Log'}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <span>{new Date(m.created_at).toLocaleDateString()}</span>
-                              {m.movement_type === 'SALE' && (
-                                <button
-                                  type="button"
-                                  onClick={() => openReceiptForMovement(m)}
-                                  className="font-bold text-theme-brand hover:underline flex items-center gap-1 cursor-pointer"
-                                >
-                                  <FileText className="w-3.5 h-3.5" /> Receipt
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+              <div id="history-results">
+                {filteredMovements.length > 0 ? (
+                  <>
+                    <HistoryEntries rows={movementPage.rows} formatCurrency={formatNaira}
+                      onReceipt={openReceiptForMovement} getMovementBadgeInfo={getMovementBadgeInfo} />
+                    <ListPagination list={movementPage} label="Movements" targetId="history-results" />
+                  </>
+                ) : loading || error ? (
+                  <p className="history-message" role="status">{loading ? 'Loading movements…' : 'Movement history is unavailable.'}</p>
+                ) : (
+                  <div className="history-empty">
+                    <div>
+                      <h3>{historyFiltered ? 'No matching movements' : 'No stock movements yet'}</h3>
+                      <p>{historyFiltered ? 'Choose a different filter or clear them to see the full log.'
+                        : 'Sales, restocks and shelf adjustments appear here when you record them.'}</p>
+                    </div>
+                    {historyFiltered ? (
+                      <button type="button" className="history-export" onClick={() => resetHistoryFilters()}>Clear filters</button>
+                    ) : (
+                      <button type="button" className="workspace-chip" onClick={() => handleSelectTab('inventory')}>
+                        View stock <ArrowRight size={15} aria-hidden="true" />
+                      </button>
+                    )}
                   </div>
-
-                  {/* Desktop History Table (>= 768px) */}
-                  <div className="hidden md:block overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead
-                        style={{
-                          backgroundColor: 'var(--bg-subtle)',
-                          borderColor: 'var(--border-outer)',
-                        }}
-                        className="border-b text-[11px] font-bold uppercase tracking-wider text-theme-secondary"
-                      >
-                        <tr>
-                          <th className="py-3.5 px-4">Date & Time</th>
-                          <th className="py-3.5 px-4">Provision / Goods</th>
-                          <th className="py-3.5 px-4">Action</th>
-                          <th className="py-3.5 px-4 text-right">Before</th>
-                          <th className="py-3.5 px-4 text-right">Qty Changed</th>
-                          <th className="py-3.5 px-4 text-right">After (Shelf)</th>
-                          <th className="py-3.5 px-4 text-right">Value ({currencySymbol})</th>
-                          <th className="py-3.5 px-4">Customer / Supplier / Note</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y theme-divider">
-                        {movementPage.rows.map((m) => {
-                          const badgeInfo = getMovementBadgeInfo(m.movement_type);
-                          return (
-                            <tr
-                              key={m.id}
-                              className="hover:bg-white/30 dark:hover:bg-white/5"
-                            >
-                              <td className="py-3.5 px-4 text-xs whitespace-nowrap tabular-nums text-theme-secondary">
-                                {new Date(m.created_at).toLocaleString()}
-                              </td>
-                              <td className="py-3.5 px-4">
-                                <div className="font-extrabold font-luxury text-theme-primary">
-                                  {m.product_name}
-                                </div>
-                                <div className="text-xs font-mono text-theme-secondary">
-                                  {m.sku}
-                                </div>
-                              </td>
-                              <td className="py-3.5 px-4">
-                                <Badge variant={badgeInfo.variant}>
-                                  {badgeInfo.label}
-                                </Badge>
-                              </td>
-                              <td className="py-3.5 px-4 text-right tabular-nums text-theme-secondary">
-                                {Number(m.previous_stock)} {m.unit}
-                              </td>
-                              <td
-                                className={`py-3.5 px-4 text-right font-extrabold tabular-nums ${
-                                  Number(m.quantity_change) >= 0
-                                    ? 'text-theme-inflow'
-                                    : 'text-theme-outflow'
-                                }`}
-                              >
-                                {Number(m.quantity_change) > 0
-                                  ? `+${Number(m.quantity_change)}`
-                                  : Number(m.quantity_change)}{' '}
-                                {m.unit}
-                              </td>
-                              <td className="py-3.5 px-4 text-right font-extrabold tabular-nums text-theme-primary">
-                                {Number(m.new_stock)} {m.unit}
-                              </td>
-                              <td className="py-3.5 px-4 text-right font-extrabold font-luxury tabular-nums text-theme-primary">
-                                {formatNaira(m.total_value)}
-                              </td>
-                              <td className="py-3.5 px-4 text-xs text-theme-secondary">
-                                <div className="flex items-center justify-between gap-2">
-                                  <div>
-                                    {m.counterparty_name ? (
-                                      <strong className="text-theme-primary">
-                                        {m.counterparty_name}
-                                      </strong>
-                                    ) : null}
-                                    {m.counterparty_name && m.note ? ' — ' : ''}
-                                    {m.note || (!m.counterparty_name ? '—' : '')}
-                                  </div>
-                                  {m.movement_type === 'SALE' && (
-                                    <button
-                                      type="button"
-                                      onClick={() => openReceiptForMovement(m)}
-                                      className="liquid-glass-subtle px-2.5 py-1 rounded-lg text-[11px] font-bold text-theme-brand hover:opacity-80 flex items-center gap-1 cursor-pointer shrink-0"
-                                      title="View & Print Sales Receipt"
-                                    >
-                                      <FileText className="w-3 h-3" /> Slip
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  <ListPagination list={movementPage} label="Activity" targetId="history-results" />
-                </>
-              )}
-            </div>
-          </div>
+                )}
+              </div>
+            </section>
+          </section>
         )}
 
         {/* TAB 5: DEBTORS BOOK (CUSTOMERS OWING ME) */}

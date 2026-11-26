@@ -12,7 +12,7 @@ const more = { id: 'more', label: 'More', icon: Grid2X2 };
 const sell = { id: 'counter', label: 'Sell', icon: Plus };
 const desktopLinks = [home, stock, money, more];
 const mobileLinks = [home, stock, sell, money, more];
-const otherPageNames = { counter: 'Make a sale', history: 'Sales', debtors: 'Debts', analytics: 'Reports' };
+const otherPageNames = { counter: 'Make a sale', history: 'Sales & stock history', debtors: 'Debts', analytics: 'Reports' };
 
 function ShopWordmark({ onClick }) {
   return (
